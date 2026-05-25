@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"/><title>StockFlow — Meu Perfil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css"></head><body>
+<!-- ICON SPRITE (Lucide-style) — included on every page via <object data> would lose currentColor, so we keep it inline -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></symbol>
+    <symbol id="i-arrow-down-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .68.39 1.28 1 1.51H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></symbol>
+    <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+    <symbol id="i-chevrons-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></symbol>
+    <symbol id="i-chevrons-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-arrow-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 17 9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+    <symbol id="i-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+    <symbol id="i-more-vertical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="i-bar-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></symbol>
+    <symbol id="i-rss" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  </defs>
+</svg>
+
+<div class="app-shell" data-screen-label="16 Meu Perfil">
+  <aside class="sidebar"><div class="sidebar-header"><div class="sidebar-logo-mark"><svg><use href="#i-box"/></svg></div><div class="sidebar-logo-text">StockFlow</div><div class="sidebar-env-badge">PROD</div></div>
+    <nav class="sidebar-nav"><div class="sidebar-section-label">Operação</div><a class="nav-item" href="S02%20Dashboard.html"><svg><use href="#i-home"/></svg><span>Dashboard</span></a><a class="nav-item" href="01%20Produtos.html"><svg><use href="#i-package"/></svg><span>Produtos</span></a><a class="nav-item" href="02%20Lotes.html"><svg><use href="#i-layers"/></svg><span>Lotes</span><span class="nav-badge warn">17</span></a><a class="nav-item" href="03%20Mapa%20do%20Armazem.html"><svg><use href="#i-map"/></svg><span>Mapa do Armazém</span></a><div class="sidebar-section-label">Movimentações</div><a class="nav-item" href="04%20Entrada.html"><svg><use href="#i-arrow-down-left"/></svg><span>Entrada</span></a><a class="nav-item" href="05%20Saida.html"><svg><use href="#i-arrow-up-right"/></svg><span>Saída</span></a><a class="nav-item" href="06%20Transferencia.html"><svg><use href="#i-shuffle"/></svg><span>Transferência</span></a><a class="nav-item" href="11%20Inventario%20Rotativo.html"><svg><use href="#i-clipboard"/></svg><span>Inventário</span></a><div class="sidebar-section-label">Análise</div><a class="nav-item" href="07%20Historico.html"><svg><use href="#i-history"/></svg><span>Histórico</span></a><a class="nav-item" href="08%20Rastreabilidade.html"><svg><use href="#i-scan"/></svg><span>Rastreabilidade</span></a><a class="nav-item" href="09%20Alertas%20de%20Vencimento.html"><svg><use href="#i-clock"/></svg><span>Vencimentos</span><span class="nav-badge">14</span></a><a class="nav-item" href="10%20Relatorios.html"><svg><use href="#i-activity"/></svg><span>Relatórios</span></a><div class="sidebar-section-label">Administração</div><a class="nav-item" href="13%20Usuarios.html"><svg><use href="#i-users"/></svg><span>Usuários</span></a><a class="nav-item" href="12%20Auditoria.html"><svg><use href="#i-shield"/></svg><span>Auditoria</span><span class="nav-badge admin">A</span></a><a class="nav-item active" href="14%20Meu%20Perfil.html"><svg><use href="#i-user"/></svg><span>Meu Perfil</span></a></nav>
+    <div class="sidebar-footer"><div class="sidebar-avatar">MA</div><div class="sidebar-user-info"><div class="sidebar-user-name">Mariana Albuquerque</div><div class="sidebar-user-role">Administrador</div></div><button class="sidebar-logout"><svg><use href="#i-logout"/></svg></button></div>
+  </aside>
+  <main class="main"><header class="topbar"><button class="topbar-toggle"><svg><use href="#i-menu"/></svg></button>
+    <nav class="breadcrumb"><span class="breadcrumb-root">StockFlow</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-root">Administração</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-current">Meu Perfil</span></nav>
+    <div class="topbar-search"><svg><use href="#i-search"/></svg><input type="text" placeholder="Buscar lote, produto, RFID ou ordem…"/><span class="topbar-search-kbd">⌘K</span></div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-right">
+      <button class="alerts-pill"><span class="dot"></span><svg><use href="#i-bell"/></svg><span>17 alertas</span></button>
+      <button class="icon-btn"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" data-theme-toggle><svg><use href="#i-sun"/></svg></button>
+      <div class="topbar-divider"></div><div class="topbar-avatar">MA</div>
+    </div></header>
+    <div class="page"><div class="page-inner">
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Meu Perfil</h1>
+    <div class="subtitle">
+      <span>Conta · segurança · preferências</span>
+      <span class="sep"></span>
+      <span>Última sessão: <strong style="color:var(--color-text-secondary);font-weight:600">há 2 min</strong> · macOS · Chrome</span>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:flex-start">
+
+  <!-- LEFT: PROFILE CARD -->
+  <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:0">
+    <article class="card">
+      <div style="padding:24px 20px;text-align:center;background:linear-gradient(180deg,var(--color-brand-50) 0%,transparent 100%)">
+        <div class="avatar-lg" style="background:linear-gradient(135deg,#2E75B6,#1F3864);margin:0 auto 14px;width:72px;height:72px;font-size:22px;position:relative">MA<button style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-radius:50%;background:var(--color-bg-default);border:1.5px solid var(--color-border-default);display:grid;place-items:center;color:var(--color-text-secondary)"><svg width="11" height="11"><use href="#i-edit"/></svg></button></div>
+        <div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">Mariana Albuquerque</div>
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-family:'IBM Plex Mono',monospace;margin-top:2px">mariana.albuq@acme.com</div>
+        <div style="margin-top:12px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+          <span class="badge admin"><span class="badge-dot"></span>Administrador</span>
+          <span class="badge success"><span class="badge-dot"></span>MFA ativo</span>
+        </div>
+      </div>
+      <div class="detail-list" style="padding:6px 20px 16px">
+        <div class="detail-row"><span class="label">Cargo</span><span class="value">Gerente de Operações</span></div>
+        <div class="detail-row"><span class="label">Equipe</span><span class="value">CD-01 · São Paulo</span></div>
+        <div class="detail-row"><span class="label">Membro desde</span><span class="value">14/03/2024</span></div>
+        <div class="detail-row"><span class="label">Movimentações</span><span class="value">1.842 (mês)</span></div>
+      </div>
+    </article>
+    <article class="card">
+      <header class="card-header"><div class="card-title">Sessões ativas</div><span class="card-title-sub">· 2</span></header>
+      <div style="padding:6px 0">
+        <div style="padding:12px 18px;border-bottom:1px solid var(--color-border-default)"><div style="display:flex;gap:8px;align-items:center;font-size:12.5px"><div style="width:22px;height:22px;border-radius:5px;background:var(--color-success-100);color:var(--color-success-700);display:grid;place-items:center"><svg width="12" height="12"><use href="#i-circle-check"/></svg></div><strong style="color:var(--color-text-primary)">Esta sessão</strong></div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:4px;padding-left:30px">macOS · Chrome 124 · São Paulo, BR<br><span class="mono">10.48.21.012</span> · ativo agora</div></div>
+        <div style="padding:12px 18px"><div style="display:flex;gap:8px;align-items:center;font-size:12.5px"><div style="width:22px;height:22px;border-radius:5px;background:var(--color-bg-subtle);color:var(--color-text-tertiary);display:grid;place-items:center"><svg width="12" height="12"><use href="#i-clock"/></svg></div>iOS · Safari</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:4px;padding-left:30px">iPhone 15 · há 1h<br><button style="font-size:11px;color:var(--color-danger-600);font-weight:600">Encerrar sessão</button></div></div>
+      </div>
+    </article>
+  </aside>
+
+  <!-- RIGHT: SETTINGS SECTIONS -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- ACCOUNT INFO -->
+    <article class="card">
+      <header class="card-header expandable" data-section="account">
+        <div class="card-title">Dados da conta</div>
+        <span class="card-title-sub">· nome, contato, idioma</span>
+        <div style="flex:1"></div>
+        <svg class="accordion-chev" width="14" height="14" style="color:var(--color-text-tertiary);transform:rotate(90deg)"><use href="#i-chevron-right"/></svg>
+      </header>
+      <div style="padding:20px 22px">
+        <div class="form-grid cols-2">
+          <div class="form-group"><label class="form-label">Nome completo</label><input class="input" value="Mariana Albuquerque"/></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="input mono" value="mariana.albuq@acme.com" disabled/><div class="form-hint">Vinculado ao SSO · contate o admin para alterar</div></div>
+          <div class="form-group"><label class="form-label">Cargo</label><input class="input" value="Gerente de Operações"/></div>
+          <div class="form-group"><label class="form-label">Telefone</label><input class="input mono" value="+55 11 98472-1190"/></div>
+          <div class="form-group"><label class="form-label">Idioma</label><select class="select"><option>Português (Brasil)</option><option>English (US)</option><option>Español</option></select></div>
+          <div class="form-group"><label class="form-label">Fuso horário</label><select class="select"><option>America/Sao_Paulo · UTC−3</option><option>America/New_York · UTC−5</option></select></div>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost">Descartar</button>
+          <button class="btn btn-primary" onclick="SF.toast.show({kind:'success',title:'Perfil atualizado',msg:'Dados da conta salvos.'})"><svg><use href="#i-check"/></svg>Salvar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- SECURITY -->
+    <article class="card">
+      <header class="card-header expandable" data-section="security">
+        <div class="card-title">Segurança</div>
+        <span class="card-title-sub">· senha, MFA, sessões</span>
+        <div style="flex:1"></div>
+        <span class="badge success"><span class="badge-dot"></span>Excelente</span>
+        <svg class="accordion-chev" width="14" height="14" style="color:var(--color-text-tertiary);transform:rotate(90deg);margin-left:10px"><use href="#i-chevron-right"/></svg>
+      </header>
+      <div style="padding:18px 22px">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--color-border-default)">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">Autenticação de dois fatores (MFA)</div>
+            <div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Autenticador: Authy · habilitado em 14/03/2024</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge success"><span class="badge-dot"></span>Ativo</span>
+            <button class="btn btn-outline btn-sm">Reconfigurar</button>
+          </div>
+        </div>
+
+        <div style="padding:18px 0;border-bottom:1px solid var(--color-border-default)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">Alterar senha</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Última troca há 47 dias · expira em 43 dias</div></div></div>
+          <div class="form-grid cols-2">
+            <div class="form-group" style="grid-column:span 2"><label class="form-label">Senha atual <span class="req">*</span></label>
+              <div style="position:relative"><input class="input mono" type="password" placeholder="Digite sua senha atual"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Nova senha <span class="req">*</span></label>
+              <input class="input mono" type="password" id="pf-pwd" placeholder="Mín. 12 caracteres"/>
+              <div class="strength-meter"><div class="strength-bar" id="pf-sb1"></div><div class="strength-bar" id="pf-sb2"></div><div class="strength-bar" id="pf-sb3"></div></div>
+              <div class="strength-label" id="pf-sl" style="display:none">Força:</div>
+            </div>
+            <div class="form-group"><label class="form-label">Confirmar nova senha <span class="req">*</span></label>
+              <input class="input mono" type="password" id="pf-pwd2" placeholder="Repita a nova senha"/>
+              <div class="form-error" id="pf-err" style="display:none"><svg><use href="#i-alert-triangle"/></svg>As senhas não coincidem</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:10px 12px;background:var(--color-bg-subtle);border-radius:6px;font-size:11.5px;color:var(--color-text-tertiary);line-height:1.6">
+            <strong style="color:var(--color-text-secondary)">Requisitos:</strong> mínimo 12 caracteres · maiúscula + minúscula · número + símbolo · não pode repetir as últimas 6 senhas.
+          </div>
+          <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-ghost">Cancelar</button><button class="btn btn-primary"><svg><use href="#i-key"/></svg>Atualizar senha</button></div>
+        </div>
+
+        <div style="padding:18px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">Chaves de API</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">2 chaves ativas · próximo a expirar em 18 dias</div></div><button class="btn btn-outline btn-sm"><svg><use href="#i-key"/></svg>Gerenciar</button></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PERFIL DE ACESSO -->
+    <article class="card">
+      <header class="card-header">
+        <div class="card-title">Perfil de acesso</div>
+        <span class="card-title-sub">· permissões atribuídas</span>
+        <div style="flex:1"></div>
+        <span class="badge admin"><span class="badge-dot"></span>Administrador</span>
+      </header>
+      <div style="padding:18px 22px">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Movimentações (entrada/saída/transf/ajuste)</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Gestão de produtos e lotes</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Bloqueio e desbloqueio de lotes</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Aprovação de ajustes de inventário</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Acesso à auditoria completa</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Gestão de usuários e perfis</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Geração de relatórios</div>
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-success-50);border-radius:6px;border:1px solid var(--color-success-200);font-size:12.5px;color:var(--color-success-700)"><svg width="14" height="14"><use href="#i-circle-check"/></svg>Configurações do sistema</div>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;background:var(--color-bg-subtle);border-radius:6px;font-size:11.5px;color:var(--color-text-tertiary)">Permissões herdadas do perfil <strong style="color:var(--color-text-secondary)">Administrador</strong>. Solicite alteração ao RH se necessário.</div>
+      </div>
+    </article>
+
+    <!-- PREFERÊNCIAS -->
+    <article class="card">
+      <header class="card-header">
+        <div class="card-title">Preferências</div>
+        <span class="card-title-sub">· notificações & aparência</span>
+      </header>
+      <div style="padding:18px 22px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <label class="toggle" style="display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Notificações por email</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Alertas críticos e resumo diário às 08h</div></div><input type="checkbox" checked><span class="track"></span></label>
+          <label class="toggle" style="display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Push (mobile)</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Avisos de bloqueio e vencimento crítico</div></div><input type="checkbox" checked><span class="track"></span></label>
+          <label class="toggle" style="display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Tema escuro</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Aplicar tema escuro em todo o sistema</div></div><input type="checkbox" id="dark-toggle"><span class="track"></span></label>
+          <label class="toggle" style="display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Resumo semanal</div><div style="font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px">Email às segundas com KPIs do CD-01</div></div><input type="checkbox"><span class="track"></span></label>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</div>
+</div></div>
+  </main></div>
+<script src="app.js"></script><script>
+const pwd = document.getElementById('pf-pwd');
+const pwd2 = document.getElementById('pf-pwd2');
+const err = document.getElementById('pf-err');
+const sl = document.getElementById('pf-sl');
+if (pwd) pwd.addEventListener('input', () => {
+  const s = SF.strength(pwd.value);
+  ['pf-sb1','pf-sb2','pf-sb3'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.className = 'strength-bar' + (i < s.score ? ' ' + s.level : '');
+  });
+  sl.style.display = pwd.value ? '' : 'none';
+  sl.textContent = pwd.value ? 'Força: ' + s.label : '';
+  sl.className = 'strength-label ' + s.level;
+});
+if (pwd2) pwd2.addEventListener('input', () => {
+  err.style.display = (pwd2.value && pwd.value !== pwd2.value) ? 'flex' : 'none';
+});
+// Dark mode toggle binding
+const darkToggle = document.getElementById('dark-toggle');
+function syncToggle(){ if(darkToggle) darkToggle.checked = SF.theme.get() === 'dark'; }
+syncToggle();
+if (darkToggle) darkToggle.addEventListener('change', () => {
+  SF.theme.set(darkToggle.checked ? 'dark' : 'light');
+});
+
+// Expandable sections (accordion-style)
+document.querySelectorAll('.card-header.expandable').forEach(h => {
+  h.style.cursor = 'pointer';
+  h.addEventListener('click', () => {
+    const body = h.nextElementSibling;
+    const chev = h.querySelector('.accordion-chev');
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : '';
+    if (chev) chev.style.transform = open ? '' : 'rotate(90deg)';
+  });
+});
+</script></body></html>

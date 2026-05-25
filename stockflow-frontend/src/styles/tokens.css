@@ -1,0 +1,140 @@
+/* ============================================================
+   StockFlow Enterprise v2.0 — Design tokens
+   ============================================================ */
+:root {
+  --color-bg-canvas: #f1f5f9;
+  --color-bg-default: #ffffff;
+  --color-bg-subtle: #f8fafc;
+  --color-bg-muted: #f1f5f9;
+  --color-bg-overlay: rgba(15, 23, 42, 0.40);
+
+  --color-sidebar-bg: #0f1f3d;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-active: #2E75B6;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --color-border-default: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-border-muted: #f1f5f9;
+  --color-border-focus: #2E75B6;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+  --color-text-placeholder: #cbd5e1;
+  --color-text-disabled: #e2e8f0;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #2E75B6;
+  --color-text-link-hover: #1F3864;
+
+  --color-brand-900: #0c1a2e;
+  --color-brand-800: #1F3864;
+  --color-brand-700: #254d8c;
+  --color-brand-600: #2E75B6;
+  --color-brand-500: #3b82f6;
+  --color-brand-300: #93c5fd;
+  --color-brand-200: #bfdbfe;
+  --color-brand-100: #dbeafe;
+  --color-brand-50: #eff6ff;
+
+  --color-success-700: #15803d;
+  --color-success-600: #16a34a;
+  --color-success-500: #22c55e;
+  --color-success-200: #bbf7d0;
+  --color-success-100: #dcfce7;
+  --color-success-50: #f0fdf4;
+
+  --color-danger-700: #b91c1c;
+  --color-danger-600: #dc2626;
+  --color-danger-500: #ef4444;
+  --color-danger-400: #f87171;
+  --color-danger-200: #fecaca;
+  --color-danger-100: #fee2e2;
+  --color-danger-50: #fef2f2;
+
+  --color-warning-700: #b45309;
+  --color-warning-600: #d97706;
+  --color-warning-500: #f59e0b;
+  --color-warning-400: #fbbf24;
+  --color-warning-300: #fcd34d;
+  --color-warning-200: #fde68a;
+  --color-warning-100: #fef3c7;
+  --color-warning-50: #fffbeb;
+
+  --color-info-700: #0369a1;
+  --color-info-600: #0284c7;
+  --color-info-100: #e0f2fe;
+  --color-info-50: #f0f9ff;
+
+  --color-admin-700: #6d28d9;
+  --color-admin-600: #7c3aed;
+  --color-admin-100: #ede9fe;
+
+  --color-topbar-bg: #ffffff;
+  --color-topbar-border: #e2e8f0;
+
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.10), 0 4px 6px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 25px rgba(15, 23, 42, 0.10), 0 8px 10px rgba(15, 23, 42, 0.04);
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --ease-default: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+html[data-theme="dark"] {
+  --color-bg-canvas: #0a1525;
+  --color-bg-default: #101b30;
+  --color-bg-subtle: #152340;
+  --color-bg-muted: #1a2848;
+  --color-bg-overlay: rgba(0, 0, 0, 0.55);
+  --color-border-default: #1e2d4d;
+  --color-border-strong: #2a3a5e;
+  --color-border-muted: #152340;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-placeholder: #475569;
+  --color-text-disabled: #334155;
+  --color-topbar-bg: #101b30;
+  --color-topbar-border: #1e2d4d;
+  --color-success-50: #0a2818;
+  --color-success-100: #0d3a23;
+  --color-success-200: #15532f;
+  --color-danger-50: #2a0e0e;
+  --color-danger-100: #3a1414;
+  --color-danger-200: #5a1e1e;
+  --color-warning-50: #2a1d04;
+  --color-warning-100: #3a2806;
+  --color-warning-200: #5a3f0a;
+  --color-info-50: #06223a;
+  --color-info-100: #082e4d;
+  --color-brand-50: #0a1a36;
+  --color-brand-100: #0e2447;
+  --color-brand-200: #163563;
+  --color-brand-300: #1d4380;
+  --color-admin-100: #1f1840;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.50), 0 4px 6px rgba(0, 0, 0, 0.30);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.55), 0 8px 10px rgba(0, 0, 0, 0.30);
+}

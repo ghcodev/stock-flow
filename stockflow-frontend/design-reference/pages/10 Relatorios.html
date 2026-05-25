@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"/><title>StockFlow — Relatórios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css"></head><body>
+<!-- ICON SPRITE (Lucide-style) — included on every page via <object data> would lose currentColor, so we keep it inline -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></symbol>
+    <symbol id="i-arrow-down-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .68.39 1.28 1 1.51H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></symbol>
+    <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+    <symbol id="i-chevrons-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></symbol>
+    <symbol id="i-chevrons-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-arrow-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 17 9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+    <symbol id="i-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+    <symbol id="i-more-vertical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="i-bar-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></symbol>
+    <symbol id="i-rss" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  </defs>
+</svg>
+
+<div class="app-shell" data-screen-label="12 Relatorios">
+  <aside class="sidebar"><div class="sidebar-header"><div class="sidebar-logo-mark"><svg><use href="#i-box"/></svg></div><div class="sidebar-logo-text">StockFlow</div><div class="sidebar-env-badge">PROD</div></div>
+    <nav class="sidebar-nav"><div class="sidebar-section-label">Operação</div><a class="nav-item" href="S02%20Dashboard.html"><svg><use href="#i-home"/></svg><span>Dashboard</span></a><a class="nav-item" href="01%20Produtos.html"><svg><use href="#i-package"/></svg><span>Produtos</span></a><a class="nav-item" href="02%20Lotes.html"><svg><use href="#i-layers"/></svg><span>Lotes</span><span class="nav-badge warn">17</span></a><a class="nav-item" href="03%20Mapa%20do%20Armazem.html"><svg><use href="#i-map"/></svg><span>Mapa do Armazém</span></a><div class="sidebar-section-label">Movimentações</div><a class="nav-item" href="04%20Entrada.html"><svg><use href="#i-arrow-down-left"/></svg><span>Entrada</span></a><a class="nav-item" href="05%20Saida.html"><svg><use href="#i-arrow-up-right"/></svg><span>Saída</span></a><a class="nav-item" href="06%20Transferencia.html"><svg><use href="#i-shuffle"/></svg><span>Transferência</span></a><a class="nav-item" href="11%20Inventario%20Rotativo.html"><svg><use href="#i-clipboard"/></svg><span>Inventário</span></a><div class="sidebar-section-label">Análise</div><a class="nav-item" href="07%20Historico.html"><svg><use href="#i-history"/></svg><span>Histórico</span></a><a class="nav-item" href="08%20Rastreabilidade.html"><svg><use href="#i-scan"/></svg><span>Rastreabilidade</span></a><a class="nav-item" href="09%20Alertas%20de%20Vencimento.html"><svg><use href="#i-clock"/></svg><span>Vencimentos</span><span class="nav-badge">14</span></a><a class="nav-item active" href="10%20Relatorios.html"><svg><use href="#i-activity"/></svg><span>Relatórios</span></a><div class="sidebar-section-label">Administração</div><a class="nav-item" href="13%20Usuarios.html"><svg><use href="#i-users"/></svg><span>Usuários</span></a><a class="nav-item" href="12%20Auditoria.html"><svg><use href="#i-shield"/></svg><span>Auditoria</span><span class="nav-badge admin">A</span></a><a class="nav-item" href="14%20Meu%20Perfil.html"><svg><use href="#i-user"/></svg><span>Meu Perfil</span></a></nav>
+    <div class="sidebar-footer"><div class="sidebar-avatar">MA</div><div class="sidebar-user-info"><div class="sidebar-user-name">Mariana Albuquerque</div><div class="sidebar-user-role">Administrador</div></div><button class="sidebar-logout"><svg><use href="#i-logout"/></svg></button></div>
+  </aside>
+  <main class="main"><header class="topbar"><button class="topbar-toggle"><svg><use href="#i-menu"/></svg></button>
+    <nav class="breadcrumb"><span class="breadcrumb-root">StockFlow</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-root">Análise</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-current">Relatórios</span></nav>
+    <div class="topbar-search"><svg><use href="#i-search"/></svg><input type="text" placeholder="Buscar lote, produto, RFID ou ordem…"/><span class="topbar-search-kbd">⌘K</span></div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-right">
+      <button class="alerts-pill"><span class="dot"></span><svg><use href="#i-bell"/></svg><span>17 alertas</span></button>
+      <button class="icon-btn"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" data-theme-toggle><svg><use href="#i-sun"/></svg></button>
+      <div class="topbar-divider"></div><div class="topbar-avatar">MA</div>
+    </div></header>
+    <div class="page"><div class="page-inner">
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Relatórios</h1>
+    <div class="subtitle">
+      <span>Geração de relatórios operacionais</span>
+      <span class="sep"></span>
+      <span><strong style="color:var(--color-text-secondary);font-weight:600">128</strong> gerados nos últimos 30 dias</span>
+      <span class="sep"></span>
+      <span>Formatos: CSV · PDF · XLSX</span>
+    </div>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-outline btn-sm"><svg><use href="#i-history"/></svg>Histórico de relatórios</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:flex-start">
+
+  <!-- LEFT: GENERATOR -->
+  <section class="card" style="position:sticky;top:0">
+    <header class="card-header">
+      <div class="card-title">Gerar relatório</div>
+      <span class="card-title-sub">· configurar parâmetros</span>
+    </header>
+    <div style="padding:18px 20px">
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Tipo de relatório <span class="req">*</span></label>
+        <div class="radio-card-grid">
+          <label class="radio-card checked"><div class="radio-card-icon"><svg><use href="#i-activity"/></svg></div><div class="radio-card-content"><div class="radio-card-title">Movimentações</div><div class="radio-card-sub">Entradas, saídas, transferências e ajustes por período</div></div><div class="radio-dot"></div></label>
+          <label class="radio-card"><div class="radio-card-icon"><svg><use href="#i-package"/></svg></div><div class="radio-card-content"><div class="radio-card-title">Produtos</div><div class="radio-card-sub">Inventário consolidado por SKU · estoque crítico</div></div><div class="radio-dot"></div></label>
+          <label class="radio-card"><div class="radio-card-icon"><svg><use href="#i-layers"/></svg></div><div class="radio-card-content"><div class="radio-card-title">Lotes</div><div class="radio-card-sub">Rastreabilidade · vencimentos · bloqueios</div></div><div class="radio-dot"></div></label>
+          <label class="radio-card"><div class="radio-card-icon"><svg><use href="#i-shield"/></svg></div><div class="radio-card-content"><div class="radio-card-title">Auditoria</div><div class="radio-card-sub">Log completo · INSERT, UPDATE, BLOQUEIO</div></div><div class="radio-dot"></div></label>
+          <label class="radio-card"><div class="radio-card-icon"><svg><use href="#i-clipboard"/></svg></div><div class="radio-card-content"><div class="radio-card-title">Inventário rotativo</div><div class="radio-card-sub">Contagens · divergências · ajustes solicitados</div></div><div class="radio-dot"></div></label>
+        </div>
+      </div>
+
+      <div class="form-grid cols-2" style="gap:12px">
+        <div class="form-group">
+          <label class="form-label">Data início</label>
+          <div class="input-prefix"><svg><use href="#i-calendar"/></svg><input class="input" type="text" value="01/05/2026"/></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data fim</label>
+          <div class="input-prefix"><svg><use href="#i-calendar"/></svg><input class="input" type="text" value="24/05/2026"/></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">Filtros adicionais</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="filter-chip" data-toggle><svg><use href="#i-tag"/></svg>Categoria</button>
+          <button class="filter-chip" data-toggle>Operador</button>
+          <button class="filter-chip" data-toggle><svg><use href="#i-map-pin"/></svg>Localização</button>
+          <button class="filter-chip active" data-toggle>Tipo: Todos</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Formato de saída</label>
+        <div style="display:flex;gap:8px">
+          <label class="radio-card checked" style="flex:1;justify-content:center;padding:8px"><input type="radio" name="fmt"><div class="radio-card-content" style="text-align:center"><div class="radio-card-title" style="font-size:12px">CSV</div></div></label>
+          <label class="radio-card" style="flex:1;justify-content:center;padding:8px"><input type="radio" name="fmt"><div class="radio-card-content" style="text-align:center"><div class="radio-card-title" style="font-size:12px">XLSX</div></div></label>
+          <label class="radio-card" style="flex:1;justify-content:center;padding:8px"><input type="radio" name="fmt"><div class="radio-card-content" style="text-align:center"><div class="radio-card-title" style="font-size:12px">PDF</div></div></label>
+        </div>
+      </div>
+
+      <div style="margin-top:14px"><label class="checkbox"><input type="checkbox" checked><span class="box"><svg><use href="#i-check"/></svg></span>Incluir cabeçalhos e metadados</label></div>
+      <div style="margin-top:6px"><label class="checkbox"><input type="checkbox"><span class="box"><svg><use href="#i-check"/></svg></span>Agendar relatório recorrente (semanal)</label></div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--color-border-default);background:var(--color-bg-subtle);display:flex;gap:8px;align-items:center">
+      <span style="font-size:11px;color:var(--color-text-tertiary)">Estimado: <strong style="color:var(--color-text-secondary)">~3.842 linhas</strong></span>
+      <div style="flex:1"></div>
+      <button class="btn btn-outline">Limpar</button>
+      <button class="btn btn-primary" id="gen-btn"><svg><use href="#i-zap"/></svg>Gerar relatório</button>
+    </div>
+  </section>
+
+  <!-- RIGHT: PREVIEW -->
+  <section class="card" id="preview-card">
+    <header class="card-header">
+      <div class="card-title">Pré-visualização do resultado</div>
+      <span class="card-title-sub">· primeiras linhas</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-outline btn-sm" id="dl-btn" disabled><svg><use href="#i-download"/></svg>Baixar CSV</button>
+    </header>
+
+    <!-- LOADING STATE -->
+    <div id="loading-state" style="display:none;padding:24px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="width:36px;height:36px;border-radius:50%;border:3px solid var(--color-brand-100);border-top-color:var(--color-brand-600);animation:spin 0.8s linear infinite"></div>
+        <div><div style="font-size:13px;font-weight:600">Gerando relatório…</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px" id="load-detail">Coletando dados · 0/3.842</div></div>
+      </div>
+      <div class="validation-bar" style="height:6px"><div class="validation-bar-fill success" id="load-bar" style="width:0%;transition:width 240ms"></div></div>
+      <div style="margin-top:18px">
+        <div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div><div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div><div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div><div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div><div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div><div class="skeleton-row"><div class="skeleton" style="width:100px"></div><div class="skeleton" style="width:60px"></div><div class="skeleton" style="flex:1"></div><div class="skeleton" style="width:80px"></div></div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div id="empty-state" class="empty" style="padding:48px 24px">
+      <div class="empty-icon"><svg><use href="#i-file-text"/></svg></div>
+      <div class="empty-title">Nenhum relatório gerado ainda</div>
+      <div class="empty-sub">Configure os parâmetros à esquerda e clique em <strong>Gerar relatório</strong> para visualizar e baixar o resultado.</div>
+    </div>
+
+    <!-- RESULT STATE -->
+    <div id="result-state" style="display:none">
+      <div style="padding:14px 20px;background:var(--color-success-50);border-bottom:1px solid var(--color-success-200);display:flex;align-items:center;gap:10px;color:var(--color-success-700);font-size:12.5px;font-weight:600">
+        <svg width="16" height="16"><use href="#i-circle-check"/></svg>
+        Relatório gerado · 3.842 registros · 412 KB · 00:02.4
+      </div>
+      <div class="table-wrap">
+        <table class="enterprise">
+          <thead><tr>
+            <th style="width:130px">Data/Hora</th>
+            <th style="width:120px">Tipo</th>
+            <th>Produto</th>
+            <th style="width:150px">Lote</th>
+            <th class="num" style="width:80px">Qtd</th>
+            <th style="width:120px">Operador</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="mono">24/05 14:31</td><td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td><td>Amoxicilina 500mg</td><td class="lot">LOT-2026-001</td><td class="num"><span class="delta out">−48</span></td><td>Júlio Santana</td></tr>
+            <tr><td class="mono">24/05 14:18</td><td><span class="badge info"><span class="badge-dot"></span>Transferência</span></td><td>Soro Glicosado 5%</td><td class="lot">LOT-2026-009</td><td class="num"><span class="delta tr">120</span></td><td>Carla Menezes</td></tr>
+            <tr><td class="mono">24/05 14:02</td><td><span class="badge success"><span class="badge-dot"></span>Entrada</span></td><td>Dipirona Sódica 500mg</td><td class="lot">LOT-2026-027</td><td class="num"><span class="delta in">+320</span></td><td>Rodrigo Nakamura</td></tr>
+            <tr><td class="mono">24/05 13:47</td><td><span class="badge warning"><span class="badge-dot"></span>Ajuste</span></td><td>Insulina NPH 100UI</td><td class="lot">LOT-2026-007</td><td class="num"><span class="delta adj">−2</span></td><td>Mariana A.</td></tr>
+            <tr><td class="mono">24/05 13:31</td><td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td><td>Paracetamol 750mg</td><td class="lot">LOT-2026-018</td><td class="num"><span class="delta out">−95</span></td><td>Júlio Santana</td></tr>
+            <tr><td class="mono">24/05 13:14</td><td><span class="badge success"><span class="badge-dot"></span>Entrada</span></td><td>Ringer Lactato 500ml</td><td class="lot">LOT-2026-029</td><td class="num"><span class="delta in">+200</span></td><td>Rodrigo Nakamura</td></tr>
+            <tr><td class="mono">24/05 12:58</td><td><span class="badge info"><span class="badge-dot"></span>Transferência</span></td><td>Heparina Sódica</td><td class="lot">LOT-2026-021</td><td class="num"><span class="delta tr">60</span></td><td>Carla Menezes</td></tr>
+            <tr><td class="mono">24/05 12:41</td><td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td><td>Soro Fisiológico 0,9%</td><td class="lot">LOT-2026-013</td><td class="num"><span class="delta out">−180</span></td><td>Júlio Santana</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination"><span>Exibindo as <strong>8</strong> primeiras linhas de <strong>3.842</strong> · baixe o arquivo completo</span><button class="btn btn-success btn-sm"><svg><use href="#i-download"/></svg>Baixar CSV completo</button></div>
+    </div>
+  </section>
+</div>
+</div></div>
+  </main></div>
+<script src="app.js"></script><script>
+@keyframes _spin{to{transform:rotate(360deg)}}
+document.head.insertAdjacentHTML('beforeend','<style>@keyframes spin{to{transform:rotate(360deg)}}</style>');
+
+document.querySelectorAll('.radio-card').forEach(c => {
+  c.addEventListener('click', () => {
+    const group = c.parentElement;
+    group.querySelectorAll('.radio-card').forEach(x=>x.classList.remove('checked'));
+    c.classList.add('checked');
+  });
+});
+const genBtn = document.getElementById('gen-btn');
+const dlBtn = document.getElementById('dl-btn');
+const loadingEl = document.getElementById('loading-state');
+const emptyEl = document.getElementById('empty-state');
+const resultEl = document.getElementById('result-state');
+const loadBar = document.getElementById('load-bar');
+const loadDetail = document.getElementById('load-detail');
+
+genBtn.addEventListener('click', () => {
+  emptyEl.style.display = 'none';
+  resultEl.style.display = 'none';
+  loadingEl.style.display = '';
+  let pct = 0;
+  const total = 3842;
+  const id = setInterval(() => {
+    pct += 12 + Math.random()*8;
+    if (pct >= 100) {
+      pct = 100;
+      loadBar.style.width = '100%';
+      loadDetail.textContent = 'Finalizando · ' + total + '/' + total;
+      clearInterval(id);
+      setTimeout(() => {
+        loadingEl.style.display = 'none';
+        resultEl.style.display = '';
+        dlBtn.removeAttribute('disabled');
+        SF.toast.show({ kind:'success', title:'Relatório pronto', msg:'3.842 registros · CSV gerado em 2,4s.' });
+      }, 350);
+      return;
+    }
+    loadBar.style.width = pct + '%';
+    loadDetail.textContent = 'Coletando dados · ' + Math.floor(total*pct/100) + '/' + total;
+  }, 180);
+});
+</script></body></html>
