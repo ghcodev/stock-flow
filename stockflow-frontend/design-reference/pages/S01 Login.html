@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>StockFlow — Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+  /* Standalone auth — no sidebar, no topbar */
+  body{overflow:hidden}
+  .auth-shell{
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+    background:var(--color-bg-canvas);
+  }
+
+  /* LEFT — institutional pane */
+  .auth-brand{
+    background:
+      radial-gradient(circle at 18% 110%, rgba(46,117,182,0.35) 0%, transparent 55%),
+      radial-gradient(circle at 92% -10%, rgba(31,56,100,0.40) 0%, transparent 50%),
+      linear-gradient(135deg, #0c1a2e 0%, #142244 65%, #1F3864 100%);
+    color:#fff;
+    padding:40px 56px;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+  .auth-brand::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size:60px 60px;
+    background-position:-1px -1px;
+    pointer-events:none;
+    mask-image:radial-gradient(circle at 30% 50%, black 0%, transparent 80%);
+  }
+  .auth-brand > *{ position:relative; z-index:1; }
+
+  .auth-logo{display:flex;align-items:center;gap:12px}
+  .auth-logo-mark{
+    width:38px;height:38px;border-radius:9px;
+    background:linear-gradient(135deg,#2E75B6 0%,#254d8c 100%);
+    display:grid;place-items:center;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18), 0 2px 6px rgba(0,0,0,0.30);
+  }
+  .auth-logo-mark svg{width:20px;height:20px;color:#fff}
+  .auth-logo-text{font-size:18px;font-weight:700;letter-spacing:-0.015em}
+  .auth-env-pill{
+    margin-left:auto;
+    font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;
+    color:#7dd3fc;
+    background:rgba(46,117,182,0.18);
+    border:1px solid rgba(46,117,182,0.40);
+    padding:4px 8px;border-radius:4px;
+  }
+
+  .auth-brand-body{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:520px}
+  .auth-eyebrow{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+    color:#7dd3fc;
+    margin-bottom:18px;
+  }
+  .auth-eyebrow .live-dot{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.22)}
+  .auth-heading{
+    font-size:36px;font-weight:700;letter-spacing:-0.035em;line-height:1.12;
+    color:#fff;margin-bottom:14px;
+    text-wrap:balance;
+  }
+  .auth-heading em{font-style:normal;color:#7dd3fc;font-weight:700}
+  .auth-lede{
+    font-size:14px;line-height:1.65;color:#94a3b8;
+    max-width:440px;
+  }
+
+  /* Stat strip */
+  .auth-stats{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:0;
+    margin-top:36px;
+    border-top:1px solid rgba(255,255,255,0.10);
+    border-bottom:1px solid rgba(255,255,255,0.10);
+  }
+  .auth-stat{padding:18px 22px 16px;border-right:1px solid rgba(255,255,255,0.10)}
+  .auth-stat:last-child{border-right:none}
+  .auth-stat .v{
+    font-size:24px;font-weight:700;letter-spacing:-0.03em;color:#fff;
+    font-variant-numeric:tabular-nums;line-height:1.1;
+  }
+  .auth-stat .l{
+    font-size:10.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:#64748b;margin-top:5px;
+  }
+
+  /* Tenants / trust strip */
+  .auth-trust{
+    margin-top:32px;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .auth-trust-label{
+    font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:#64748b;
+  }
+  .auth-trust-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .trust-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11.5px;font-weight:600;color:#cbd5e1;
+    padding:5px 10px;border-radius:5px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.10);
+  }
+  .trust-chip svg{width:11px;height:11px;color:#7dd3fc}
+
+  .auth-brand-footer{
+    margin-top:auto;padding-top:28px;
+    display:flex;align-items:center;gap:14px;
+    font-size:11px;color:#64748b;flex-wrap:wrap;
+  }
+  .auth-brand-footer code{
+    font-family:"IBM Plex Mono",monospace;
+    color:#94a3b8;background:rgba(255,255,255,0.05);
+    padding:2px 6px;border-radius:3px;font-size:10.5px;font-weight:500;
+  }
+  .auth-brand-footer .live-dot{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.22)}
+
+  /* RIGHT — form pane */
+  .auth-form-pane{
+    background:var(--color-bg-default);
+    padding:40px 56px;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  .auth-form-top{
+    display:flex;align-items:center;gap:8px;
+    margin-left:auto;
+  }
+  .auth-form-body{
+    flex:1;
+    display:flex;flex-direction:column;justify-content:center;
+    max-width:380px;
+    width:100%;
+    margin:0 auto;
+    padding:36px 0;
+  }
+
+  .auth-form-eyebrow{
+    font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--color-text-tertiary);margin-bottom:8px;
+  }
+  .auth-form-title{
+    font-size:24px;font-weight:700;letter-spacing:-0.025em;
+    color:var(--color-text-primary);line-height:1.2;
+  }
+  .auth-form-sub{
+    font-size:13px;color:var(--color-text-secondary);
+    margin-top:6px;line-height:1.55;
+  }
+
+  .auth-sso-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;height:42px;
+    border:1px solid var(--color-border-strong);
+    background:var(--color-bg-default);
+    color:var(--color-text-primary);
+    font-size:13px;font-weight:600;
+    border-radius:8px;
+    transition:background 100ms,border-color 100ms,box-shadow 100ms,transform 60ms;
+    margin-top:28px;
+  }
+  .auth-sso-btn:hover{background:var(--color-bg-subtle);border-color:var(--color-brand-600);box-shadow:0 0 0 3px rgba(46,117,182,0.10)}
+  .auth-sso-btn:active{transform:scale(0.99)}
+  .auth-sso-btn .ms-icon{width:18px;height:18px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .auth-sso-btn .ms-icon i{display:block}
+  .auth-sso-btn .ms-icon i:nth-child(1){background:#F25022}
+  .auth-sso-btn .ms-icon i:nth-child(2){background:#7FBA00}
+  .auth-sso-btn .ms-icon i:nth-child(3){background:#00A4EF}
+  .auth-sso-btn .ms-icon i:nth-child(4){background:#FFB900}
+  .auth-sso-btn .ms-tenant{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--color-text-tertiary);margin-left:auto;font-weight:500}
+
+  .auth-divider{
+    display:flex;align-items:center;gap:14px;
+    margin:24px 0;
+    color:var(--color-text-tertiary);
+    font-size:10.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;
+  }
+  .auth-divider::before,.auth-divider::after{
+    content:'';flex:1;height:1px;background:var(--color-border-default);
+  }
+
+  .auth-field{margin-bottom:14px}
+  .auth-field label.form-label{margin-bottom:6px;display:block}
+  .auth-field .input{height:40px;font-size:13.5px}
+  .auth-field .input-prefix svg{width:15px;height:15px}
+  .auth-pwd-wrap{position:relative}
+  .auth-pwd-toggle{
+    position:absolute;right:4px;top:50%;transform:translateY(-50%);
+    width:32px;height:32px;display:grid;place-items:center;
+    border-radius:6px;color:var(--color-text-tertiary);
+    transition:background 100ms,color 100ms;
+  }
+  .auth-pwd-toggle:hover{background:var(--color-bg-subtle);color:var(--color-text-primary)}
+  .auth-pwd-toggle svg{width:15px;height:15px}
+
+  .auth-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+  .auth-forgot{font-size:12.5px;color:var(--color-brand-600);font-weight:600}
+  .auth-forgot:hover{color:var(--color-brand-800);text-decoration:underline;text-underline-offset:3px}
+
+  .auth-submit{
+    margin-top:20px;
+    width:100%;height:44px;
+    background:var(--color-brand-800);
+    color:#fff;
+    font-size:14px;font-weight:600;letter-spacing:0.005em;
+    border-radius:8px;
+    transition:background 100ms,box-shadow 100ms,transform 60ms;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    position:relative;
+  }
+  .auth-submit:hover{background:var(--color-brand-600);box-shadow:0 4px 12px rgba(46,117,182,0.30)}
+  .auth-submit:active{transform:scale(0.99)}
+  .auth-submit:disabled{opacity:0.7;cursor:wait}
+  .auth-submit .spinner{
+    width:16px;height:16px;
+    border:2px solid rgba(255,255,255,0.30);border-top-color:#fff;
+    border-radius:50%;animation:auth-spin 0.65s linear infinite;
+    display:none;
+  }
+  .auth-submit.loading .spinner{display:inline-block}
+  .auth-submit.loading .label{opacity:0.6}
+  @keyframes auth-spin{to{transform:rotate(360deg)}}
+
+  .auth-foot{
+    margin-top:32px;display:flex;align-items:center;gap:8px;
+    font-size:11.5px;color:var(--color-text-tertiary);
+    padding-top:18px;border-top:1px solid var(--color-border-default);
+  }
+  .auth-foot a{color:var(--color-text-secondary);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--color-border-strong)}
+  .auth-foot a:hover{color:var(--color-text-primary);text-decoration-color:var(--color-text-secondary)}
+
+  /* Responsive */
+  @media (max-width:980px){
+    body{overflow:auto}
+    .auth-shell{grid-template-columns:1fr;height:auto;min-height:100vh}
+    .auth-brand{padding:32px 32px 40px;min-height:auto}
+    .auth-heading{font-size:28px}
+    .auth-stats{margin-top:24px}
+    .auth-form-pane{padding:32px}
+    .auth-form-body{padding:16px 0 28px}
+  }
+  @media (max-width:520px){
+    .auth-brand{padding:24px 22px 30px}
+    .auth-form-pane{padding:24px 22px}
+    .auth-heading{font-size:24px}
+    .auth-stats{grid-template-columns:1fr 1fr}
+    .auth-stat:nth-child(3){border-right:none}
+    .auth-stat:nth-child(2){border-right:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ICON SPRITE -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 17 9"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  </defs>
+</svg>
+
+<div class="auth-shell" data-screen-label="01 Login">
+
+  <!-- LEFT — INSTITUTIONAL -->
+  <aside class="auth-brand">
+    <header class="auth-logo">
+      <div class="auth-logo-mark"><svg><use href="#i-box"/></svg></div>
+      <div class="auth-logo-text">StockFlow</div>
+      <div class="auth-env-pill">Prod · v2.1.4</div>
+    </header>
+
+    <div class="auth-brand-body">
+      <div class="auth-eyebrow"><span class="live-dot"></span> Plataforma operacional · CD-01</div>
+      <h1 class="auth-heading">
+        Rastreabilidade <em>RFID</em> em tempo real para sua cadeia de suprimentos.
+      </h1>
+      <p class="auth-lede">
+        StockFlow centraliza entrada, saída, transferência e auditoria de lotes em um único sistema validado. Conformidade LGPD, log imutável de 7 anos e integração nativa com SAP.
+      </p>
+
+      <div class="auth-stats">
+        <div class="auth-stat"><div class="v">3.842</div><div class="l">Movimentações hoje</div></div>
+        <div class="auth-stat"><div class="v">1.182<span style="opacity:0.55;font-size:14px;font-weight:500"> / 1.440</span></div><div class="l">Posições ocupadas</div></div>
+        <div class="auth-stat"><div class="v">99,7%</div><div class="l">SLA · uptime 30d</div></div>
+      </div>
+
+      <div class="auth-trust">
+        <div class="auth-trust-label">Conformidade & integrações</div>
+        <div class="auth-trust-row">
+          <span class="trust-chip"><svg><use href="#i-shield"/></svg>LGPD</span>
+          <span class="trust-chip"><svg><use href="#i-shield"/></svg>ISO 27001</span>
+          <span class="trust-chip"><svg><use href="#i-shield"/></svg>ANVISA RDC 430</span>
+          <span class="trust-chip"><svg><use href="#i-radio"/></svg>RFID 915MHz</span>
+          <span class="trust-chip">SAP S/4HANA</span>
+          <span class="trust-chip">Azure AD</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="auth-brand-footer">
+      <span class="live-dot" style="width:6px;height:6px;border-radius:50%;display:inline-block"></span>
+      <span>API <code>v2.1.4</code></span>
+      <span style="opacity:0.4">·</span>
+      <span>Tenant <code>acme-pharma</code></span>
+      <span style="opacity:0.4">·</span>
+      <span>Região <code>sa-east-1</code></span>
+      <span style="margin-left:auto">© 2026 ACME Logística</span>
+    </footer>
+  </aside>
+
+  <!-- RIGHT — FORM -->
+  <section class="auth-form-pane">
+    <div class="auth-form-top">
+      <button class="icon-btn" aria-label="Ajuda" data-tooltip="Suporte"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" data-theme-toggle aria-label="Alternar tema"><svg><use href="#i-sun"/></svg></button>
+    </div>
+
+    <div class="auth-form-body">
+      <div class="auth-form-eyebrow">Acesso restrito</div>
+      <h2 class="auth-form-title">Entrar na sua conta</h2>
+      <p class="auth-form-sub">Use suas credenciais corporativas. O acesso é registrado em log de auditoria imutável.</p>
+
+      <!-- SSO -->
+      <button class="auth-sso-btn" type="button" id="sso-btn">
+        <span class="ms-icon"><i></i><i></i><i></i><i></i></span>
+        Entrar com SSO · Microsoft
+        <span class="ms-tenant">@acme.com</span>
+      </button>
+
+      <div class="auth-divider">ou com email e senha</div>
+
+      <!-- FORM -->
+      <form id="login-form" novalidate>
+        <div class="auth-field">
+          <label class="form-label" for="login-email">Email corporativo</label>
+          <div class="input-prefix">
+            <svg><use href="#i-mail"/></svg>
+            <input class="input" id="login-email" type="email" placeholder="seu.nome@acme.com" autocomplete="username" required value="mariana.albuq@acme.com"/>
+          </div>
+          <div class="form-error" id="email-err" style="display:none;margin-top:6px"><svg><use href="#i-alert-triangle"/></svg><span></span></div>
+        </div>
+
+        <div class="auth-field">
+          <label class="form-label" for="login-pwd">Senha</label>
+          <div class="input-prefix auth-pwd-wrap">
+            <svg><use href="#i-lock"/></svg>
+            <input class="input" id="login-pwd" type="password" placeholder="••••••••••••" autocomplete="current-password" required style="padding-right:42px" value="••••••••••••"/>
+            <button class="auth-pwd-toggle" type="button" aria-label="Mostrar senha" id="pwd-toggle"><svg><use href="#i-eye"/></svg></button>
+          </div>
+          <div class="form-error" id="pwd-err" style="display:none;margin-top:6px"><svg><use href="#i-alert-triangle"/></svg><span></span></div>
+        </div>
+
+        <div class="auth-row">
+          <label class="checkbox"><input type="checkbox" id="keep-logged" checked><span class="box"><svg><use href="#i-check"/></svg></span>Manter conectado</label>
+          <a href="#" class="auth-forgot">Esqueci minha senha</a>
+        </div>
+
+        <button class="auth-submit" type="submit" id="submit-btn">
+          <span class="spinner"></span>
+          <span class="label">Entrar no StockFlow</span>
+          <svg style="width:14px;height:14px"><use href="#i-arrow-right"/></svg>
+        </button>
+      </form>
+
+      <div class="auth-foot">
+        <svg width="13" height="13" style="color:var(--color-text-tertiary);flex-shrink:0"><use href="#i-info"/></svg>
+        <span>Problemas para entrar? Contate <a href="#">suporte@acme.com</a> ou ligue para o ramal <strong style="color:var(--color-text-secondary)">8410</strong>.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Password toggle
+  const pwdInput = document.getElementById('login-pwd');
+  const pwdToggle = document.getElementById('pwd-toggle');
+  pwdToggle.addEventListener('click', () => {
+    const showing = pwdInput.type === 'text';
+    pwdInput.type = showing ? 'password' : 'text';
+    pwdToggle.innerHTML = showing
+      ? '<svg><use href="#i-eye"/></svg>'
+      : '<svg><use href="#i-eye-off"/></svg>';
+  });
+
+  // Email validation
+  const emailInput = document.getElementById('login-email');
+  const emailErr = document.getElementById('email-err');
+  const pwdErr = document.getElementById('pwd-err');
+  function validateEmail(v){
+    if (!v.trim()) return 'Email é obrigatório.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return 'Formato de email inválido.';
+    return null;
+  }
+  function setError(input, errEl, msg){
+    if (msg) {
+      input.classList.add('invalid');
+      errEl.querySelector('span').textContent = msg;
+      errEl.style.display = 'flex';
+    } else {
+      input.classList.remove('invalid');
+      errEl.style.display = 'none';
+    }
+  }
+
+  // Form submit (simulated)
+  const form = document.getElementById('login-form');
+  const submitBtn = document.getElementById('submit-btn');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const emailMsg = validateEmail(emailInput.value);
+    const pwdMsg = pwdInput.value.trim().length < 6 ? 'Senha deve ter ao menos 6 caracteres.' : null;
+    setError(emailInput, emailErr, emailMsg);
+    setError(pwdInput, pwdErr, pwdMsg);
+    if (emailMsg || pwdMsg) {
+      SF.toast.show({ kind:'danger', title:'Não foi possível entrar', msg:'Verifique os campos destacados.' });
+      return;
+    }
+    // Simulate loading
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    submitBtn.querySelector('.label').textContent = 'Autenticando…';
+    setTimeout(() => {
+      SF.toast.show({ kind:'success', title:'Bem-vinda, Mariana', msg:'Redirecionando para o painel…' });
+      setTimeout(() => { window.location.href = 'S02 Dashboard.html'; }, 500);
+    }, 1100);
+  });
+
+  // SSO simulation
+  document.getElementById('sso-btn').addEventListener('click', () => {
+    SF.toast.show({ kind:'info', title:'Iniciando SSO', msg:'Redirecionando ao Azure AD · tenant acme-pharma.' });
+    setTimeout(() => {
+      SF.toast.show({ kind:'success', title:'Autenticação SSO OK', msg:'Token válido · entrando…' });
+      setTimeout(() => { window.location.href = 'S02 Dashboard.html'; }, 800);
+    }, 900);
+  });
+
+  // Real-time email clear
+  emailInput.addEventListener('input', () => setError(emailInput, emailErr, null));
+  pwdInput.addEventListener('input', () => setError(pwdInput, pwdErr, null));
+</script>
+
+</body>
+</html>

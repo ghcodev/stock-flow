@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>StockFlow — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DESIGN TOKENS — StockFlow Enterprise v2.0
+     ============================================================ */
+  :root {
+    /* Surfaces */
+    --color-bg-canvas:        #f1f5f9;
+    --color-bg-default:       #ffffff;
+    --color-bg-subtle:        #f8fafc;
+    --color-bg-muted:         #f1f5f9;
+    --color-bg-overlay:       rgba(15,23,42,0.40);
+
+    /* Sidebar */
+    --color-sidebar-bg:       #0f1f3d;
+    --color-sidebar-hover:    rgba(255,255,255,0.06);
+    --color-sidebar-active:   #2E75B6;
+    --color-sidebar-text:     #94a3b8;
+    --color-sidebar-text-active: #ffffff;
+    --color-sidebar-border:   rgba(255,255,255,0.08);
+
+    /* Borders */
+    --color-border-default:   #e2e8f0;
+    --color-border-strong:    #cbd5e1;
+    --color-border-muted:     #f1f5f9;
+    --color-border-focus:     #2E75B6;
+
+    /* Text */
+    --color-text-primary:     #0f172a;
+    --color-text-secondary:   #475569;
+    --color-text-tertiary:    #94a3b8;
+    --color-text-placeholder: #cbd5e1;
+    --color-text-disabled:    #e2e8f0;
+    --color-text-inverse:     #ffffff;
+    --color-text-link:        #2E75B6;
+    --color-text-link-hover:  #1F3864;
+
+    /* Brand */
+    --color-brand-900:        #0c1a2e;
+    --color-brand-800:        #1F3864;
+    --color-brand-700:        #254d8c;
+    --color-brand-600:        #2E75B6;
+    --color-brand-500:        #3b82f6;
+    --color-brand-200:        #bfdbfe;
+    --color-brand-100:        #dbeafe;
+    --color-brand-50:         #eff6ff;
+
+    /* Semantic */
+    --color-success-700:      #15803d;
+    --color-success-600:      #16a34a;
+    --color-success-500:      #22c55e;
+    --color-success-200:      #bbf7d0;
+    --color-success-100:      #dcfce7;
+    --color-success-50:       #f0fdf4;
+
+    --color-danger-700:       #b91c1c;
+    --color-danger-600:       #dc2626;
+    --color-danger-500:       #ef4444;
+    --color-danger-400:       #f87171;
+    --color-danger-200:       #fecaca;
+    --color-danger-100:       #fee2e2;
+    --color-danger-50:        #fef2f2;
+
+    --color-warning-700:      #b45309;
+    --color-warning-600:      #d97706;
+    --color-warning-500:      #f59e0b;
+    --color-warning-400:      #fbbf24;
+    --color-warning-300:      #fcd34d;
+    --color-warning-200:      #fde68a;
+    --color-warning-100:      #fef3c7;
+    --color-warning-50:       #fffbeb;
+
+    --color-info-700:         #0369a1;
+    --color-info-600:         #0284c7;
+    --color-info-100:         #e0f2fe;
+    --color-info-50:          #f0f9ff;
+
+    --color-admin-700:        #6d28d9;
+    --color-admin-600:        #7c3aed;
+    --color-admin-100:        #ede9fe;
+
+    /* Topbar */
+    --color-topbar-bg:        #ffffff;
+    --color-topbar-border:    #e2e8f0;
+
+    /* Shadows */
+    --shadow-xs:  0 1px 2px rgba(15,23,42,0.06);
+    --shadow-sm:  0 1px 3px rgba(15,23,42,0.10), 0 1px 2px rgba(15,23,42,0.06);
+    --shadow-md:  0 4px 6px rgba(15,23,42,0.07), 0 2px 4px rgba(15,23,42,0.06);
+    --shadow-lg:  0 10px 15px rgba(15,23,42,0.10), 0 4px 6px rgba(15,23,42,0.05);
+
+    /* Radius */
+    --radius-xs:  2px;
+    --radius-sm:  4px;
+    --radius-md:  6px;
+    --radius-lg:  8px;
+    --radius-xl:  12px;
+    --radius-2xl: 16px;
+    --radius-full: 9999px;
+
+    /* Spacing — 4px base */
+    --space-1:   4px;
+    --space-2:   8px;
+    --space-3:   12px;
+    --space-4:   16px;
+    --space-5:   20px;
+    --space-6:   24px;
+    --space-8:   32px;
+
+    /* Animation */
+    --ease-default: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out:     cubic-bezier(0.0, 0, 0.2, 1);
+  }
+
+  /* ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-bg-canvas);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { background: none; border: none; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+
+  ::selection { background: var(--color-brand-100); color: var(--color-brand-800); }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border: 2px solid transparent; background-clip: content-box; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary); border: 2px solid transparent; background-clip: content-box; }
+
+  /* ============================================================
+     APP SHELL
+     ============================================================ */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 224px 1fr;
+    grid-template-rows: 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ============================================================
+     SIDEBAR
+     ============================================================ */
+  .sidebar {
+    background: var(--color-sidebar-bg);
+    border-right: 1px solid var(--color-sidebar-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    height: 56px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--color-sidebar-border);
+    flex-shrink: 0;
+  }
+  .sidebar-logo-mark {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2E75B6 0%, #1F3864 100%);
+    display: grid; place-items: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 1px 0 rgba(0,0,0,0.2);
+    flex-shrink: 0;
+  }
+  .sidebar-logo-mark svg { width: 14px; height: 14px; color: #fff; }
+  .sidebar-logo-text { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .sidebar-env-badge {
+    margin-left: auto;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    background: rgba(255,255,255,0.06);
+    padding: 3px 6px;
+    border-radius: 3px;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 12px 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 14px 10px 6px;
+  }
+  .sidebar-section-label:first-child { padding-top: 4px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    color: var(--color-sidebar-text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 100ms var(--ease-out), color 100ms var(--ease-out);
+    position: relative;
+    margin-bottom: 1px;
+  }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.85; }
+  .nav-item:hover {
+    background: var(--color-sidebar-hover);
+    color: rgba(255,255,255,0.85);
+  }
+  .nav-item.active {
+    background: var(--color-sidebar-active);
+    color: #fff;
+  }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item .nav-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--color-danger-600);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .nav-item .nav-badge.warn { background: var(--color-warning-600); }
+
+  .sidebar-footer {
+    border-top: 1px solid var(--color-sidebar-border);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .sidebar-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2E75B6, #1F3864);
+    color: #fff;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+    flex-shrink: 0;
+  }
+  .sidebar-user-info { flex: 1; min-width: 0; }
+  .sidebar-user-name {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .sidebar-user-role {
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+  }
+  .sidebar-logout {
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    color: #64748b;
+    transition: background 100ms, color 100ms;
+  }
+  .sidebar-logout:hover { background: var(--color-sidebar-hover); color: var(--color-danger-400); }
+  .sidebar-logout svg { width: 14px; height: 14px; }
+
+  /* ============================================================
+     MAIN
+     ============================================================ */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    height: 56px;
+    background: var(--color-topbar-bg);
+    border-bottom: 1px solid var(--color-topbar-border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .topbar-toggle {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    transition: background 100ms;
+  }
+  .topbar-toggle:hover { background: var(--color-bg-subtle); }
+  .topbar-toggle svg { width: 16px; height: 16px; }
+
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+  }
+  .breadcrumb-sep { color: var(--color-text-tertiary); font-weight: 400; }
+  .breadcrumb-root { color: var(--color-text-tertiary); }
+  .breadcrumb-current { color: var(--color-text-primary); font-weight: 500; }
+
+  .topbar-search {
+    margin-left: 16px;
+    position: relative;
+    width: 320px;
+  }
+  .topbar-search svg {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; color: var(--color-text-tertiary);
+  }
+  .topbar-search input {
+    width: 100%;
+    height: 34px;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    padding: 0 56px 0 32px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    transition: border-color 100ms, box-shadow 100ms, background 100ms;
+  }
+  .topbar-search input::placeholder { color: var(--color-text-placeholder); }
+  .topbar-search input:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px rgba(46,117,182,0.15);
+  }
+  .topbar-search-kbd {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; gap: 2px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 500;
+  }
+
+  .topbar-spacer { flex: 1; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .alerts-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: var(--color-warning-50);
+    border: 1px solid var(--color-warning-200);
+    color: var(--color-warning-700);
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 100ms;
+  }
+  .alerts-pill:hover { background: var(--color-warning-100); }
+  .alerts-pill svg { width: 14px; height: 14px; }
+  .alerts-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--color-warning-500);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+    50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+  }
+
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    transition: background 100ms, color 100ms;
+  }
+  .icon-btn:hover { background: var(--color-bg-subtle); color: var(--color-text-primary); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .topbar-divider {
+    width: 1px; height: 20px;
+    background: var(--color-border-default);
+    margin: 0 4px;
+  }
+
+  .topbar-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-brand-800);
+    color: #fff;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: box-shadow 100ms;
+    cursor: pointer;
+  }
+  .topbar-avatar:hover { box-shadow: 0 0 0 3px rgba(46,117,182,0.18); }
+
+  /* ============================================================
+     PAGE CONTENT
+     ============================================================ */
+  .page {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .page-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 28px 24px 40px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--color-border-default);
+  }
+  .page-header-left h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+  .page-header-left .subtitle {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .page-header-left .subtitle .sep {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--color-border-strong);
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-success-500);
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+    animation: pulse-green 2.4s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+    50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  }
+
+  .page-header-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 100ms, color 100ms, border-color 100ms, transform 50ms;
+    white-space: nowrap;
+  }
+  .btn svg { width: 14px; height: 14px; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--color-brand-800);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--color-brand-600); }
+
+  .btn-outline {
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-default);
+    color: var(--color-text-secondary);
+  }
+  .btn-outline:hover {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+  }
+
+  .btn-ghost {
+    color: var(--color-text-secondary);
+    background: transparent;
+  }
+  .btn-ghost:hover { background: var(--color-bg-subtle); color: var(--color-text-primary); }
+
+  .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+
+  /* Refresh ring */
+  .refresh-btn { position: relative; }
+  .refresh-btn .ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .refresh-btn .ring svg {
+    width: 100%; height: 100%;
+  }
+
+  /* ============================================================
+     KPI CARDS
+     ============================================================ */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--color-bg-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    min-height: 112px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 150ms, transform 100ms;
+  }
+  .kpi:hover { box-shadow: var(--shadow-md); }
+
+  .kpi-bg-icon {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 22px; height: 22px;
+    color: var(--color-brand-100);
+    opacity: 0.85;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .kpi-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .kpi-trend {
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .kpi-trend svg { width: 11px; height: 11px; }
+  .kpi-trend.up { background: var(--color-success-50); color: var(--color-success-700); }
+  .kpi-trend.down { background: var(--color-danger-50); color: var(--color-danger-700); }
+  .kpi-trend.neutral { background: var(--color-bg-subtle); color: var(--color-text-secondary); }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-top: auto;
+    padding-top: 4px;
+  }
+
+  /* Sparkline strip */
+  .kpi-spark {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 28px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* Critical state */
+  .kpi.critical {
+    background: var(--color-danger-50);
+    border-color: var(--color-danger-200);
+  }
+  .kpi.critical .kpi-label { color: var(--color-danger-600); }
+  .kpi.critical .kpi-value { color: var(--color-danger-700); }
+  .kpi.critical .kpi-sub { color: var(--color-danger-600); }
+  .kpi.critical .kpi-bg-icon { color: var(--color-danger-200); }
+
+  .kpi.warning {
+    background: var(--color-warning-50);
+    border-color: var(--color-warning-200);
+  }
+  .kpi.warning .kpi-label { color: var(--color-warning-700); }
+  .kpi.warning .kpi-value { color: var(--color-warning-700); }
+  .kpi.warning .kpi-sub { color: var(--color-warning-700); }
+  .kpi.warning .kpi-bg-icon { color: var(--color-warning-200); }
+
+  .kpi-alert-dot {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--color-danger-500);
+    box-shadow: 0 0 0 4px rgba(239,68,68,0.18);
+    animation: pulse-red 1.8s ease-in-out infinite;
+  }
+  .kpi.warning .kpi-alert-dot {
+    background: var(--color-warning-500);
+    box-shadow: 0 0 0 4px rgba(245,158,11,0.20);
+    animation: pulse-amber 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(239,68,68,0.18); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+  @keyframes pulse-amber {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(245,158,11,0.20); }
+    50% { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
+  }
+
+  /* ============================================================
+     PANELS — chart + alerts
+     ============================================================ */
+  .panel-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--color-bg-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border-default);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.005em;
+  }
+  .card-title-sub {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+
+  .card-header-divider {
+    width: 1px; height: 16px;
+    background: var(--color-border-default);
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+  }
+  .legend-dot.entrada { background: var(--color-success-600); }
+  .legend-dot.saida { background: var(--color-danger-600); }
+  .legend-dot.transferencia { background: var(--color-brand-600); }
+
+  .card-header-spacer { flex: 1; }
+
+  /* Select control */
+  .select-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 8px 0 10px;
+    background: var(--color-bg-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: background 100ms, border-color 100ms;
+  }
+  .select-sm:hover { background: var(--color-bg-subtle); border-color: var(--color-border-strong); }
+  .select-sm svg { width: 12px; height: 12px; color: var(--color-text-tertiary); }
+
+  /* CHART */
+  .chart-wrap {
+    padding: 18px 20px 14px;
+    height: 300px;
+    position: relative;
+  }
+  .chart-svg { width: 100%; height: 100%; display: block; }
+  .chart-grid-line { stroke: var(--color-border-muted); stroke-dasharray: 2 4; }
+  .chart-axis-text {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 10px;
+    fill: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+  .chart-axis-y-text { text-anchor: end; }
+  .chart-axis-x-text { text-anchor: middle; }
+
+  .bar { transition: opacity 100ms; cursor: pointer; }
+  .bar:hover { opacity: 0.8; }
+
+  .chart-tooltip {
+    position: absolute;
+    background: var(--color-bg-default);
+    border: 1px solid var(--color-border-default);
+    box-shadow: var(--shadow-md);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--color-text-primary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 100ms;
+    z-index: 5;
+    min-width: 168px;
+    transform: translate(-50%, -100%);
+  }
+  .chart-tooltip.visible { opacity: 1; }
+  .chart-tooltip-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .chart-tooltip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    line-height: 1.6;
+  }
+  .chart-tooltip-row > span:first-child {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+  .chart-tooltip-row > span:last-child {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+
+  /* ALERTS PANEL */
+  .alerts-card .card-header { padding-right: 16px; }
+  .alerts-count-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--color-danger-100);
+    color: var(--color-danger-700);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    min-width: 22px;
+    margin-left: auto;
+    border: 1px solid rgba(185,28,28,0.20);
+  }
+
+  .alerts-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+  }
+
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 100ms, transform 100ms;
+    border-left: 3px solid transparent;
+  }
+  .alert-item:hover { transform: translateX(1px); }
+  .alert-item.critical {
+    background: var(--color-danger-50);
+    border-left-color: var(--color-danger-400);
+  }
+  .alert-item.critical:hover { background: #fde8e8; }
+  .alert-item.warning {
+    background: var(--color-warning-50);
+    border-left-color: var(--color-warning-400);
+  }
+  .alert-item.warning:hover { background: #fef0d1; }
+
+  .alert-icon {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .alert-item.critical .alert-icon {
+    background: rgba(220,38,38,0.10);
+    color: var(--color-danger-600);
+  }
+  .alert-item.warning .alert-icon {
+    background: rgba(217,119,6,0.12);
+    color: var(--color-warning-600);
+  }
+  .alert-icon svg { width: 13px; height: 13px; }
+
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .alert-meta {
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .alert-item.critical .alert-meta { color: var(--color-danger-700); }
+  .alert-item.warning .alert-meta { color: var(--color-warning-700); }
+  .alert-meta .sep {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+  }
+  .alert-meta code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  .alerts-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border-default);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .alerts-footer a {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-brand-600);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 100ms;
+  }
+  .alerts-footer a:hover { color: var(--color-brand-800); }
+  .alerts-footer a svg { width: 12px; height: 12px; }
+
+  /* ============================================================
+     TABLE
+     ============================================================ */
+  .table-card { margin-bottom: 0; }
+  .table-card .card-header { padding: 14px 20px; }
+
+  .table-toolbar-link {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-brand-600);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 100ms;
+  }
+  .table-toolbar-link:hover { color: var(--color-brand-800); }
+  .table-toolbar-link svg { width: 12px; height: 12px; }
+
+  .table-wrap { overflow-x: auto; }
+
+  table.enterprise {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.enterprise thead {
+    background: var(--color-brand-800);
+    color: #fff;
+  }
+  table.enterprise thead th {
+    height: 40px;
+    padding: 0 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    color: rgba(255,255,255,0.92);
+  }
+  table.enterprise thead th .sort-icon {
+    display: inline-flex;
+    margin-left: 4px;
+    vertical-align: middle;
+    opacity: 0.55;
+  }
+  table.enterprise thead th .sort-icon svg { width: 11px; height: 11px; }
+  table.enterprise thead th.sorted .sort-icon { opacity: 1; color: var(--color-brand-100); }
+  table.enterprise thead th.num { text-align: right; }
+  table.enterprise thead th.center { text-align: center; }
+
+  table.enterprise tbody tr {
+    border-bottom: 1px solid var(--color-border-default);
+    transition: background 80ms var(--ease-out);
+  }
+  table.enterprise tbody tr:nth-child(even) { background: var(--color-bg-subtle); }
+  table.enterprise tbody tr:hover { background: rgba(46,117,182,0.05); }
+  table.enterprise tbody tr:last-child { border-bottom: none; }
+
+  table.enterprise tbody td {
+    padding: 10px 16px;
+    vertical-align: middle;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+  }
+  table.enterprise tbody td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  table.enterprise tbody td.center { text-align: center; }
+  table.enterprise tbody td.mono {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  table.enterprise tbody td.lot {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-brand-600);
+  }
+  table.enterprise tbody td .product-cell {
+    display: flex; align-items: center; gap: 10px;
+  }
+  table.enterprise tbody td .product-name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+  }
+  table.enterprise tbody td .product-sku {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .badge .badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .badge.success {
+    background: var(--color-success-100);
+    color: var(--color-success-700);
+    border-color: rgba(21,128,61,0.18);
+  }
+  .badge.danger {
+    background: var(--color-danger-100);
+    color: var(--color-danger-700);
+    border-color: rgba(185,28,28,0.18);
+  }
+  .badge.warning {
+    background: var(--color-warning-100);
+    color: var(--color-warning-700);
+    border-color: rgba(180,83,9,0.18);
+  }
+  .badge.info {
+    background: var(--color-info-100);
+    color: var(--color-info-700);
+    border-color: rgba(3,105,161,0.18);
+  }
+  .badge.neutral {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border-default);
+  }
+
+  .avatar-tiny {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    color: #fff;
+    display: inline-grid; place-items: center;
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .user-cell {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .delta {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .delta svg { width: 11px; height: 11px; }
+  .delta.in { color: var(--color-success-700); }
+  .delta.out { color: var(--color-danger-700); }
+  .delta.tr { color: var(--color-brand-700); }
+  .delta.adj { color: var(--color-warning-700); }
+
+  /* ============================================================
+     Operational strip — top header band
+     ============================================================ */
+  .ops-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+  .ops-strip .ops-item {
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .ops-strip .ops-divider {
+    width: 1px; height: 12px;
+    background: var(--color-border-default);
+  }
+  .ops-strip code {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* === Responsive: collapse to a usable view under ~1100px */
+  @media (max-width: 1100px) {
+    .panel-row { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .topbar-search { display: none; }
+  }
+  @media (max-width: 720px) {
+    .app-shell { grid-template-columns: 60px 1fr; }
+    .sidebar-logo-text, .sidebar-section-label, .nav-item span:not(.nav-badge), .sidebar-user-info, .sidebar-env-badge { display: none; }
+    .nav-item { justify-content: center; padding: 0; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .page-inner { padding: 20px 16px 32px; }
+  }
+
+  /* DARK MODE — extension over the inline tokens above */
+  html[data-theme="dark"]{
+    --color-bg-canvas:#0a1525; --color-bg-default:#101b30; --color-bg-subtle:#152340;
+    --color-bg-muted:#1a2848; --color-bg-overlay:rgba(0,0,0,0.55);
+    --color-border-default:#1e2d4d; --color-border-strong:#2a3a5e; --color-border-muted:#152340;
+    --color-text-primary:#e2e8f0; --color-text-secondary:#94a3b8; --color-text-tertiary:#64748b;
+    --color-text-placeholder:#475569; --color-text-disabled:#334155;
+    --color-topbar-bg:#101b30; --color-topbar-border:#1e2d4d;
+    --color-success-50:#0a2818; --color-success-100:#0d3a23; --color-success-200:#15532f;
+    --color-danger-50:#2a0e0e; --color-danger-100:#3a1414; --color-danger-200:#5a1e1e;
+    --color-warning-50:#2a1d04; --color-warning-100:#3a2806; --color-warning-200:#5a3f0a;
+    --color-info-50:#06223a; --color-info-100:#082e4d;
+    --color-brand-50:#0a1a36; --color-brand-100:#0e2447; --color-brand-200:#163563;
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.50),0 1px 2px rgba(0,0,0,0.30);
+    --shadow-md:0 4px 6px rgba(0,0,0,0.40),0 2px 4px rgba(0,0,0,0.30);
+    --shadow-lg:0 10px 15px rgba(0,0,0,0.50),0 4px 6px rgba(0,0,0,0.30);
+  }
+  /* Make chart axis text legible in dark mode (inline fill overrides need !important) */
+  html[data-theme="dark"] text.chart-axis-text[fill="#0f172a"]{ fill:#e2e8f0 !important; }
+  html[data-theme="dark"] text.chart-axis-text[fill="#94a3b8"]{ fill:#64748b !important; }
+  html[data-theme="dark"] line[stroke="#cbd5e1"]{ stroke:#2a3a5e !important; }
+  html[data-theme="dark"] .chart-grid-line{ stroke:#1e2d4d; }
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     ICON SPRITE — small reusable Lucide-style SVG library
+     ========================================================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></symbol>
+    <symbol id="i-arrow-down-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .68.39 1.28 1 1.51H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></symbol>
+    <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 17 9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  </defs>
+</svg>
+
+<!-- =========================================================
+     APP SHELL
+     ========================================================= -->
+<div class="app-shell" data-screen-label="02 Dashboard">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" role="navigation" aria-label="Navegação principal">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-mark">
+        <svg><use href="#i-box"/></svg>
+      </div>
+      <div class="sidebar-logo-text">StockFlow</div>
+      <div class="sidebar-env-badge">PROD</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Operação</div>
+      <a class="nav-item active" href="S02%20Dashboard.html"><svg><use href="#i-home"/></svg><span>Dashboard</span></a>
+      <a class="nav-item" href="01%20Produtos.html"><svg><use href="#i-package"/></svg><span>Produtos</span></a>
+      <a class="nav-item" href="02%20Lotes.html"><svg><use href="#i-layers"/></svg><span>Lotes</span><span class="nav-badge warn">17</span></a>
+      <a class="nav-item" href="03%20Mapa%20do%20Armazem.html"><svg><use href="#i-map"/></svg><span>Mapa do Armazém</span></a>
+
+      <div class="sidebar-section-label">Movimentações</div>
+      <a class="nav-item" href="04%20Entrada.html"><svg><use href="#i-arrow-down-left"/></svg><span>Entrada</span></a>
+      <a class="nav-item" href="05%20Saida.html"><svg><use href="#i-arrow-up-right"/></svg><span>Saída</span></a>
+      <a class="nav-item" href="06%20Transferencia.html"><svg><use href="#i-shuffle"/></svg><span>Transferência</span></a>
+      <a class="nav-item" href="11%20Inventario%20Rotativo.html"><svg><use href="#i-clipboard"/></svg><span>Inventário</span></a>
+
+      <div class="sidebar-section-label">Análise</div>
+      <a class="nav-item" href="07%20Historico.html"><svg><use href="#i-history"/></svg><span>Histórico</span></a>
+      <a class="nav-item" href="08%20Rastreabilidade.html"><svg><use href="#i-scan"/></svg><span>Rastreabilidade</span></a>
+      <a class="nav-item" href="09%20Alertas%20de%20Vencimento.html"><svg><use href="#i-clock"/></svg><span>Vencimentos</span><span class="nav-badge">14</span></a>
+      <a class="nav-item" href="10%20Relatorios.html"><svg><use href="#i-activity"/></svg><span>Relatórios</span></a>
+
+      <div class="sidebar-section-label">Administração</div>
+      <a class="nav-item" href="13%20Usuarios.html"><svg><use href="#i-users"/></svg><span>Usuários</span></a>
+      <a class="nav-item" href="12%20Auditoria.html"><svg><use href="#i-shield"/></svg><span>Auditoria</span><span class="nav-badge" style="background:#7c3aed">A</span></a>
+      <a class="nav-item" href="14%20Meu%20Perfil.html"><svg><use href="#i-user"/></svg><span>Meu Perfil</span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">MA</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Mariana Albuquerque</div>
+        <div class="sidebar-user-role">Administrador</div>
+      </div>
+      <button class="sidebar-logout" aria-label="Sair"><svg><use href="#i-logout"/></svg></button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="topbar-toggle" aria-label="Alternar menu lateral"><svg><use href="#i-menu"/></svg></button>
+      <nav class="breadcrumb" aria-label="Trilha">
+        <span class="breadcrumb-root">StockFlow</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Dashboard</span>
+      </nav>
+
+      <div class="topbar-search">
+        <svg><use href="#i-search"/></svg>
+        <input type="text" placeholder="Buscar lote, produto, RFID ou ordem…" aria-label="Buscar"/>
+        <span class="topbar-search-kbd">⌘K</span>
+      </div>
+
+      <div class="topbar-spacer"></div>
+
+      <div class="topbar-right">
+        <button class="alerts-pill" aria-label="17 alertas críticos">
+          <span class="dot"></span>
+          <svg><use href="#i-bell"/></svg>
+          <span>17 alertas</span>
+        </button>
+        <button class="icon-btn" aria-label="Atalhos de teclado"><svg><use href="#i-help"/></svg></button>
+        <button class="icon-btn" data-theme-toggle aria-label="Alternar tema"><svg><use href="#i-sun"/></svg></button>
+        <div class="topbar-divider"></div>
+        <div class="topbar-avatar" title="Mariana Albuquerque">MA</div>
+      </div>
+    </header>
+
+    <!-- PAGE -->
+    <div class="page">
+      <div class="page-inner">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>Visão geral operacional</h1>
+            <div class="subtitle">
+              <span><span class="live-dot"></span>&nbsp; Dados em tempo real</span>
+              <span class="sep"></span>
+              <span>CD-01 · São Paulo / SP</span>
+              <span class="sep"></span>
+              <span>Atualizado às <strong style="color:var(--color-text-secondary);font-weight:600">14:32:08</strong></span>
+            </div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-outline btn-sm"><svg><use href="#i-download"/></svg> Exportar</button>
+            <button class="btn btn-outline btn-sm"><svg><use href="#i-refresh"/></svg> Atualizar</button>
+            <button class="btn btn-primary"><svg><use href="#i-plus"/></svg> Nova movimentação</button>
+          </div>
+        </div>
+
+        <!-- OPS STRIP -->
+        <div class="ops-strip" style="margin: -8px 0 22px;">
+          <span class="ops-item"><svg width="11" height="11" style="color:var(--color-success-500)"><use href="#i-database"/></svg> API <code>v2.1.4</code></span>
+          <span class="ops-divider"></span>
+          <span class="ops-item">Tenant: <code>acme-pharma</code></span>
+          <span class="ops-divider"></span>
+          <span class="ops-item">Posições ocupadas: <code>1.182 / 1.440</code> · 82%</span>
+          <span class="ops-divider"></span>
+          <span class="ops-item">Última sync RFID: há 12s</span>
+          <span class="ops-divider"></span>
+          <span class="ops-item">Operadores online: <code>14</code></span>
+        </div>
+
+        <!-- KPI ROW -->
+        <section class="kpi-grid" aria-label="Indicadores principais">
+
+          <!-- KPI 1 — Produtos Ativos -->
+          <article class="kpi">
+            <svg class="kpi-bg-icon"><use href="#i-package"/></svg>
+            <div class="kpi-label">Produtos Ativos</div>
+            <div class="kpi-value-row">
+              <div class="kpi-value">1.247</div>
+              <span class="kpi-trend up"><svg><use href="#i-arrow-up"/></svg>+24</span>
+            </div>
+            <div class="kpi-sub">cadastros no sistema · 32 novos no mês</div>
+            <svg class="kpi-spark" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0 22 L20 19 L40 21 L60 17 L80 18 L100 15 L120 13 L140 14 L160 11 L180 9 L200 7"
+                    fill="none" stroke="#2E75B6" stroke-width="1.5" opacity="0.4"/>
+              <path d="M0 22 L20 19 L40 21 L60 17 L80 18 L100 15 L120 13 L140 14 L160 11 L180 9 L200 7 L200 28 L0 28 Z"
+                    fill="url(#sparkGradBlue)"/>
+              <defs>
+                <linearGradient id="sparkGradBlue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#2E75B6" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#2E75B6" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </article>
+
+          <!-- KPI 2 — Abaixo do Mínimo (CRITICAL) -->
+          <article class="kpi critical">
+            <svg class="kpi-bg-icon"><use href="#i-trending-down"/></svg>
+            <span class="kpi-alert-dot" aria-label="Alerta crítico"></span>
+            <div class="kpi-label">Abaixo do Mínimo</div>
+            <div class="kpi-value-row">
+              <div class="kpi-value">8</div>
+              <span class="kpi-trend down" style="background:rgba(220,38,38,0.10);color:var(--color-danger-700);">
+                <svg><use href="#i-arrow-up"/></svg>+3
+              </span>
+            </div>
+            <div class="kpi-sub">requerem reposição imediata</div>
+            <svg class="kpi-spark" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0 22 L20 21 L40 19 L60 20 L80 17 L100 15 L120 14 L140 11 L160 10 L180 8 L200 5"
+                    fill="none" stroke="#dc2626" stroke-width="1.5" opacity="0.5"/>
+            </svg>
+          </article>
+
+          <!-- KPI 3 — Lotes Vencendo (CRITICAL) -->
+          <article class="kpi critical">
+            <svg class="kpi-bg-icon"><use href="#i-clock"/></svg>
+            <span class="kpi-alert-dot"></span>
+            <div class="kpi-label">Lotes Vencendo</div>
+            <div class="kpi-value-row">
+              <div class="kpi-value">14</div>
+              <span class="kpi-trend down" style="background:rgba(220,38,38,0.10);color:var(--color-danger-700);">
+                <svg><use href="#i-arrow-up"/></svg>+5
+              </span>
+            </div>
+            <div class="kpi-sub">nos próximos 30 dias</div>
+            <svg class="kpi-spark" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0 24 L20 22 L40 19 L60 21 L80 18 L100 15 L120 12 L140 11 L160 9 L180 7 L200 4"
+                    fill="none" stroke="#dc2626" stroke-width="1.5" opacity="0.5"/>
+            </svg>
+          </article>
+
+          <!-- KPI 4 — Lotes Bloqueados (WARNING) -->
+          <article class="kpi warning">
+            <svg class="kpi-bg-icon"><use href="#i-lock"/></svg>
+            <span class="kpi-alert-dot"></span>
+            <div class="kpi-label">Lotes Bloqueados</div>
+            <div class="kpi-value-row">
+              <div class="kpi-value">3</div>
+              <span class="kpi-trend neutral" style="background:rgba(180,83,9,0.12);color:var(--color-warning-700);">
+                <svg><use href="#i-arrow-down"/></svg>−1
+              </span>
+            </div>
+            <div class="kpi-sub">em quarentena ou bloqueio manual</div>
+            <svg class="kpi-spark" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0 14 L20 16 L40 13 L60 15 L80 12 L100 14 L120 13 L140 16 L160 14 L180 17 L200 16"
+                    fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.5"/>
+            </svg>
+          </article>
+        </section>
+
+        <!-- PANELS — CHART + ALERTS -->
+        <section class="panel-row">
+
+          <!-- CHART CARD -->
+          <article class="card">
+            <header class="card-header">
+              <div>
+                <div class="card-title">Movimentações — Últimos 7 dias</div>
+              </div>
+              <div class="card-header-divider"></div>
+              <div class="legend">
+                <span class="legend-item"><span class="legend-dot entrada"></span>Entradas</span>
+                <span class="legend-item"><span class="legend-dot saida"></span>Saídas</span>
+                <span class="legend-item"><span class="legend-dot transferencia"></span>Transferências</span>
+              </div>
+              <div class="card-header-spacer"></div>
+              <button class="select-sm">
+                <span>Últimos 7 dias</span>
+                <svg><use href="#i-chevron-down"/></svg>
+              </button>
+            </header>
+            <div class="chart-wrap" id="chartWrap">
+              <svg class="chart-svg" id="chart" viewBox="0 0 720 260" preserveAspectRatio="none"></svg>
+              <div class="chart-tooltip" id="chartTooltip">
+                <div class="chart-tooltip-title" id="ttTitle">—</div>
+                <div class="chart-tooltip-row"><span><span class="legend-dot entrada" style="width:6px;height:6px;border-radius:2px;display:inline-block"></span>Entradas</span><span id="ttIn">0</span></div>
+                <div class="chart-tooltip-row"><span><span class="legend-dot saida" style="width:6px;height:6px;border-radius:2px;display:inline-block"></span>Saídas</span><span id="ttOut">0</span></div>
+                <div class="chart-tooltip-row"><span><span class="legend-dot transferencia" style="width:6px;height:6px;border-radius:2px;display:inline-block"></span>Transferências</span><span id="ttTr">0</span></div>
+              </div>
+            </div>
+            <!-- Chart footer summary -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--color-border-default);background:var(--color-bg-subtle)">
+              <div style="padding:12px 20px;border-right:1px solid var(--color-border-default)">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);margin-bottom:4px">Total entradas</div>
+                <div style="font-size:18px;font-weight:700;color:var(--color-success-700);font-variant-numeric:tabular-nums">1.842 <span style="font-size:11px;color:var(--color-text-tertiary);font-weight:500"> un</span></div>
+              </div>
+              <div style="padding:12px 20px;border-right:1px solid var(--color-border-default)">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);margin-bottom:4px">Total saídas</div>
+                <div style="font-size:18px;font-weight:700;color:var(--color-danger-700);font-variant-numeric:tabular-nums">1.296 <span style="font-size:11px;color:var(--color-text-tertiary);font-weight:500"> un</span></div>
+              </div>
+              <div style="padding:12px 20px">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);margin-bottom:4px">Saldo líquido</div>
+                <div style="font-size:18px;font-weight:700;color:var(--color-text-primary);font-variant-numeric:tabular-nums">+546 <span style="font-size:11px;color:var(--color-success-700);font-weight:600"> ↑ 12,4%</span></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ALERTS CARD -->
+          <article class="card alerts-card">
+            <header class="card-header">
+              <div class="card-title">Alertas Críticos</div>
+              <span class="alerts-count-pill">17</span>
+            </header>
+            <div class="alerts-list" role="list">
+
+              <div class="alert-item critical" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-trending-down"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Amoxicilina 500mg · cápsula</div>
+                  <div class="alert-meta">
+                    <span>Estoque: <strong>12 un</strong></span>
+                    <span class="sep"></span>
+                    <span>Mín: 50 un</span>
+                    <span class="sep"></span>
+                    <code>SKU-A0142</code>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item critical" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-trending-down"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Dipirona Sódica 500mg · comprimido</div>
+                  <div class="alert-meta">
+                    <span>Estoque: <strong>4 un</strong></span>
+                    <span class="sep"></span>
+                    <span>Mín: 40 un</span>
+                    <span class="sep"></span>
+                    <code>SKU-D0081</code>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item warning" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-clock"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Ringer Lactato 500ml · solução</div>
+                  <div class="alert-meta">
+                    <code>LOT-2026-014</code>
+                    <span class="sep"></span>
+                    <span>Vence em <strong>5 dias</strong> · 02/06/2026</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item critical" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-trending-down"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Soro Fisiológico 0,9% · 500ml</div>
+                  <div class="alert-meta">
+                    <span>Estoque: <strong>23 un</strong></span>
+                    <span class="sep"></span>
+                    <span>Mín: 100 un</span>
+                    <span class="sep"></span>
+                    <code>SKU-S0231</code>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item warning" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-clock"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Insulina NPH 100UI · frasco</div>
+                  <div class="alert-meta">
+                    <code>LOT-2026-007</code>
+                    <span class="sep"></span>
+                    <span>Vence em <strong>12 dias</strong> · 09/06/2026</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item warning" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-clock"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Heparina Sódica 5000 UI · ampola</div>
+                  <div class="alert-meta">
+                    <code>LOT-2026-021</code>
+                    <span class="sep"></span>
+                    <span>Vence em <strong>18 dias</strong> · 15/06/2026</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-item critical" role="listitem">
+                <div class="alert-icon"><svg><use href="#i-trending-down"/></svg></div>
+                <div class="alert-body">
+                  <div class="alert-title">Paracetamol 750mg · comprimido</div>
+                  <div class="alert-meta">
+                    <span>Estoque: <strong>31 un</strong></span>
+                    <span class="sep"></span>
+                    <span>Mín: 80 un</span>
+                    <span class="sep"></span>
+                    <code>SKU-P0014</code>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="alerts-footer">
+              <a href="#">Ver todos os 17 alertas <svg><use href="#i-arrow-right"/></svg></a>
+            </div>
+          </article>
+        </section>
+
+        <!-- RECENT MOVEMENTS TABLE -->
+        <section class="card table-card" aria-label="Movimentações recentes">
+          <header class="card-header">
+            <div class="card-title">Movimentações Recentes</div>
+            <span class="card-title-sub">· últimas 10 operações</span>
+            <a href="#" class="table-toolbar-link">Ver histórico completo <svg><use href="#i-arrow-right"/></svg></a>
+          </header>
+          <div class="table-wrap">
+            <table class="enterprise" role="grid">
+              <thead>
+                <tr>
+                  <th style="width:160px">Data / Hora <span class="sort-icon sorted"><svg><use href="#i-arrow-down"/></svg></span></th>
+                  <th style="width:140px">Tipo</th>
+                  <th>Produto <span class="sort-icon"><svg><use href="#i-arrow-up-down"/></svg></span></th>
+                  <th style="width:160px">Lote</th>
+                  <th class="num" style="width:100px">Qtd</th>
+                  <th style="width:120px">Origem → Destino</th>
+                  <th style="width:180px">Usuário</th>
+                  <th class="center" style="width:120px">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">24 mai · 14:31</td>
+                  <td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td>
+                  <td>
+                    <div class="product-name">Amoxicilina 500mg · cápsula</div>
+                    <div class="product-sku">SKU-A0142</div>
+                  </td>
+                  <td class="lot">LOT-2026-001</td>
+                  <td class="num"><span class="delta out"><svg><use href="#i-arrow-down"/></svg>−48</span></td>
+                  <td class="mono">A1-N2-P3</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#475569">JS</span>Júlio Santana</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 14:18</td>
+                  <td><span class="badge info"><span class="badge-dot"></span>Transferência</span></td>
+                  <td>
+                    <div class="product-name">Soro Glicosado 5% · 500ml</div>
+                    <div class="product-sku">SKU-S0118</div>
+                  </td>
+                  <td class="lot">LOT-2026-009</td>
+                  <td class="num"><span class="delta tr">120</span></td>
+                  <td class="mono">B3 → C1</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#7c3aed">CM</span>Carla Menezes</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 14:02</td>
+                  <td><span class="badge success"><span class="badge-dot"></span>Entrada</span></td>
+                  <td>
+                    <div class="product-name">Dipirona Sódica 500mg · comprimido</div>
+                    <div class="product-sku">SKU-D0081</div>
+                  </td>
+                  <td class="lot">LOT-2026-027</td>
+                  <td class="num"><span class="delta in"><svg><use href="#i-arrow-up"/></svg>+320</span></td>
+                  <td class="mono">D2-N1-P4</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#0369a1">RN</span>Rodrigo Nakamura</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 13:47</td>
+                  <td><span class="badge warning"><span class="badge-dot"></span>Ajuste</span></td>
+                  <td>
+                    <div class="product-name">Insulina NPH 100UI · frasco</div>
+                    <div class="product-sku">SKU-I0023</div>
+                  </td>
+                  <td class="lot">LOT-2026-007</td>
+                  <td class="num"><span class="delta adj">−2</span></td>
+                  <td class="mono">A4-N3-P1</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#b45309">MA</span>Mariana Albuquerque</span></td>
+                  <td class="center"><span class="badge warning"><span class="badge-dot"></span>Auditoria</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 13:31</td>
+                  <td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td>
+                  <td>
+                    <div class="product-name">Paracetamol 750mg · comprimido</div>
+                    <div class="product-sku">SKU-P0014</div>
+                  </td>
+                  <td class="lot">LOT-2026-018</td>
+                  <td class="num"><span class="delta out"><svg><use href="#i-arrow-down"/></svg>−95</span></td>
+                  <td class="mono">B2-N1-P2</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#475569">JS</span>Júlio Santana</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 13:14</td>
+                  <td><span class="badge success"><span class="badge-dot"></span>Entrada</span></td>
+                  <td>
+                    <div class="product-name">Ringer Lactato 500ml · solução</div>
+                    <div class="product-sku">SKU-R0051</div>
+                  </td>
+                  <td class="lot">LOT-2026-029</td>
+                  <td class="num"><span class="delta in"><svg><use href="#i-arrow-up"/></svg>+200</span></td>
+                  <td class="mono">C2-N2-P3</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#0369a1">RN</span>Rodrigo Nakamura</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 12:58</td>
+                  <td><span class="badge info"><span class="badge-dot"></span>Transferência</span></td>
+                  <td>
+                    <div class="product-name">Heparina Sódica 5000 UI · ampola</div>
+                    <div class="product-sku">SKU-H0099</div>
+                  </td>
+                  <td class="lot">LOT-2026-021</td>
+                  <td class="num"><span class="delta tr">60</span></td>
+                  <td class="mono">A2 → A4</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#7c3aed">CM</span>Carla Menezes</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 12:41</td>
+                  <td><span class="badge danger"><span class="badge-dot"></span>Saída</span></td>
+                  <td>
+                    <div class="product-name">Soro Fisiológico 0,9% · 500ml</div>
+                    <div class="product-sku">SKU-S0231</div>
+                  </td>
+                  <td class="lot">LOT-2026-013</td>
+                  <td class="num"><span class="delta out"><svg><use href="#i-arrow-down"/></svg>−180</span></td>
+                  <td class="mono">B1-N2-P1</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#475569">JS</span>Júlio Santana</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 12:27</td>
+                  <td><span class="badge warning"><span class="badge-dot"></span>Ajuste</span></td>
+                  <td>
+                    <div class="product-name">Captopril 25mg · comprimido</div>
+                    <div class="product-sku">SKU-C0033</div>
+                  </td>
+                  <td class="lot">LOT-2026-005</td>
+                  <td class="num"><span class="delta adj">+4</span></td>
+                  <td class="mono">D1-N1-P2</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#b45309">MA</span>Mariana Albuquerque</span></td>
+                  <td class="center"><span class="badge warning"><span class="badge-dot"></span>Auditoria</span></td>
+                </tr>
+                <tr>
+                  <td class="mono">24 mai · 12:09</td>
+                  <td><span class="badge success"><span class="badge-dot"></span>Entrada</span></td>
+                  <td>
+                    <div class="product-name">Cloreto de Potássio 19,1% · ampola</div>
+                    <div class="product-sku">SKU-C0207</div>
+                  </td>
+                  <td class="lot">LOT-2026-031</td>
+                  <td class="num"><span class="delta in"><svg><use href="#i-arrow-up"/></svg>+150</span></td>
+                  <td class="mono">A3-N1-P4</td>
+                  <td><span class="user-cell"><span class="avatar-tiny" style="background:#0369a1">RN</span>Rodrigo Nakamura</span></td>
+                  <td class="center"><span class="badge success"><span class="badge-dot"></span>Confirmado</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--color-border-default);background:var(--color-bg-subtle);">
+            <span style="font-size:12px;color:var(--color-text-tertiary)">Exibindo as <strong style="color:var(--color-text-secondary)">10</strong> operações mais recentes de <strong style="color:var(--color-text-secondary)">3.842</strong> totais hoje</span>
+            <a href="#" class="table-toolbar-link" style="margin:0">Abrir histórico completo <svg><use href="#i-arrow-right"/></svg></a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- =========================================================
+     CHART RENDERER — clean SVG bar chart (no external libs)
+     ========================================================= -->
+<script>
+(function renderChart() {
+  const data = [
+    { day: 'Seg', date: '19 mai', entradas: 320, saidas: 180, transferencias:  90 },
+    { day: 'Ter', date: '20 mai', entradas: 240, saidas: 220, transferencias: 110 },
+    { day: 'Qua', date: '21 mai', entradas: 280, saidas: 160, transferencias:  70 },
+    { day: 'Qui', date: '22 mai', entradas: 360, saidas: 240, transferencias: 130 },
+    { day: 'Sex', date: '23 mai', entradas: 210, saidas: 190, transferencias:  85 },
+    { day: 'Sáb', date: '24 mai', entradas: 180, saidas: 140, transferencias:  60 },
+    { day: 'Hoje', date: 'hoje',   entradas: 252, saidas: 166, transferencias:  75 },
+  ];
+
+  const svg = document.getElementById('chart');
+  const tooltip = document.getElementById('chartTooltip');
+  const ttTitle = document.getElementById('ttTitle');
+  const ttIn = document.getElementById('ttIn');
+  const ttOut = document.getElementById('ttOut');
+  const ttTr = document.getElementById('ttTr');
+
+  const W = 720, H = 260;
+  const padL = 40, padR = 12, padT = 12, padB = 32;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  // Y scale
+  const maxV = Math.max(...data.flatMap(d => [d.entradas, d.saidas, d.transferencias]));
+  const niceMax = Math.ceil(maxV / 100) * 100; // round up to 100
+
+  const yTicks = 5;
+  let html = '';
+
+  // Grid lines + Y axis labels
+  for (let i = 0; i <= yTicks; i++) {
+    const v = niceMax * (1 - i / yTicks);
+    const y = padT + (innerH * i / yTicks);
+    html += `<line class="chart-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>`;
+    html += `<text class="chart-axis-text chart-axis-y-text" x="${padL - 8}" y="${y + 3.5}">${v}</text>`;
+  }
+
+  // Bars per group
+  const groupW = innerW / data.length;
+  const barW = 9;
+  const groupGap = 4;
+  const totalBarsW = barW * 3 + groupGap * 2;
+
+  data.forEach((d, i) => {
+    const cx = padL + groupW * i + groupW / 2;
+    const startX = cx - totalBarsW / 2;
+    const yE = padT + innerH - (d.entradas / niceMax) * innerH;
+    const yS = padT + innerH - (d.saidas / niceMax) * innerH;
+    const yT = padT + innerH - (d.transferencias / niceMax) * innerH;
+    const baseY = padT + innerH;
+
+    // Invisible hover area covers the entire group
+    html += `<rect class="bar-hover-area" data-i="${i}" x="${padL + groupW * i}" y="${padT}" width="${groupW}" height="${innerH}" fill="transparent"/>`;
+
+    // Bars (with subtle bottom rounding)
+    html += `<rect class="bar" data-i="${i}" x="${startX}" y="${yE}" width="${barW}" height="${baseY - yE}" rx="2" fill="#16a34a"/>`;
+    html += `<rect class="bar" data-i="${i}" x="${startX + barW + groupGap}" y="${yS}" width="${barW}" height="${baseY - yS}" rx="2" fill="#dc2626"/>`;
+    html += `<rect class="bar" data-i="${i}" x="${startX + (barW + groupGap) * 2}" y="${yT}" width="${barW}" height="${baseY - yT}" rx="2" fill="#2E75B6"/>`;
+
+    // X axis label
+    const isToday = i === data.length - 1;
+    html += `<text class="chart-axis-text chart-axis-x-text" x="${cx}" y="${H - 14}" font-weight="${isToday ? 700 : 500}" fill="${isToday ? '#0f172a' : '#94a3b8'}">${d.day}</text>`;
+    html += `<text class="chart-axis-text chart-axis-x-text" x="${cx}" y="${H - 2}" font-size="9">${d.date}</text>`;
+  });
+
+  // Bottom axis line
+  html += `<line x1="${padL}" y1="${padT + innerH}" x2="${W - padR}" y2="${padT + innerH}" stroke="#cbd5e1" stroke-width="1"/>`;
+
+  svg.innerHTML = html;
+
+  // Tooltip interactions
+  const chartWrap = document.getElementById('chartWrap');
+  const wrapRect = () => chartWrap.getBoundingClientRect();
+  const svgRect  = () => svg.getBoundingClientRect();
+
+  svg.querySelectorAll('.bar-hover-area, .bar').forEach(el => {
+    el.addEventListener('mouseenter', (e) => {
+      const i = +el.dataset.i;
+      const d = data[i];
+      ttTitle.textContent = `${d.day} · ${d.date}`;
+      ttIn.textContent = d.entradas.toLocaleString('pt-BR');
+      ttOut.textContent = d.saidas.toLocaleString('pt-BR');
+      ttTr.textContent = d.transferencias.toLocaleString('pt-BR');
+      tooltip.classList.add('visible');
+
+      // Position
+      const sRect = svgRect();
+      const wRect = wrapRect();
+      const scale = sRect.width / W;
+      const cx = padL + groupW * i + groupW / 2;
+      const yTop = padT + innerH - (Math.max(d.entradas, d.saidas, d.transferencias) / niceMax) * innerH;
+      const left = sRect.left - wRect.left + cx * scale;
+      const top  = sRect.top  - wRect.top  + yTop * scale - 8;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top  = `${top}px`;
+    });
+    el.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+})();
+</script>
+<script src="app.js"></script>
+
+</body>
+</html>
