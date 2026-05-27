@@ -7,8 +7,10 @@ export default function Login() {
   const { login, user } = useAuth()
   const navigate = useNavigate()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const isDev = import.meta.env.DEV
+
+  const [email, setEmail] = useState(isDev ? 'admin@stockflow.com' : '')
+  const [password, setPassword] = useState(isDev ? 'Admin@1234' : '')
   const [showPwd, setShowPwd] = useState(false)
   const [keepLogged, setKeepLogged] = useState(true)
   const [loading, setLoading] = useState(false)
