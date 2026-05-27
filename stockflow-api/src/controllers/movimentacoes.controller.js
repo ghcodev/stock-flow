@@ -140,6 +140,7 @@ async function ajuste(req, res) {
   const lote = lotes[0];
 
   const diff = Number(nova_quantidade) - Number(lote.quantidade);
+  if (diff === 0) return err(res, 422, 'Nova quantidade é igual à quantidade atual — ajuste não necessário');
 
   const conn = await pool.getConnection();
   try {
@@ -147,7 +148,7 @@ async function ajuste(req, res) {
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, motivo_movimentacao, status)
        VALUES ('ajuste', ?, ?, ?, ?, 'concluida')`,
-      [Math.abs(diff) || 1, id_lote, req.user.id, justificativa]
+      [Math.abs(diff), id_lote, req.user.id, justificativa]
     );
     await conn.execute('UPDATE lote SET quantidade = ? WHERE id = ?', [nova_quantidade, id_lote]);
     await conn.commit();
