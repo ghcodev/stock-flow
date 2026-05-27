@@ -9,7 +9,7 @@ export default function Login() {
 
   const isDev = import.meta.env.DEV
 
-  const [email, setEmail] = useState(isDev ? 'admin@stockflow.com' : '')
+  const [email, setEmail] = useState(isDev ? 'carlos.matos@artetrigo.com.br' : '')
   const [password, setPassword] = useState(isDev ? 'Admin@1234' : '')
   const [showPwd, setShowPwd] = useState(false)
   const [keepLogged, setKeepLogged] = useState(true)
@@ -59,29 +59,29 @@ export default function Login() {
           <div style={{ width: 38, height: 38, borderRadius: 9, background: 'linear-gradient(135deg,#2E75B6 0%,#254d8c 100%)', display: 'grid', placeItems: 'center', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18), 0 2px 6px rgba(0,0,0,0.30)' }}>
             <Box size={20} color="#fff" />
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.015em' }}>StockFlow</div>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.015em' }}>Arte Trigo</div>
           <div style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#7dd3fc', background: 'rgba(46,117,182,0.18)', border: '1px solid rgba(46,117,182,0.40)', padding: '4px 8px', borderRadius: 4 }}>
-            Prod · v2.1.4
+            Prod · v1.3.0
           </div>
         </header>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: 520 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7dd3fc', marginBottom: 18 }}>
             <span className="live-dot" style={{ background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.22)' }} />
-            Plataforma operacional · CD-01
+            Rastreabilidade de produção · Unidade Central
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-0.035em', lineHeight: 1.12, color: '#fff', marginBottom: 14 }}>
-            Rastreabilidade <em style={{ fontStyle: 'normal', color: '#7dd3fc' }}>RFID</em> em tempo real para sua cadeia de suprimentos.
+            Rastreabilidade e controle da produção com <em style={{ fontStyle: 'normal', color: '#7dd3fc' }}>precisão e agilidade.</em>
           </h1>
           <p style={{ fontSize: 14, lineHeight: 1.65, color: '#94a3b8', maxWidth: 440 }}>
-            StockFlow centraliza entrada, saída, transferência e auditoria de lotes em um único sistema validado. Conformidade LGPD, log imutável de 7 anos e integração nativa com SAP.
+            Arte Trigo centraliza lotes, validades e movimentações da padaria em um único sistema. Controle de câmaras frias, rastreio por RFID e alertas automáticos de vencimento.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', marginTop: 36, borderTop: '1px solid rgba(255,255,255,0.10)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
             {[
-              { v: '3.842', l: 'Movimentações hoje' },
-              { v: '1.182 / 1.440', l: 'Posições ocupadas' },
-              { v: '99,7%', l: 'SLA · uptime 30d' },
+              { v: '86', l: 'Movimentações hoje' },
+              { v: '6 / 576', l: 'Posições ocupadas' },
+              { v: '22', l: 'Produtos ativos' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '18px 22px 16px', borderRight: i < 2 ? '1px solid rgba(255,255,255,0.10)' : 'none' }}>
                 <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', color: '#fff' }}>{s.v}</div>
@@ -91,11 +91,11 @@ export default function Login() {
           </div>
 
           <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#64748b' }}>Conformidade & integrações</div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#64748b' }}>Recursos do sistema</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-              {['LGPD', 'ISO 27001', 'ANVISA RDC 430', 'RFID 915MHz', 'SAP S/4HANA', 'Azure AD'].map(chip => (
+              {['LGPD', 'RFID 915MHz', 'NF-e', 'Câmaras Frias', 'Alertas FIFO', 'Log imutável'].map(chip => (
                 <span key={chip} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 600, color: '#cbd5e1', padding: '5px 10px', borderRadius: 5, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                  {chip.includes('RFID') ? <Radio size={11} color="#7dd3fc" /> : chip.includes('LGPD') || chip.includes('ISO') || chip.includes('ANVISA') ? <Shield size={11} color="#7dd3fc" /> : null}
+                  {chip.includes('RFID') ? <Radio size={11} color="#7dd3fc" /> : chip.includes('LGPD') || chip.includes('Log') ? <Shield size={11} color="#7dd3fc" /> : null}
                   {chip}
                 </span>
               ))}
@@ -107,8 +107,8 @@ export default function Login() {
           <span className="live-dot" style={{ background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.22)', width: 6, height: 6, borderRadius: '50%', display: 'inline-block' }} />
           <span>API <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>v2.1.4</code></span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span>Tenant <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>acme-pharma</code></span>
-          <span style={{ marginLeft: 'auto' }}>© 2026 ACME Logística</span>
+          <span>Tenant <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>arte-trigo</code></span>
+          <span style={{ marginLeft: 'auto' }}>© 2026 Arte Trigo Indústria e Comércio</span>
         </footer>
       </aside>
 
@@ -198,14 +198,14 @@ export default function Login() {
               style={{ marginTop: 20, width: '100%', height: 44, background: 'var(--color-brand-800)', color: '#fff', fontSize: 14, fontWeight: 600, borderRadius: 8, border: 'none', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}
             >
               {loading && <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} />}
-              <span>{loading ? 'Autenticando…' : 'Entrar no StockFlow'}</span>
+              <span>{loading ? 'Autenticando…' : 'Entrar no Sistema'}</span>
               {!loading && <ArrowRight size={14} />}
             </button>
           </form>
 
           <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: 'var(--color-text-tertiary)', paddingTop: 18, borderTop: '1px solid var(--color-border-default)' }}>
             <Info size={13} style={{ flexShrink: 0 }} />
-            <span>Problemas para entrar? Contate <a href="mailto:suporte@empresa.com" style={{ color: 'var(--color-text-secondary)', fontWeight: 500, textDecoration: 'underline' }}>suporte@empresa.com</a> ou ligue para o ramal <strong style={{ color: 'var(--color-text-secondary)' }}>8410</strong>.</span>
+            <span>Problemas para entrar? Contate <a href="mailto:suporte@artetrigo.com.br" style={{ color: 'var(--color-text-secondary)', fontWeight: 500, textDecoration: 'underline' }}>suporte@artetrigo.com.br</a> ou ligue para o ramal <strong style={{ color: 'var(--color-text-secondary)' }}>8410</strong>.</span>
           </div>
         </div>
       </section>

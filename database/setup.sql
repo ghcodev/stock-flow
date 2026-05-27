@@ -805,6 +805,51 @@ INSERT INTO produto (nome, categoria, unidade_medida, estoque_minimo, ativo) VAL
   ('Leite Integral 1L', 'Insumos', 'unidade', 10, 1),
   ('Ovos (caixa 30un)', 'Insumos', 'caixa', 10, 1);
 
+
+-- ================================================================
+-- ETAPA 3 — Lotes Arte Trigo
+-- ================================================================
+INSERT INTO lote (numero_lote, id_produto, data_fabricacao, data_validade, quantidade, id_localizacao, status_lote, motivo_bloqueio, data_bloqueio) VALUES
+  ('LOT-AT-001',  1, '2026-05-27', '2026-05-29',  200, 1,   'ativo',     NULL,                          NULL),
+  ('LOT-AT-002',  7, '2026-05-27', '2026-05-30',  150, 97,  'ativo',     NULL,                          NULL),
+  ('LOT-AT-003', 17, '2026-04-27', '2026-10-27',   40, 385, 'ativo',     NULL,                          NULL),
+  ('LOT-AT-004', 12, '2026-05-26', '2026-06-06',   80, 481, 'ativo',     NULL,                          NULL),
+  ('LOT-AT-005', 18, '2026-05-07', '2026-05-28',   15, 193, 'ativo',     NULL,                          NULL),
+  ('LOT-AT-006', 13, '2026-05-26', '2026-06-15',   30, 289, 'bloqueado', 'Suspeita de contaminação', '2026-05-26 10:00:00');
+
+-- ================================================================
+-- ETAPA 3 — Movimentações Arte Trigo (~20 registros, últimos 7 dias)
+-- Ordem: id_lote segue a sequência dos INSERTs acima (1=LOT-AT-001 … 6=LOT-AT-006)
+-- ================================================================
+INSERT INTO movimentacao (tipo, data_movimentacao, quantidade, id_lote, id_usuario, id_localizacao_origem, id_localizacao_destino, motivo_movimentacao, observacao, status) VALUES
+  -- 2026-05-27 (hoje)
+  ('entrada',       '2026-05-27 06:30:00', 200, 1, 1, NULL, 1,   'Produção matinal', 'Pão Francês · turno A',         'concluida'),
+  ('saida',         '2026-05-27 09:15:00',  45, 1, 2, 1,    NULL, 'Venda balcão',    'Loja própria · 45 unidades',    'concluida'),
+  ('entrada',       '2026-05-27 10:00:00', 150, 2, 1, NULL, 97,  'Produção matinal', 'Coxinha de Frango · turno A',   'concluida'),
+  ('saida',         '2026-05-27 11:30:00',  60, 2, 2, 97,   NULL, 'Venda atacado',   'Pedido #AT-4812',               'concluida'),
+  -- 2026-05-26 (ontem)
+  ('entrada',       '2026-05-26 06:15:00',  80, 4, 4, NULL, 481, 'Produção diária',  'Pão de Mel · turno A',          'concluida'),
+  ('entrada',       '2026-05-26 07:00:00',  30, 6, 4, NULL, 289, 'Produção diária',  'Biscoito Amanteigado · turno A','concluida'),
+  ('transferencia', '2026-05-26 14:10:00',  30, 6, 3, 289,  289, 'Reorganização CF04', 'Consolidação de posição',     'concluida'),
+  ('ajuste',        '2026-05-26 15:45:00',   2, 5, 1, 193,  NULL, 'Embalagem danificada', 'Descarte controlado',      'concluida'),
+  -- 2026-05-25
+  ('saida',         '2026-05-25 07:00:00',   5, 3, 5, 385,  NULL, 'Uso produção',    'Farinha 25kg · turno A',        'concluida'),
+  ('saida',         '2026-05-25 08:30:00',   3, 5, 6, 193,  NULL, 'Uso produção',    'Fermento 500g · turno A',       'concluida'),
+  ('saida',         '2026-05-25 14:00:00',  20, 4, 2, 481,  NULL, 'Venda balcão',    'Pão de Mel · 20 unidades',      'concluida'),
+  -- 2026-05-24
+  ('saida',         '2026-05-24 09:30:00',   3, 5, 6, 193,  NULL, 'Uso produção',    'Fermento 500g · turno B',       'concluida'),
+  ('saida',         '2026-05-24 10:00:00',   5, 3, 5, 385,  NULL, 'Uso produção',    'Farinha 25kg · turno B',        'concluida'),
+  ('saida',         '2026-05-24 15:30:00',  35, 1, 2, 1,    NULL, 'Venda balcão',    'Loja própria · 35 unidades',    'concluida'),
+  -- 2026-05-23
+  ('saida',         '2026-05-23 08:00:00',   3, 5, 6, 193,  NULL, 'Uso produção',    'Fermento 500g · turno A',       'concluida'),
+  ('saida',         '2026-05-23 09:00:00',   5, 3, 5, 385,  NULL, 'Uso produção',    'Farinha 25kg · turno A',        'concluida'),
+  -- 2026-05-22
+  ('saida',         '2026-05-22 09:00:00',   3, 5, 6, 193,  NULL, 'Uso produção',    'Fermento — estoque crítico',    'concluida'),
+  ('saida',         '2026-05-22 10:00:00',   5, 3, 5, 385,  NULL, 'Uso produção',    'Farinha 25kg',                  'concluida'),
+  -- 2026-05-21
+  ('entrada',       '2026-05-21 08:00:00',  40, 3, 7, NULL, 385, 'Recebimento fornecedor', 'Moinho Sul · NF-4521',    'concluida'),
+  ('saida',         '2026-05-21 14:00:00',   5, 3, 5, 385,  NULL, 'Uso produção',    'Farinha 25kg · turno A',        'concluida');
+
 -- =============================================================
 -- VALIDAÇÃO FINAL
 -- =============================================================
