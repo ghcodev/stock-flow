@@ -780,6 +780,31 @@ INSERT INTO usuario (nome, email, senha_hash, perfil, ativo) VALUES
   ('Ricardo Mendes', 'ricardo.mendes@artetrigo.com.br', '$2b$12$CU2ggnSrYAxMd6z/WcmqYechRweErRaj41tmy0pqCbJeDPK1U.18y', 'operador', 1),
   ('Tatiane Ferreira', 'tatiane.ferreira@artetrigo.com.br', '$2b$12$CU2ggnSrYAxMd6z/WcmqYechRweErRaj41tmy0pqCbJeDPK1U.18y', 'operador', 1);
 
+-- 22 produtos Arte Trigo (4 categorias)
+INSERT INTO produto (nome, categoria, unidade_medida, estoque_minimo, ativo) VALUES
+  ('Pão Francês', 'Pães', 'unidade', 50, 1),
+  ('Pão de Forma Tradicional', 'Pães', 'pacote', 50, 1),
+  ('Pão de Queijo GG', 'Pães', 'unidade', 50, 1),
+  ('Pão Sírio', 'Pães', 'pacote', 50, 1),
+  ('Pão Integral', 'Pães', 'pacote', 50, 1),
+  ('Pão de Hambúrguer', 'Pães', 'unidade', 50, 1),
+  ('Coxinha de Frango', 'Salgados', 'unidade', 30, 1),
+  ('Esfirra de Carne', 'Salgados', 'unidade', 30, 1),
+  ('Pastel de Queijo', 'Salgados', 'unidade', 30, 1),
+  ('Croissant Presunto/Queijo', 'Salgados', 'unidade', 30, 1),
+  ('Enroladinho de Salsicha', 'Salgados', 'unidade', 30, 1),
+  ('Pão de Mel', 'Quitandas', 'unidade', 20, 1),
+  ('Biscoito Amanteigado', 'Quitandas', 'pacote', 20, 1),
+  ('Rosca de Coco', 'Quitandas', 'unidade', 20, 1),
+  ('Bolo de Cenoura Fatia', 'Quitandas', 'fatia', 20, 1),
+  ('Brownie de Chocolate', 'Quitandas', 'unidade', 20, 1),
+  ('Farinha de Trigo 25kg', 'Insumos', 'saco', 10, 1),
+  ('Fermento Biológico 500g', 'Insumos', 'pacote', 10, 1),
+  ('Açúcar Refinado 5kg', 'Insumos', 'pacote', 10, 1),
+  ('Manteiga 500g', 'Insumos', 'pacote', 10, 1),
+  ('Leite Integral 1L', 'Insumos', 'unidade', 10, 1),
+  ('Ovos (caixa 30un)', 'Insumos', 'caixa', 10, 1);
+
 -- =============================================================
 -- VALIDAÇÃO FINAL
 -- =============================================================
