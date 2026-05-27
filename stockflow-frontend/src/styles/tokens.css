@@ -2,10 +2,11 @@
    StockFlow Enterprise v2.0 — Design tokens
    ============================================================ */
 :root {
-  --color-bg-canvas: #f1f5f9;
+  --color-bg-canvas: #edf1f7;
   --color-bg-default: #ffffff;
-  --color-bg-subtle: #f8fafc;
-  --color-bg-muted: #f1f5f9;
+  --color-bg-subtle: #f4f7fb;
+  --color-bg-muted: #edf1f7;
+  --color-bg-elevated: #f8fafc;
   --color-bg-overlay: rgba(15, 23, 42, 0.40);
 
   --color-sidebar-bg: #0f1f3d;
@@ -15,9 +16,9 @@
   --color-sidebar-text-active: #ffffff;
   --color-sidebar-border: rgba(255, 255, 255, 0.08);
 
-  --color-border-default: #e2e8f0;
+  --color-border-default: #dce3ed;
   --color-border-strong: #cbd5e1;
-  --color-border-muted: #f1f5f9;
+  --color-border-muted: #edf1f7;
   --color-border-focus: #2E75B6;
 
   --color-text-primary: #0f172a;
@@ -73,7 +74,7 @@
   --color-admin-100: #ede9fe;
 
   --color-topbar-bg: #ffffff;
-  --color-topbar-border: #e2e8f0;
+  --color-topbar-border: #dce3ed;
 
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -106,6 +107,7 @@ html[data-theme="dark"] {
   --color-bg-default: #101b30;
   --color-bg-subtle: #152340;
   --color-bg-muted: #1a2848;
+  --color-bg-elevated: #1a2848;
   --color-bg-overlay: rgba(0, 0, 0, 0.55);
   --color-border-default: #1e2d4d;
   --color-border-strong: #2a3a5e;
