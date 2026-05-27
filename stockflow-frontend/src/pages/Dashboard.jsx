@@ -88,7 +88,7 @@ export default function Dashboard() {
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
                 {k.label}
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: k.danger ? 'var(--color-danger-600)' : k.warn ? 'var(--color-warning-600)' : 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+              <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.04em', color: k.danger ? 'var(--color-danger-600)' : k.warn ? 'var(--color-warning-600)' : 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
                 {k.value}
               </div>
             </div>
