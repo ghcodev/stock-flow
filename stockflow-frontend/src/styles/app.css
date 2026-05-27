@@ -41,7 +41,7 @@ a { color: inherit; text-decoration: none; }
 .nav-item:hover { background: var(--color-sidebar-hover); color: rgba(255,255,255,0.85); }
 .nav-item.active { background: var(--color-sidebar-active); color: #fff; }
 .nav-item.active svg { opacity: 1; }
-.nav-badge { margin-left: auto; font-size: 10px; font-weight: 700; background: var(--color-danger-600); color: #fff; padding: 1px 6px; border-radius: 999px; min-width: 18px; text-align: center; line-height: 1.4; }
+.nav-badge { margin-left: auto; font-size: 10px; font-weight: 700; background: var(--color-danger-600); color: #fff; padding: 2px 7px; border-radius: 999px; min-width: 18px; text-align: center; line-height: 1.4; }
 .nav-badge.warn { background: var(--color-warning-600); }
 .nav-badge.admin { background: var(--color-admin-600); }
 .sidebar-footer { border-top: 1px solid var(--color-sidebar-border); padding: 10px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -71,7 +71,7 @@ a { color: inherit; text-decoration: none; }
 .topbar-search-kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 4px; padding: 1px 5px; }
 .topbar-spacer { flex: 1; }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
-.alerts-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; background: var(--color-warning-50); border: 1px solid var(--color-warning-200); color: var(--color-warning-700); font-size: 12px; font-weight: 600; transition: background 100ms; }
+.alerts-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; background: var(--color-warning-100); border: 1.5px solid var(--color-warning-300); color: var(--color-warning-700); font-size: 12px; font-weight: 700; transition: background 100ms; }
 .alerts-pill:hover { background: var(--color-warning-100); }
 .alerts-pill svg { width: 14px; height: 14px; }
 .alerts-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning-500); box-shadow: 0 0 0 3px rgba(245,158,11,0.18); animation: pulse 2s ease-in-out infinite; display: inline-block; }
@@ -140,12 +140,12 @@ tbody td { padding: 10px 16px; font-size: 13px; color: var(--color-text-primary)
 
 /* BADGES / PILLS */
 .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); }
-.badge-success { background: var(--color-success-100); color: var(--color-success-700); }
-.badge-danger { background: var(--color-danger-100); color: var(--color-danger-700); }
-.badge-warning { background: var(--color-warning-100); color: var(--color-warning-700); }
-.badge-info { background: var(--color-info-100); color: var(--color-info-700); }
+.badge-success { background: var(--color-success-50);  color: var(--color-success-700); border: 1px solid var(--color-success-200); }
+.badge-danger  { background: var(--color-danger-50);   color: var(--color-danger-700);  border: 1px solid var(--color-danger-200);  }
+.badge-warning { background: var(--color-warning-50);  color: var(--color-warning-700); border: 1px solid var(--color-warning-200); }
+.badge-info    { background: var(--color-info-50);     color: var(--color-info-700);    border: 1px solid var(--color-info-100);    }
 .badge-neutral { background: var(--color-bg-muted); color: var(--color-text-secondary); border: 1px solid var(--color-border-default); }
-.badge-admin { background: var(--color-admin-100); color: var(--color-admin-700); }
+.badge-admin   { background: var(--color-admin-100); color: var(--color-admin-700); }
 
 /* FORM */
 .form-label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 6px; display: block; }
@@ -187,6 +187,10 @@ tbody td { padding: 10px 16px; font-size: 13px; color: var(--color-text-primary)
 .toast.danger  .toast-icon { background: var(--color-danger-100);  color: var(--color-danger-600);  }
 .toast.warning .toast-icon { background: var(--color-warning-100); color: var(--color-warning-600); }
 .toast.info    .toast-icon { background: var(--color-info-100);    color: var(--color-info-600);    }
+.toast.success { border-left: 3px solid var(--color-success-500); }
+.toast.danger  { border-left: 3px solid var(--color-danger-500);  }
+.toast.warning { border-left: 3px solid var(--color-warning-500); }
+.toast.info    { border-left: 3px solid var(--color-info-600);    }
 .toast-content { flex: 1; min-width: 0; }
 .toast-title { font-size: 13px; font-weight: 700; color: var(--color-text-primary); }
 .toast-msg { font-size: 12.5px; color: var(--color-text-secondary); margin-top: 2px; line-height: 1.45; }
