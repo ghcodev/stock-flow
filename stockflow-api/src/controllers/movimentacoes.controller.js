@@ -7,24 +7,39 @@ function err(res, status, msg, codigo = null) {
 }
 
 async function listar(req, res) {
-  const { tipo = '', lote = '', usuario = '', page = 1, limit = 20 } = req.query;
+  const { tipo = '', lote = '', usuario = '', search = '', page = 1, limit = 20 } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   const params = [];
   const conds = [];
   if (tipo) { conds.push('m.tipo = ?'); params.push(tipo); }
   if (lote) { conds.push('m.id_lote = ?'); params.push(lote); }
   if (usuario) { conds.push('m.id_usuario = ?'); params.push(usuario); }
+  if (search) { conds.push('(p.nome LIKE ? OR l.numero_lote LIKE ?)'); params.push(`%${search}%`, `%${search}%`); }
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
   const [rows] = await pool.execute(
-    `SELECT m.*, u.nome AS usuario_nome, l.numero_lote
+    `SELECT m.*,
+       u.nome AS usuario_nome,
+       l.numero_lote AS codigo_lote,
+       p.nome AS produto_nome,
+       loc_orig.corredor AS origem_corredor, loc_orig.nivel AS origem_nivel, loc_orig.posicao AS origem_posicao,
+       loc_dest.corredor AS destino_corredor, loc_dest.nivel AS destino_nivel, loc_dest.posicao AS destino_posicao
      FROM movimentacao m
      JOIN usuario u ON u.id = m.id_usuario
      JOIN lote l ON l.id = m.id_lote
+     JOIN produto p ON p.id = l.id_produto
+     LEFT JOIN localizacao loc_orig ON loc_orig.id = m.id_localizacao_origem
+     LEFT JOIN localizacao loc_dest ON loc_dest.id = m.id_localizacao_destino
      ${where} ORDER BY m.data_movimentacao DESC LIMIT ${Number(limit)} OFFSET ${offset}`,
     params
   );
-  const [[{ total }]] = await pool.execute(`SELECT COUNT(*) AS total FROM movimentacao m ${where}`, params);
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total FROM movimentacao m
+     JOIN lote l ON l.id = m.id_lote
+     JOIN produto p ON p.id = l.id_produto
+     ${where}`,
+    params
+  );
   return res.json({ data: rows, total, page: Number(page), limit: Number(limit) });
 }
 

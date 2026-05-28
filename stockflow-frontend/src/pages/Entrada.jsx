@@ -139,7 +139,7 @@ export default function Entrada() {
                     </td>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
                     <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-success-600)' }}>+{m.quantidade}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-success-600)' }}>+{Number(m.quantidade)}</td>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)' }}>{fmtLoc(m)}</td>
                     <td style={{ fontSize: 12 }}>{m.usuario_nome || '—'}</td>
                   </tr>

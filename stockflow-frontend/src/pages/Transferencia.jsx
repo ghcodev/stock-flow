@@ -41,8 +41,8 @@ export default function Transferencia() {
   async function load() {
     setLoading(true)
     try {
-      const { data } = await api.get('/movimentacoes', { params: { limit: 50 } })
-      const items = (data.data || data || []).filter(m => m.tipo === 'transferencia')
+      const { data } = await api.get('/movimentacoes', { params: { tipo: 'transferencia', search, limit: 50 } })
+      const items = data.data || data || []
       setMovs(items)
       setTotal(data.total || items.length)
     } catch {
@@ -156,7 +156,7 @@ export default function Transferencia() {
                       </td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
                       <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{m.quantidade}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{Number(m.quantidade)}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-text-secondary)' }}>{ori}</td>
                       <td><ArrowRight size={14} style={{ color: 'var(--color-text-tertiary)' }} /></td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)', fontWeight: 500 }}>{dst}</td>

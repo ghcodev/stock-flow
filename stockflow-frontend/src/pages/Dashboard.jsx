@@ -41,7 +41,12 @@ export default function Dashboard() {
         api.get('/movimentacoes?limit=5'),
       ])
       setKpis(kpisRes.data)
-      setMovData(movRes.data || [])
+      const rawMov = movRes.data || []
+      setMovData(rawMov.map(d => ({
+        ...d,
+        dia: new Date(d.dia || d.data || d.date)
+          .toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      })))
       setAlertas(alertasRes.data?.alertas || [])
       setRecentes(recentesRes.data?.data || [])
     } catch {
@@ -110,7 +115,7 @@ export default function Dashboard() {
                 <BarChart data={movData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-default)" vertical={false} />
                   <XAxis dataKey="dia" tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false}
-                    tickFormatter={v => v ? v.slice(5) : ''} interval="preserveStartEnd" />
+                    interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--color-border-default)', boxShadow: 'var(--shadow-md)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -181,7 +186,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: isEntrada ? 'var(--color-success-600)' : isSaida ? 'var(--color-danger-600)' : 'var(--color-text-secondary)' }}>
-                    {isEntrada ? '+' : isSaida ? '-' : ''}{r.quantidade}
+                    {isEntrada ? '+' : isSaida ? '-' : ''}{Number(r.quantidade)}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{r.usuario_nome || '—'}</div>
                 </div>
