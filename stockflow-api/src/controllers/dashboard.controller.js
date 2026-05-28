@@ -35,11 +35,15 @@ async function kpis(req, res) {
 
 async function movimentacoes(req, res) {
   const [rows] = await pool.execute(
-    `SELECT DATE(data_movimentacao) AS dia, tipo, COUNT(*) AS total, SUM(quantidade) AS volume
+    `SELECT
+       DATE(data_movimentacao) AS dia,
+       SUM(CASE WHEN tipo = 'entrada'       THEN quantidade ELSE 0 END) AS entradas,
+       SUM(CASE WHEN tipo = 'saida'         THEN quantidade ELSE 0 END) AS saidas,
+       SUM(CASE WHEN tipo = 'transferencia' THEN quantidade ELSE 0 END) AS transferencias
      FROM movimentacao
      WHERE data_movimentacao >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(data_movimentacao), tipo
-     ORDER BY dia DESC, tipo`
+     GROUP BY DATE(data_movimentacao)
+     ORDER BY dia ASC`
   );
   return res.json(rows);
 }
