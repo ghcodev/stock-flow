@@ -1,6 +1,5 @@
 const { validationResult } = require('express-validator');
 const pool = require('../config/database');
-const logAudit = require('../middleware/audit');
 
 function err(res, status, msg, codigo = null) {
   return res.status(status).json({ error: msg, ...(codigo && { codigo }), timestamp: new Date().toISOString() });
@@ -55,6 +54,7 @@ async function entrada(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, id_localizacao_destino, observacao, status)
        VALUES ('entrada',?,?,?,?,?,'concluida')`,
@@ -62,8 +62,6 @@ async function entrada(req, res) {
     );
     await conn.execute('UPDATE lote SET quantidade = quantidade + ? WHERE id = ?', [quantidade, id_lote]);
     await conn.commit();
-
-    await logAudit({ tabela: 'movimentacao', operacao: 'INSERT', valorNovo: `tipo:entrada,qtd:${quantidade},lote:${id_lote}`, idUsuario: req.user.id, ip: req.ip });
     return res.status(201).json({ id: result.insertId, mensagem: 'Entrada registrada' });
   } catch (e) {
     await conn.rollback();
@@ -89,6 +87,7 @@ async function saida(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, observacao, status)
        VALUES ('saida',?,?,?,?,'concluida')`,
@@ -96,8 +95,6 @@ async function saida(req, res) {
     );
     await conn.execute('UPDATE lote SET quantidade = quantidade - ? WHERE id = ?', [quantidade, id_lote]);
     await conn.commit();
-
-    await logAudit({ tabela: 'movimentacao', operacao: 'INSERT', valorNovo: `tipo:saida,qtd:${quantidade},lote:${id_lote}`, idUsuario: req.user.id, ip: req.ip });
     return res.status(201).json({ id: result.insertId, mensagem: 'Saída registrada' });
   } catch (e) {
     await conn.rollback();
@@ -122,6 +119,7 @@ async function transferencia(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, id_localizacao_origem, id_localizacao_destino, motivo_movimentacao, status)
        VALUES ('transferencia', ?, ?, ?, ?, ?, ?, 'concluida')`,
@@ -129,12 +127,6 @@ async function transferencia(req, res) {
     );
     await conn.execute('UPDATE lote SET id_localizacao = ? WHERE id = ?', [id_localizacao_destino, id_lote]);
     await conn.commit();
-
-    await logAudit({
-      tabela: 'movimentacao', operacao: 'INSERT',
-      valorNovo: `tipo:transferencia,lote:${id_lote},de:${lote.id_localizacao},para:${id_localizacao_destino}`,
-      idUsuario: req.user.id, ip: req.ip,
-    });
     return res.status(201).json({ id: result.insertId, mensagem: 'Transferência realizada' });
   } catch (e) {
     await conn.rollback();
@@ -160,6 +152,7 @@ async function ajuste(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'AJUSTE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, motivo_movimentacao, status)
        VALUES ('ajuste', ?, ?, ?, ?, 'concluida')`,
@@ -167,13 +160,6 @@ async function ajuste(req, res) {
     );
     await conn.execute('UPDATE lote SET quantidade = ? WHERE id = ?', [nova_quantidade, id_lote]);
     await conn.commit();
-
-    await logAudit({
-      tabela: 'lote', operacao: 'AJUSTE',
-      valorAnterior: `quantidade:${lote.quantidade}`,
-      valorNovo: `quantidade:${nova_quantidade},justificativa:${justificativa}`,
-      idUsuario: req.user.id, ip: req.ip,
-    });
     return res.status(201).json({ id: result.insertId, mensagem: 'Ajuste realizado', quantidade_anterior: lote.quantidade, nova_quantidade });
   } catch (e) {
     await conn.rollback();
