@@ -67,7 +67,7 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <div className="subtitle">
             <span className="live-dot" />
-            <span>CD-01 · São Paulo</span>
+            <span>Arte Trigo · Unidade Central</span>
           </div>
         </div>
         <div className="page-header-actions">
