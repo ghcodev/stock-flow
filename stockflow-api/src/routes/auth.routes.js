@@ -11,6 +11,8 @@ router.post('/login',
   login
 );
 
+router.get('/perfil', authMiddleware, (req, res) => res.json({ usuario: req.user }));
+
 router.post('/logout', authMiddleware, logout);
 
 router.patch('/senha',
