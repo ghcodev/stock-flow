@@ -2,6 +2,16 @@
 
 Sistema web de controle de estoque com rastreabilidade por lote, gestão de localizações físicas e auditoria completa de operações.
 
+## Repositório
+
+[![GitHub](https://img.shields.io/badge/GitHub-StockFlow-1F3864?style=for-the-badge&logo=github)](https://github.com/ghcodev/stock-flow)
+
+**Clone o projeto:**
+```bash
+git clone https://github.com/ghcodev/stock-flow.git
+cd stock-flow
+```
+
 ## Stack
 
 | Camada | Tecnologia |

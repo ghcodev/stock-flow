@@ -11,7 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 // Documentação
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'StockFlow API Docs',
+  customCss: '.swagger-ui .topbar { background-color: #1F3864 }',
+  swaggerOptions: { persistAuthorization: true },
+}));
 
 // Rotas
 app.use('/api/v1/auth',           require('./routes/auth.routes'));
