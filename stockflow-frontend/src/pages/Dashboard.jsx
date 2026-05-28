@@ -43,9 +43,10 @@ export default function Dashboard() {
       setKpis(kpisRes.data)
       const rawMov = movRes.data || []
       setMovData(rawMov.map(d => ({
-        ...d,
-        dia: new Date(d.dia || d.data || d.date)
-          .toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        dia: new Date(d.dia).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        entradas: Number(d.entradas),
+        saidas: Number(d.saidas),
+        transferencias: Number(d.transferencias),
       })))
       setAlertas(alertasRes.data?.alertas || [])
       setRecentes(recentesRes.data?.data || [])
@@ -119,7 +120,9 @@ export default function Dashboard() {
                   <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--color-border-default)', boxShadow: 'var(--shadow-md)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="total" name="Total" fill="#2E75B6" radius={[3,3,0,0]} />
+                  <Bar dataKey="entradas"       name="Entradas"       fill="#16a34a" radius={[3,3,0,0]} />
+                  <Bar dataKey="saidas"         name="Saídas"         fill="#dc2626" radius={[3,3,0,0]} />
+                  <Bar dataKey="transferencias" name="Transferências" fill="#2E75B6" radius={[3,3,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
