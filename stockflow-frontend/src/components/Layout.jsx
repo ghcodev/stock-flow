@@ -88,7 +88,7 @@ export default function Layout({ children, breadcrumb }) {
             <div className="sidebar-logo-mark" style={{ flexShrink: 0 }}>
               <Box size={14} color="#fff" />
             </div>
-            {sidebarOpen && <div className="sidebar-logo-text">Arte Trigo · Estoque</div>}
+            {sidebarOpen && <div className="sidebar-logo-text">StockFlow</div>}
             {sidebarOpen && <div className="sidebar-env-badge">PROD</div>}
           </div>
 
@@ -147,7 +147,7 @@ export default function Layout({ children, breadcrumb }) {
             </button>
 
             <nav className="breadcrumb">
-              <span className="breadcrumb-root">Arte Trigo</span>
+              <span className="breadcrumb-root">StockFlow</span>
               {breadcrumb?.map((seg, i) => (
                 <span key={i} style={{ display: 'contents' }}>
                   <span className="breadcrumb-sep">/</span>
@@ -207,7 +207,7 @@ export default function Layout({ children, breadcrumb }) {
         >
           <div className="modal" style={{ maxWidth: 440 }}>
             <div className="modal-header">
-              <h3 className="modal-title">Ajuda — Arte Trigo · Estoque</h3>
+              <h3 className="modal-title">Ajuda — StockFlow</h3>
               <button className="icon-btn" onClick={() => setShowHelp(false)} aria-label="Fechar">
                 <X size={16} />
               </button>
@@ -216,9 +216,9 @@ export default function Layout({ children, breadcrumb }) {
             <div className="modal-body" style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
-                  { emoji: '📦', label: 'Versão',        value: 'Arte Trigo · Estoque v1.3' },
+                  { emoji: '📦', label: 'Versão',        value: 'StockFlow v1.3' },
                   { emoji: '🔗', label: 'API',           value: 'localhost:3000/api/v1' },
-                  { emoji: '👤', label: 'Suporte',       value: 'suporte@artetrigo.com.br' },
+                  { emoji: '👤', label: 'Suporte',       value: 'suporte@stockflow.com' },
                   { emoji: '📄', label: 'Documentação',  value: 'Disponível com o administrador' },
                 ].map(row => (
                   <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--color-bg-subtle)', borderRadius: 8, border: '1px solid var(--color-border-default)' }}>

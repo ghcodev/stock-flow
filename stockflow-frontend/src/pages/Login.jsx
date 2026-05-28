@@ -9,7 +9,7 @@ export default function Login() {
 
   const isDev = import.meta.env.DEV
 
-  const [email, setEmail] = useState(isDev ? 'carlos.matos@artetrigo.com.br' : '')
+  const [email, setEmail] = useState(isDev ? 'admin@stockflow.com' : '')
   const [password, setPassword] = useState(isDev ? 'Admin@1234' : '')
   const [showPwd, setShowPwd] = useState(false)
   const [keepLogged, setKeepLogged] = useState(true)
@@ -59,7 +59,7 @@ export default function Login() {
           <div style={{ width: 38, height: 38, borderRadius: 9, background: 'linear-gradient(135deg,#2E75B6 0%,#254d8c 100%)', display: 'grid', placeItems: 'center', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18), 0 2px 6px rgba(0,0,0,0.30)' }}>
             <Box size={20} color="#fff" />
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.015em' }}>Arte Trigo</div>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.015em' }}>StockFlow</div>
           <div style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#7dd3fc', background: 'rgba(46,117,182,0.18)', border: '1px solid rgba(46,117,182,0.40)', padding: '4px 8px', borderRadius: 4 }}>
             Prod · v1.3.0
           </div>
@@ -71,10 +71,10 @@ export default function Login() {
             Rastreabilidade de produção · Unidade Central
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-0.035em', lineHeight: 1.12, color: '#fff', marginBottom: 14 }}>
-            Rastreabilidade e controle da produção com <em style={{ fontStyle: 'normal', color: '#7dd3fc' }}>precisão e agilidade.</em>
+            Sistema de Gerenciamento de <em style={{ fontStyle: 'normal', color: '#7dd3fc' }}>Estoque</em>
           </h1>
           <p style={{ fontSize: 14, lineHeight: 1.65, color: '#94a3b8', maxWidth: 440 }}>
-            Arte Trigo centraliza lotes, validades e movimentações da padaria em um único sistema. Controle de câmaras frias, rastreio por RFID e alertas automáticos de vencimento.
+            Controle de estoque com precisão e rastreabilidade total.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', marginTop: 36, borderTop: '1px solid rgba(255,255,255,0.10)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
@@ -107,8 +107,8 @@ export default function Login() {
           <span className="live-dot" style={{ background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.22)', width: 6, height: 6, borderRadius: '50%', display: 'inline-block' }} />
           <span>API <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>v2.1.4</code></span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span>Tenant <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>arte-trigo</code></span>
-          <span style={{ marginLeft: 'auto' }}>© 2026 Arte Trigo Indústria e Comércio</span>
+          <span>Tenant <code style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 3, fontSize: 10.5 }}>stockflow</code></span>
+          <span style={{ marginLeft: 'auto' }}>© 2026 StockFlow</span>
         </footer>
       </aside>
 
@@ -205,7 +205,7 @@ export default function Login() {
 
           <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: 'var(--color-text-tertiary)', paddingTop: 18, borderTop: '1px solid var(--color-border-default)' }}>
             <Info size={13} style={{ flexShrink: 0 }} />
-            <span>Problemas para entrar? Contate <a href="mailto:suporte@artetrigo.com.br" style={{ color: 'var(--color-text-secondary)', fontWeight: 500, textDecoration: 'underline' }}>suporte@artetrigo.com.br</a> ou ligue para o ramal <strong style={{ color: 'var(--color-text-secondary)' }}>8410</strong>.</span>
+            <span>Problemas para entrar? Contate <a href="mailto:suporte@stockflow.com" style={{ color: 'var(--color-text-secondary)', fontWeight: 500, textDecoration: 'underline' }}>suporte@stockflow.com</a> ou ligue para o ramal <strong style={{ color: 'var(--color-text-secondary)' }}>8410</strong>.</span>
           </div>
         </div>
       </section>

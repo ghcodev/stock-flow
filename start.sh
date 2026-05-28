@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Arte Trigo — Iniciando o sistema..."
+echo "  StockFlow — Iniciando o sistema..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Verificar MySQL
@@ -75,12 +75,12 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Arte Trigo esta rodando!"
+echo "  StockFlow esta rodando!"
 echo ""
 echo "  Frontend: http://localhost:5173"
 echo "  Backend:  http://localhost:3000/api/v1"
 echo ""
-echo "  Login: carlos.matos@artetrigo.com.br"
+echo "  Login: admin@stockflow.com"
 echo "  Senha: Admin@1234"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

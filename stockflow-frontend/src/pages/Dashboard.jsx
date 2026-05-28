@@ -72,7 +72,7 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <div className="subtitle">
             <span className="live-dot" />
-            <span>Arte Trigo · Unidade Central</span>
+            <span>StockFlow · Unidade Central</span>
           </div>
         </div>
         <div className="page-header-actions">
