@@ -65,6 +65,15 @@ Acesse: **http://localhost:5173**
 
 ## Scripts
 
+### Raiz do projeto
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Inicia backend e frontend simultaneamente |
+| `npm start` | Alias para `npm run dev` |
+| `npm run backend` | Inicia apenas a API |
+| `npm run frontend` | Inicia apenas o frontend |
+
 ### API (`stockflow-api/`)
 
 | Comando | Descrição |

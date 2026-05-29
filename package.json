@@ -3,7 +3,7 @@
   "version": "1.3.0",
   "description": "Sistema de Gerenciamento de Estoque",
   "scripts": {
-    "start": "./start.sh",
+    "start": "npm run dev",
     "backend": "cd stockflow-api && npm run dev",
     "frontend": "cd stockflow-frontend && npm run dev",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\""
