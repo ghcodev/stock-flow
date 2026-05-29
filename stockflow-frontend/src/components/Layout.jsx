@@ -1,12 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.js'
+import { PainelAtalhos } from './PainelAtalhos.jsx'
 import {
   LayoutDashboard, Package, Layers, Map, ArrowDownLeft, ArrowUpRight,
   Shuffle, Clipboard, History, ScanLine, Clock, Activity, Users, Shield,
-  User, LogOut, Menu, Search, Bell, HelpCircle, Sun, Moon, Box, Sliders, X,
+  User, LogOut, Menu, Search, Bell, HelpCircle, Sun, Moon, Box, Sliders,
   Link2,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 
 const NAV = [
   {
@@ -53,18 +55,31 @@ export default function Layout({ children, breadcrumb }) {
   const navigate = useNavigate()
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [showHelp, setShowHelp] = useState(false)
+  const [ajudaAberta, setAjudaAberta] = useState(false)
+  const buscaRef = useRef(null)
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : ''
   }, [dark])
 
-  useEffect(() => {
-    if (!showHelp) return
-    function onKey(e) { if (e.key === 'Escape') setShowHelp(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [showHelp])
+  const abrirBuscaGlobal = useCallback(() => {
+    buscaRef.current?.focus()
+    buscaRef.current?.select()
+  }, [])
+
+  const alternarTema = useCallback(() => {
+    setDark(d => !d)
+  }, [])
+
+  const alternarAjuda = useCallback(() => {
+    setAjudaAberta(v => !v)
+  }, [])
+
+  useKeyboardShortcuts({
+    onAbrirBusca: abrirBuscaGlobal,
+    onAbrirAjuda: alternarAjuda,
+    onToggleTema: alternarTema,
+  })
 
   function handleLogout() {
     logout()
@@ -163,8 +178,14 @@ export default function Layout({ children, breadcrumb }) {
 
             <div className="topbar-search">
               <Search size={14} />
-              <input type="text" placeholder="Buscar lote, produto, RFID…" aria-label="Buscar" />
-              <span className="topbar-search-kbd">⌘K</span>
+              <input
+                ref={buscaRef}
+                id="busca-global"
+                type="text"
+                placeholder="Buscar lote, produto, RFID... (Ctrl+K)"
+                aria-label="Buscar"
+              />
+              <span className="topbar-search-kbd">Ctrl K</span>
             </div>
 
             <div className="topbar-spacer" />
@@ -179,7 +200,7 @@ export default function Layout({ children, breadcrumb }) {
               <button
                 className="icon-btn"
                 aria-label="Ajuda"
-                onClick={() => setShowHelp(true)}
+                onClick={() => setAjudaAberta(true)}
               >
                 <HelpCircle size={16} />
               </button>
@@ -201,51 +222,21 @@ export default function Layout({ children, breadcrumb }) {
         </main>
       </div>
 
-      {/* ── HELP MODAL ── */}
-      {showHelp && (
-        <div
-          className="modal-backdrop"
-          onClick={e => e.target === e.currentTarget && setShowHelp(false)}
-        >
-          <div className="modal" style={{ maxWidth: 440 }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Ajuda — StockFlow</h3>
-              <button className="icon-btn" onClick={() => setShowHelp(false)} aria-label="Fechar">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { emoji: '📦', label: 'Versão',        value: 'StockFlow v1.3' },
-                  { emoji: '🔗', label: 'API',           value: 'localhost:3000/api/v1' },
-                  { emoji: '👤', label: 'Suporte',       value: 'suporte@stockflow.com' },
-                  { emoji: '📄', label: 'Documentação',  value: 'Disponível com o administrador' },
-                ].map(row => (
-                  <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--color-bg-subtle)', borderRadius: 8, border: '1px solid var(--color-border-default)' }}>
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>{row.emoji}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-tertiary)', marginBottom: 2 }}>{row.label}</div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: row.label === 'API' ? '"IBM Plex Mono",monospace' : undefined, wordBreak: 'break-all' }}>{row.value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--color-info-50)', border: '1px solid var(--color-info-100)', borderRadius: 8, fontSize: 12, color: 'var(--color-info-700)', lineHeight: 1.5 }}>
-                Pressione <kbd style={{ fontFamily: '"IBM Plex Mono",monospace', background: 'var(--color-bg-default)', border: '1px solid var(--color-border-strong)', borderRadius: 4, padding: '1px 5px', fontSize: 11 }}>Esc</kbd> para fechar este modal.
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => setShowHelp(false)}>
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PainelAtalhos aberto={ajudaAberta} onFechar={() => setAjudaAberta(false)} />
+      <div style={{
+        position: 'fixed',
+        bottom: 8,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: 11,
+        color: 'var(--color-text-secondary)',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        opacity: 0.6,
+        zIndex: 20,
+      }}>
+        Pressione <kbd style={{ fontFamily: 'var(--font-mono, var(--font-data))', fontSize: 10, background: 'var(--color-background-secondary, var(--color-bg-subtle))', border: '0.5px solid var(--color-border-tertiary, var(--color-border-default))', borderRadius: 3, padding: '1px 5px' }}>Ctrl+/</kbd> para ver atalhos
+      </div>
     </>
   )
 }
