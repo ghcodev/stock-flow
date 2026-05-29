@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const pool = require('../config/database');
 
 const blacklist = new Set();
 
@@ -6,7 +7,7 @@ function addToBlacklist(token) {
   blacklist.add(token);
 }
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token não fornecido', timestamp: new Date().toISOString() });
@@ -20,7 +21,21 @@ function authMiddleware(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
+    const [rows] = await pool.execute(
+      'SELECT id, nome, email, perfil, permissoes FROM usuario WHERE id = ? AND ativo = 1',
+      [payload.id]
+    );
+    if (!rows.length) {
+      return res.status(401).json({ error: 'Usuário inativo ou não encontrado', timestamp: new Date().toISOString() });
+    }
+    req.user = {
+      ...payload,
+      id: rows[0].id,
+      nome: rows[0].nome,
+      email: rows[0].email,
+      perfil: rows[0].perfil,
+      permissoes: rows[0].permissoes,
+    };
     req.token = token;
     next();
   } catch {

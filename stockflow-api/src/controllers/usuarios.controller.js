@@ -4,13 +4,13 @@ const pool = require('../config/database');
 const logAudit = require('../middleware/audit');
 
 async function listar(req, res) {
-  const [rows] = await pool.execute('SELECT id, nome, email, perfil, ativo, criado_em FROM usuario ORDER BY nome');
+  const [rows] = await pool.execute('SELECT id, nome, email, perfil, ativo, permissoes, criado_em FROM usuario ORDER BY nome');
   return res.json(rows);
 }
 
 async function buscarPorId(req, res) {
   const [rows] = await pool.execute(
-    'SELECT id, nome, email, perfil, ativo, criado_em FROM usuario WHERE id = ?',
+    'SELECT id, nome, email, perfil, ativo, permissoes, criado_em FROM usuario WHERE id = ?',
     [req.params.id]
   );
   if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -19,7 +19,7 @@ async function buscarPorId(req, res) {
 
 async function perfil(req, res) {
   const [rows] = await pool.execute(
-    'SELECT id, nome, email, perfil, ativo, criado_em FROM usuario WHERE id = ?',
+    'SELECT id, nome, email, perfil, ativo, permissoes, criado_em FROM usuario WHERE id = ?',
     [req.user.id]
   );
   if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -53,11 +53,12 @@ async function atualizar(req, res) {
   if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' });
 
   const ant = rows[0];
-  const { nome, email, perfil: p } = req.body;
+  const { nome, email, perfil: p, permissoes } = req.body;
+  const permissoesValue = permissoes === undefined ? ant.permissoes : JSON.stringify(permissoes || null);
 
   await pool.execute(
-    'UPDATE usuario SET nome=?, email=?, perfil=? WHERE id=?',
-    [nome ?? ant.nome, email ?? ant.email, p ?? ant.perfil, req.params.id]
+    'UPDATE usuario SET nome=?, email=?, perfil=?, permissoes=? WHERE id=?',
+    [nome ?? ant.nome, email ?? ant.email, p ?? ant.perfil, permissoesValue, req.params.id]
   );
 
   await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorAnterior: `email:${ant.email}`, valorNovo: `email:${email ?? ant.email}`, idUsuario: req.user.id, ip: req.ip });

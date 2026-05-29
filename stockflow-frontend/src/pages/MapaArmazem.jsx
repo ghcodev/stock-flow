@@ -67,7 +67,7 @@ export default function MapaArmazem() {
           <button
             key={k}
             onClick={() => setFilterStatus(f => f === k ? 'todos' : k)}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: filterStatus === k ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, background: filterStatus === k ? 'var(--color-bg-subtle)' : 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: filterStatus === k ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, background: filterStatus === k ? 'var(--color-bg-subtle)' : 'none' }}
           >
             <span style={{ width: 12, height: 12, borderRadius: 3, background: v.bg, flexShrink: 0 }} />
             {v.label} ({counts[k] || 0})

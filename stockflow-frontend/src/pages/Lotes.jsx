@@ -29,7 +29,7 @@ function SkeletonRow() {
 function fmtLoc(l) {
   if (!l) return '—'
   if (l.corredor && l.nivel && l.posicao) return `${l.corredor}-N${l.nivel}-P${l.posicao}`
-  return l.codigo || l.localizacao || '—'
+  return l.localizacao_nome || l.localizacao || '—'
 }
 
 function diasLabel(dias) {
@@ -65,7 +65,7 @@ export default function Lotes() {
   }
 
   const vencendo = lotes.filter(l => l.dias_para_vencer != null && l.dias_para_vencer >= 0 && l.dias_para_vencer <= 30).length
-  const bloqueados = lotes.filter(l => l.status?.toLowerCase() === 'bloqueado').length
+  const bloqueados = lotes.filter(l => (l.status_lote || l.status)?.toLowerCase() === 'bloqueado').length
 
   return (
     <Layout breadcrumb={['Operação', 'Lotes']}>
@@ -128,9 +128,12 @@ export default function Lotes() {
                 : lotes.map(l => {
                   const dias = l.dias_para_vencer
                   const loc = fmtLoc(l)
+                  const codigo = l.numero_lote || l.codigo || l.id
+                  const rfid = l.rfid || l.codigo_identificacao || l.identificacao?.codigo || l.identificacao_codigo
+                  const status = l.status_lote || l.status
                   return (
                     <tr key={l.id}>
-                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, fontWeight: 600 }}>{l.codigo || l.id}</td>
+                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, fontWeight: 600 }}>{codigo}</td>
                       <td>
                         <div style={{ fontWeight: 600 }}>{l.produto_nome || '—'}</div>
                         {l.produto_codigo && <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{l.produto_codigo}</div>}
@@ -150,14 +153,14 @@ export default function Lotes() {
                       </td>
                       <td style={{ textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{l.quantidade ?? '—'}</td>
                       <td>
-                        {l.rfid ? (
+                        {rfid ? (
                           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, background: 'var(--color-bg-subtle)', padding: '2px 5px', borderRadius: 3, border: '1px solid var(--color-border-default)' }}>
-                            {l.rfid}
+                            {rfid}
                           </span>
                         ) : <span style={{ color: 'var(--color-text-tertiary)', fontSize: 12 }}>—</span>}
                       </td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, color: 'var(--color-brand-700)', fontWeight: 500 }}>{loc}</td>
-                      <td style={{ textAlign: 'center' }}><StatusBadge status={l.status} /></td>
+                      <td style={{ textAlign: 'center' }}><StatusBadge status={status} /></td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                           <button className="icon-btn" aria-label="Ver"><Eye size={14} /></button>

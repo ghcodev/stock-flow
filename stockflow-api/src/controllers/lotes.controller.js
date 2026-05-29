@@ -12,10 +12,18 @@ async function listar(req, res) {
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
   const [rows] = await pool.execute(
-    `SELECT l.*, p.nome AS produto_nome, loc.corredor, loc.nivel, loc.posicao
+    `SELECT l.*,
+            l.numero_lote AS codigo,
+            l.status_lote AS status,
+            DATEDIFF(l.data_validade, NOW()) AS dias_para_vencer,
+            p.nome AS produto_nome,
+            loc.corredor, loc.nivel, loc.posicao,
+            i.codigo AS rfid,
+            i.codigo AS codigo_identificacao
      FROM lote l
      JOIN produto p ON p.id = l.id_produto
      JOIN localizacao loc ON loc.id = l.id_localizacao
+     LEFT JOIN identificacao i ON i.id_lote = l.id
      ${where} ORDER BY l.criado_em DESC LIMIT ${Number(limit)} OFFSET ${offset}`,
     params
   );
@@ -25,8 +33,14 @@ async function listar(req, res) {
 
 async function buscarPorId(req, res) {
   const [rows] = await pool.execute(
-    `SELECT l.*, p.nome AS produto_nome, loc.corredor, loc.nivel, loc.posicao,
-            i.tipo AS identificacao_tipo, i.codigo AS identificacao_codigo
+    `SELECT l.*,
+            l.numero_lote AS codigo,
+            l.status_lote AS status,
+            p.nome AS produto_nome,
+            loc.corredor, loc.nivel, loc.posicao,
+            i.tipo AS identificacao_tipo,
+            i.codigo AS identificacao_codigo,
+            i.codigo AS rfid
      FROM lote l
      JOIN produto p ON p.id = l.id_produto
      JOIN localizacao loc ON loc.id = l.id_localizacao
@@ -56,8 +70,15 @@ async function timeline(req, res) {
 
 async function vencendo(req, res) {
   const [rows] = await pool.execute(
-    `SELECT l.*, p.nome AS produto_nome, DATEDIFF(l.data_validade, NOW()) AS dias_para_vencer
-     FROM lote l JOIN produto p ON p.id = l.id_produto
+    `SELECT l.*,
+            l.numero_lote AS codigo,
+            l.status_lote AS status,
+            p.nome AS produto_nome,
+            loc.corredor, loc.nivel, loc.posicao,
+            DATEDIFF(l.data_validade, NOW()) AS dias_para_vencer
+     FROM lote l
+     JOIN produto p ON p.id = l.id_produto
+     JOIN localizacao loc ON loc.id = l.id_localizacao
      WHERE l.status_lote = 'ativo' AND l.data_validade IS NOT NULL
        AND l.data_validade <= DATE_ADD(NOW(), INTERVAL 30 DAY)
      ORDER BY l.data_validade ASC`

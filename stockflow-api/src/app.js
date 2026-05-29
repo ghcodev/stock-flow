@@ -28,6 +28,8 @@ app.use('/api/v1/identificacoes', require('./routes/identificacoes.routes'));
 app.use('/api/v1/auditoria',      require('./routes/auditoria.routes'));
 app.use('/api/v1/dashboard',      require('./routes/dashboard.routes'));
 app.use('/api/v1/inventarios',    require('./routes/inventarios.routes'));
+app.use('/api/v1/inventario',     require('./routes/inventario.routes'));
+app.use('/api/v1/sap',            require('./routes/sap.routes'));
 
 // Health check
 app.get('/api/v1/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
