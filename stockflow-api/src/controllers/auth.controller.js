@@ -22,7 +22,7 @@ async function login(req, res) {
     return res.status(401).json({ error: 'Credenciais inválidas', timestamp: new Date().toISOString() });
   }
 
-  const payload = { id: usuario.id, email: usuario.email, perfil: usuario.perfil, nome: usuario.nome };
+  const payload = { id: usuario.id, email: usuario.email, perfil: usuario.perfil, nome: usuario.nome, permissoes: usuario.permissoes || null };
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
   await logAudit({
@@ -35,7 +35,7 @@ async function login(req, res) {
 
   return res.json({
     token,
-    usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, perfil: usuario.perfil },
+    usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, perfil: usuario.perfil, permissoes: usuario.permissoes || null },
   });
 }
 

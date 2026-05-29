@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const ctrl = require('../controllers/usuarios.controller');
 const { authMiddleware } = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
+const { checkPermission } = require('../middleware/permission');
 
 const router = Router();
 router.use(authMiddleware);
@@ -12,14 +13,15 @@ router.get('/perfil', ctrl.perfil);
 
 router.use(adminMiddleware);
 
-router.get('/', ctrl.listar);
-router.get('/:id', ctrl.buscarPorId);
+router.get('/', checkPermission('usuarios', 'ver'), ctrl.listar);
+router.get('/:id', checkPermission('usuarios', 'ver'), ctrl.buscarPorId);
 
 router.post('/',
   body('nome').notEmpty().withMessage('Nome obrigatório'),
   body('email').isEmail().withMessage('E-mail inválido'),
   body('senha').isLength({ min: 6 }).withMessage('Senha mínima de 6 caracteres'),
   body('perfil').optional().isIn(['administrador','operador']).withMessage('Perfil inválido'),
+  checkPermission('usuarios', 'criar'),
   ctrl.criar
 );
 

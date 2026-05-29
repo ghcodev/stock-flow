@@ -57,11 +57,13 @@ export default function Historico() {
 
   function locLabel(m) {
     if (m.tipo === 'transferencia') {
-      const ori = m.origem_corredor ? `${m.origem_corredor}` : '?'
-      const dst = m.destino_corredor ? `${m.destino_corredor}` : '?'
+      const ori = m.localizacao_origem_nome || (m.origem_corredor ? `${m.origem_corredor}-N${m.origem_nivel}-P${m.origem_posicao}` : '?')
+      const dst = m.localizacao_destino_nome || (m.destino_corredor ? `${m.destino_corredor}-N${m.destino_nivel}-P${m.destino_posicao}` : '?')
       return `${ori}→${dst}`
     }
-    if (m.corredor) return `${m.corredor}-N${m.nivel}-P${m.posicao}`
+    if (m.tipo === 'entrada' && m.localizacao_destino_nome) return m.localizacao_destino_nome
+    if (m.tipo === 'saida' && m.localizacao_origem_nome) return m.localizacao_origem_nome
+    if (m.localizacao_nome) return m.localizacao_nome
     return m.localizacao || '—'
   }
 
@@ -140,9 +142,9 @@ export default function Historico() {
                       </td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)', fontWeight: 500 }}>{m.id}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>
-                        {m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—'}
+                        {m.data_movimentacao || m.criado_em ? new Date(m.data_movimentacao || m.criado_em).toLocaleString('pt-BR') : '—'}
                       </td>
-                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
+                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.numero_lote || m.codigo_lote || m.id_lote}</td>
                       <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
                       <td style={{ textAlign: 'right', fontWeight: 700, color: isEntrada ? 'var(--color-success-600)' : isSaida ? 'var(--color-danger-600)' : 'var(--color-text-primary)' }}>
                         {qtyLabel(m)}

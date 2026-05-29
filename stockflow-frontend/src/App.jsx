@@ -19,6 +19,7 @@ import Auditoria from './pages/Auditoria.jsx'
 import Usuarios from './pages/Usuarios.jsx'
 import Perfil from './pages/Perfil.jsx'
 import AjusteEstoque from './pages/AjusteEstoque.jsx'
+import IntegracaoSAP from './pages/IntegracaoSAP.jsx'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -71,6 +72,7 @@ function AppRoutes() {
       <Route path="/auditoria"    element={<AdminRoute><Auditoria /></AdminRoute>} />
       <Route path="/usuarios"     element={<AdminRoute><Usuarios /></AdminRoute>} />
       <Route path="/ajuste"       element={<AdminRoute><AjusteEstoque /></AdminRoute>} />
+      <Route path="/sap"          element={<AdminRoute><IntegracaoSAP /></AdminRoute>} />
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

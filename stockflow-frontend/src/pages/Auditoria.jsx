@@ -52,8 +52,9 @@ export default function Auditoria() {
   const filtered = search
     ? logs.filter(l =>
         (l.usuario_nome || '').toLowerCase().includes(search.toLowerCase()) ||
-        (l.acao || '').toLowerCase().includes(search.toLowerCase()) ||
-        (l.entidade || '').toLowerCase().includes(search.toLowerCase())
+        (l.acao || l.operacao || '').toLowerCase().includes(search.toLowerCase()) ||
+        (l.entidade || l.tabela_afetada || '').toLowerCase().includes(search.toLowerCase()) ||
+        (l.detalhe || l.observacao || l.valor_novo || '').toLowerCase().includes(search.toLowerCase())
       )
     : logs
 
@@ -110,13 +111,14 @@ export default function Auditoria() {
                   </td></tr>
                 )
                 : filtered.map((l, i) => {
-                  const acao = (l.acao || '').toUpperCase()
+                  const acao = (l.acao || l.operacao || '').toUpperCase()
                   const cfg = ACAO_CFG[acao] || { icon: Shield, color: 'var(--color-text-secondary)', bg: 'var(--color-bg-muted)' }
+                  const detalhe = l.detalhe || l.observacao || l.valor_novo || l.valor_anterior
                   return (
                     <tr key={l.id || i}>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 10.5, color: 'var(--color-brand-700)', fontWeight: 500 }}>{l.id}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>
-                        {l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR') : '—'}
+                        {l.data_hora || l.criado_em ? new Date(l.data_hora || l.criado_em).toLocaleString('pt-BR') : '—'}
                       </td>
                       <td style={{ fontSize: 12, fontWeight: 500 }}>{l.usuario_nome || l.usuario || '—'}</td>
                       <td>
@@ -124,9 +126,9 @@ export default function Auditoria() {
                           <cfg.icon size={10} />{acao}
                         </span>
                       </td>
-                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{l.entidade || l.recurso || '—'}</td>
-                      <td style={{ fontSize: 12, color: 'var(--color-text-secondary)', maxWidth: 220 }}>{l.detalhe || l.descricao || '—'}</td>
-                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-text-tertiary)' }}>{l.ip || '—'}</td>
+                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{l.entidade || l.tabela_afetada || l.recurso || '—'}</td>
+                      <td style={{ fontSize: 12, color: 'var(--color-text-secondary)', maxWidth: 220 }}>{detalhe || '—'}</td>
+                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-text-tertiary)' }}>{l.ip || l.ip_usuario || '—'}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-text-tertiary)' }}>
                         {l.hash ? `${l.hash.slice(0, 4)}…${l.hash.slice(-4)}` : '—'}
                       </td>

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Package, Layers, Map, ArrowDownLeft, ArrowUpRight,
   Shuffle, Clipboard, History, ScanLine, Clock, Activity, Users, Shield,
   User, LogOut, Menu, Search, Bell, HelpCircle, Sun, Moon, Box, Sliders, X,
+  Link2,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -41,6 +42,7 @@ const NAV = [
       { label: 'Usuários',       to: '/usuarios',        icon: Users },
       { label: 'Auditoria',      to: '/auditoria',       icon: Shield,  badge: 'A', badgeKind: 'admin' },
       { label: 'Ajuste Estoque', to: '/ajuste',          icon: Sliders },
+      { label: 'Integração SAP', to: '/sap',             icon: Link2, adminOnly: true },
       { label: 'Meu Perfil',     to: '/perfil',          icon: User },
     ],
   },
@@ -98,7 +100,7 @@ export default function Layout({ children, breadcrumb }) {
                 {sidebarOpen && (
                   <div className="sidebar-section-label">{group.section}</div>
                 )}
-                {group.items.map(item => (
+                {group.items.filter(item => !item.adminOnly || user?.isAdmin).map(item => (
                   <NavLink
                     key={item.to}
                     to={item.to}

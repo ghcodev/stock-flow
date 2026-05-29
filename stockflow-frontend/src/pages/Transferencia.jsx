@@ -92,8 +92,8 @@ export default function Transferencia() {
   }
 
   function fmtLoc(m) {
-    const ori = m.origem_corredor ? `${m.origem_corredor}-N${m.origem_nivel}-P${m.origem_posicao}` : (m.localizacao_origem || '—')
-    const dst = m.destino_corredor ? `${m.destino_corredor}-N${m.destino_nivel}-P${m.destino_posicao}` : (m.localizacao_destino || '—')
+    const ori = m.localizacao_origem_nome || (m.origem_corredor ? `${m.origem_corredor}-N${m.origem_nivel}-P${m.origem_posicao}` : (m.localizacao_origem || '—'))
+    const dst = m.localizacao_destino_nome || (m.destino_corredor ? `${m.destino_corredor}-N${m.destino_nivel}-P${m.destino_posicao}` : (m.localizacao_destino || '—'))
     return { ori, dst }
   }
 
@@ -152,9 +152,9 @@ export default function Transferencia() {
                     <tr key={m.id || i}>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)', fontWeight: 600 }}>{m.id}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>
-                        {m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—'}
+                        {m.data_movimentacao || m.criado_em ? new Date(m.data_movimentacao || m.criado_em).toLocaleString('pt-BR') : '—'}
                       </td>
-                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
+                      <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.numero_lote || m.codigo_lote || m.id_lote}</td>
                       <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
                       <td style={{ textAlign: 'right', fontWeight: 700 }}>{Number(m.quantidade)}</td>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-text-secondary)' }}>{ori}</td>

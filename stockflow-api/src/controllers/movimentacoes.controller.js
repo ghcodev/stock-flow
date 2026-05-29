@@ -18,15 +18,24 @@ async function listar(req, res) {
 
   const [rows] = await pool.execute(
     `SELECT m.*,
+       m.tipo AS tipo_movimentacao,
+       m.data_movimentacao AS criado_em,
        u.nome AS usuario_nome,
+       l.numero_lote,
        l.numero_lote AS codigo_lote,
        p.nome AS produto_nome,
+       CONCAT(loc_orig.corredor, '-N', loc_orig.nivel, '-P', loc_orig.posicao) AS localizacao_origem_nome,
+       CONCAT(loc_dest.corredor, '-N', loc_dest.nivel, '-P', loc_dest.posicao) AS localizacao_destino_nome,
+       COALESCE(
+         CONCAT(loc_dest.corredor, '-N', loc_dest.nivel, '-P', loc_dest.posicao),
+         CONCAT(loc_orig.corredor, '-N', loc_orig.nivel, '-P', loc_orig.posicao)
+       ) AS localizacao_nome,
        loc_orig.corredor AS origem_corredor, loc_orig.nivel AS origem_nivel, loc_orig.posicao AS origem_posicao,
        loc_dest.corredor AS destino_corredor, loc_dest.nivel AS destino_nivel, loc_dest.posicao AS destino_posicao
      FROM movimentacao m
-     JOIN usuario u ON u.id = m.id_usuario
-     JOIN lote l ON l.id = m.id_lote
-     JOIN produto p ON p.id = l.id_produto
+     LEFT JOIN usuario u ON u.id = m.id_usuario
+     LEFT JOIN lote l ON l.id = m.id_lote
+     LEFT JOIN produto p ON p.id = l.id_produto
      LEFT JOIN localizacao loc_orig ON loc_orig.id = m.id_localizacao_origem
      LEFT JOIN localizacao loc_dest ON loc_dest.id = m.id_localizacao_destino
      ${where} ORDER BY m.data_movimentacao DESC LIMIT ${Number(limit)} OFFSET ${offset}`,

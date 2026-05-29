@@ -88,6 +88,13 @@ export default function Saida() {
     }
   }
 
+  function fmtOrigem(m) {
+    if (m.localizacao_origem_nome) return m.localizacao_origem_nome
+    if (m.localizacao_nome) return m.localizacao_nome
+    if (m.origem_corredor && m.origem_nivel && m.origem_posicao) return `${m.origem_corredor}-N${m.origem_nivel}-P${m.origem_posicao}`
+    return m.destino || m.observacao || '—'
+  }
+
   return (
     <Layout breadcrumb={['Movimentações', 'Saída']}>
       <div className="page-header">
@@ -140,12 +147,12 @@ export default function Saida() {
                   <tr key={m.id || i}>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)', fontWeight: 600 }}>{m.id}</td>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>
-                      {m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—'}
+                      {m.data_movimentacao || m.criado_em ? new Date(m.data_movimentacao || m.criado_em).toLocaleString('pt-BR') : '—'}
                     </td>
-                    <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
+                    <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.numero_lote || m.codigo_lote || m.id_lote}</td>
                     <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-danger-600)' }}>-{m.quantidade}</td>
-                    <td style={{ fontSize: 12 }}>{m.destino || '—'}</td>
+                    <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)' }}>{fmtOrigem(m)}</td>
                     <td style={{ fontSize: 12 }}>{m.usuario_nome || '—'}</td>
                   </tr>
                 ))

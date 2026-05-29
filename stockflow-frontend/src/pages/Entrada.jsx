@@ -79,7 +79,9 @@ export default function Entrada() {
   }
 
   function fmtLoc(m) {
-    if (m.corredor && m.nivel && m.posicao) return `${m.corredor}-N${m.nivel}-P${m.posicao}`
+    if (m.localizacao_destino_nome) return m.localizacao_destino_nome
+    if (m.localizacao_nome) return m.localizacao_nome
+    if (m.destino_corredor && m.destino_nivel && m.destino_posicao) return `${m.destino_corredor}-N${m.destino_nivel}-P${m.destino_posicao}`
     return m.localizacao || '—'
   }
 
@@ -135,9 +137,9 @@ export default function Entrada() {
                   <tr key={m.id || i}>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)', fontWeight: 600 }}>{m.id}</td>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>
-                      {m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—'}
+                      {m.data_movimentacao || m.criado_em ? new Date(m.data_movimentacao || m.criado_em).toLocaleString('pt-BR') : '—'}
                     </td>
-                    <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.codigo_lote || m.id_lote}</td>
+                    <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11 }}>{m.numero_lote || m.codigo_lote || m.id_lote}</td>
                     <td style={{ fontWeight: 600 }}>{m.produto_nome || '—'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-success-600)' }}>+{Number(m.quantidade)}</td>
                     <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, color: 'var(--color-brand-700)' }}>{fmtLoc(m)}</td>

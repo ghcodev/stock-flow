@@ -39,7 +39,8 @@ async function movimentacoes(req, res) {
        DATE(data_movimentacao) AS dia,
        SUM(CASE WHEN tipo = 'entrada'       THEN quantidade ELSE 0 END) AS entradas,
        SUM(CASE WHEN tipo = 'saida'         THEN quantidade ELSE 0 END) AS saidas,
-       SUM(CASE WHEN tipo = 'transferencia' THEN quantidade ELSE 0 END) AS transferencias
+       SUM(CASE WHEN tipo = 'transferencia' THEN quantidade ELSE 0 END) AS transferencias,
+       SUM(CASE WHEN tipo = 'ajuste'        THEN quantidade ELSE 0 END) AS ajustes
      FROM movimentacao
      WHERE data_movimentacao >= DATE_SUB(NOW(), INTERVAL 30 DAY)
      GROUP BY DATE(data_movimentacao)

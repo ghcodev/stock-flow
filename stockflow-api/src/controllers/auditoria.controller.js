@@ -11,7 +11,15 @@ async function listar(req, res) {
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
   const [rows] = await pool.execute(
-    `SELECT a.*, u.nome AS usuario_nome, u.email AS usuario_email
+    `SELECT a.*,
+            a.data_hora AS criado_em,
+            a.operacao AS acao,
+            a.tabela_afetada AS entidade,
+            COALESCE(a.observacao, a.valor_novo, a.valor_anterior) AS detalhe,
+            a.ip_usuario AS ip,
+            SHA2(CONCAT(a.id, '|', a.tabela_afetada, '|', a.operacao, '|', COALESCE(a.valor_novo, '')), 256) AS hash,
+            u.nome AS usuario_nome,
+            u.email AS usuario_email
      FROM auditoria_log a LEFT JOIN usuario u ON u.id = a.id_usuario
      ${where} ORDER BY a.data_hora DESC LIMIT ${Number(limit)} OFFSET ${offset}`,
     params
