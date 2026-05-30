@@ -1,336 +1,409 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Package, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle } from 'lucide-react'
+import api from '../api/axios.js'
+import { Box, Lock, Eye, EyeOff, Hash, CheckCircle, LogIn } from 'lucide-react'
 
 export default function Login() {
   const { login, user } = useAuth()
   const navigate = useNavigate()
 
-  const [email, setEmail]       = useState('carlos.matos@artetrigo.com.br')
-  const [password, setPassword] = useState('Admin@1234')
-  const [showPwd, setShowPwd]   = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [emailErr, setEmailErr] = useState('')
-  const [pwdErr, setPwdErr]     = useState('')
-  const [apiErr, setApiErr]     = useState('')
+  const [codigo, setCodigo]                   = useState('')
+  const [nomeUsuario, setNomeUsuario]         = useState('')
+  const [buscandoUsuario, setBuscandoUsuario] = useState(false)
+  const [usuarioEncontrado, setUsuarioEncontrado] = useState(false)
+  const [senha, setSenha]     = useState('')
+  const [erro, setErro]       = useState('')
+  const [loading, setLoading] = useState(false)
+  const [showSenha, setShowSenha] = useState(false)
+
+  useEffect(() => {
+    if (!codigo || codigo.length === 0) {
+      setNomeUsuario('')
+      setUsuarioEncontrado(false)
+      setErro('')
+      return
+    }
+    const timer = setTimeout(async () => {
+      setBuscandoUsuario(true)
+      try {
+        const res = await api.get(`/auth/usuario-por-codigo/${codigo}`)
+        if (res.data.encontrado) {
+          setNomeUsuario(res.data.nome)
+          setUsuarioEncontrado(true)
+          setErro('')
+          document.getElementById('campo-senha')?.focus()
+        } else {
+          setNomeUsuario('')
+          setUsuarioEncontrado(false)
+          if (codigo.length >= 1) setErro('Código não encontrado')
+        }
+      } catch {
+        setNomeUsuario('')
+        setUsuarioEncontrado(false)
+      } finally {
+        setBuscandoUsuario(false)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [codigo])
 
   if (user) return <Navigate to="/dashboard" replace />
 
-  function validateEmail(v) {
-    if (!v.trim()) return 'Email é obrigatório.'
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return 'Formato de email inválido.'
-    return ''
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
-    const eErr = validateEmail(email)
-    const pErr = password.trim().length < 6 ? 'Senha deve ter ao menos 6 caracteres.' : ''
-    setEmailErr(eErr)
-    setPwdErr(pErr)
-    if (eErr || pErr) return
-
+    if (!usuarioEncontrado) { setErro('Digite um código de operador válido'); return }
+    if (!senha) { setErro('Digite sua senha'); return }
     setLoading(true)
-    setApiErr('')
+    setErro('')
     try {
-      await login(email, password)
+      await login(codigo, senha)
       navigate('/dashboard')
     } catch (err) {
-      setApiErr(err.response?.data?.error || 'Erro ao autenticar. Verifique suas credenciais.')
+      setErro(err.response?.data?.error || 'Código ou senha incorretos')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--color-bg-canvas)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px 16px',
-    }}>
+    <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--color-bg-canvas)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
 
-      <style>{`
-        @keyframes sf-spin { to { transform: rotate(360deg); } }
-        @keyframes sf-pulse {
-          0%, 100% { box-shadow: 0 0 0 0   var(--color-pulse-success-start); }
-          50%       { box-shadow: 0 0 0 6px transparent; }
-        }
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
 
-        .sf-card {
-          width: 100%;
-          max-width: 420px;
-          background: var(--color-bg-default);
-          border: 1px solid var(--color-border-default);
-          border-radius: var(--radius-xl);
-          box-shadow: var(--shadow-lg);
-          overflow: hidden;
-        }
+          input[type=number]::-webkit-outer-spin-button,
+          input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+          input[type=number] { -moz-appearance: textfield; }
 
-        .sf-card-head {
-          background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800));
-          padding: 28px 32px;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          color: var(--color-text-inverse);
-        }
+          .sf-code-input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            font-family: var(--font-data);
+            outline: none;
+            background: var(--color-bg-default);
+            color: var(--color-text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+          }
+          .sf-code-input:focus {
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+          }
 
-        .sf-card-body { padding: 28px 32px; }
+          .sf-senha-input {
+            width: 100%;
+            padding: 10px 40px 10px 38px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            outline: none;
+            color: var(--color-text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+          }
+          .sf-senha-input:not(:disabled):focus {
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+          }
 
-        .sf-card-foot {
-          border-top: 1px solid var(--color-border-muted);
-          padding: 16px 32px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
+          .sf-submit-btn {
+            width: 100%;
+            height: 44px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.15s, background 0.2s;
+          }
+          .sf-submit-btn:not(:disabled):hover { opacity: 0.88; }
+        `}</style>
 
-        .sf-live-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: var(--color-success-600);
-          animation: sf-pulse 2.2s ease-in-out infinite;
-          flex-shrink: 0;
-        }
+        {/* Padrão de grid SVG */}
+        <svg style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          opacity: 0.4, pointerEvents: 'none',
+        }} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="sf-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none"
+                stroke="var(--color-border-default)" strokeWidth="0.8" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#sf-grid)" />
+        </svg>
 
-        .sf-label {
-          display: block;
-          font-size: 12.5px;
-          font-weight: 600;
-          color: var(--color-text-secondary);
-          margin-bottom: 5px;
-        }
+        {/* Círculos decorativos brand */}
+        <div style={{
+          position: 'absolute', top: -120, right: -120,
+          width: 400, height: 400, borderRadius: '50%',
+          background: 'var(--color-brand-600)', opacity: 0.06,
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -80, left: -80,
+          width: 300, height: 300, borderRadius: '50%',
+          background: 'var(--color-brand-800)', opacity: 0.05,
+          pointerEvents: 'none',
+        }} />
 
-        .sf-input-wrap { position: relative; }
+        {/* Card principal */}
+        <div style={{
+          width: '100%', maxWidth: 400,
+          background: 'var(--color-bg-default)',
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--shadow-xl)',
+          border: '1px solid var(--color-border-muted)',
+          overflow: 'hidden',
+          position: 'relative', zIndex: 1,
+        }}>
 
-        .sf-input-icon {
-          position: absolute;
-          left: 11px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--color-text-tertiary);
-          pointer-events: none;
-          display: flex;
-          align-items: center;
-        }
-
-        .sf-input {
-          width: 100%;
-          height: 40px;
-          padding-left: 36px;
-          padding-right: 12px;
-          font-size: 13.5px;
-          font-family: inherit;
-          color: var(--color-text-primary);
-          background: var(--color-bg-default);
-          border: 1px solid var(--color-border-default);
-          border-radius: var(--radius-lg);
-          outline: none;
-          box-sizing: border-box;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .sf-input:focus {
-          border-color: var(--color-border-focus);
-          box-shadow: 0 0 0 3px var(--color-focus-ring);
-        }
-        .sf-input.invalid {
-          border-color: var(--color-danger-200);
-          background: var(--color-danger-50);
-        }
-        .sf-input.invalid:focus {
-          border-color: var(--color-danger-500);
-          box-shadow: 0 0 0 3px var(--color-focus-ring-danger);
-        }
-        .sf-input-pwd { padding-right: 40px; }
-
-        .sf-eye {
-          position: absolute;
-          right: 4px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 32px;
-          height: 32px;
-          display: grid;
-          place-items: center;
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--color-text-tertiary);
-          border-radius: var(--radius-md);
-          transition: color 0.15s;
-        }
-        .sf-eye:hover { color: var(--color-text-secondary); }
-
-        .sf-field-error {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 11.5px;
-          color: var(--color-danger-600);
-          margin-top: 4px;
-        }
-
-        .sf-api-error {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 10px 12px;
-          background: var(--color-danger-50);
-          border: 1px solid var(--color-danger-200);
-          border-radius: var(--radius-lg);
-          font-size: 12.5px;
-          color: var(--color-danger-600);
-          margin-bottom: 18px;
-        }
-
-        .sf-btn {
-          width: 100%;
-          height: 44px;
-          background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800));
-          color: var(--color-text-inverse);
-          font-size: 14px;
-          font-weight: 600;
-          font-family: inherit;
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: opacity 0.15s;
-          letter-spacing: 0.01em;
-        }
-        .sf-btn:hover:not(:disabled) { opacity: 0.88; }
-        .sf-btn:disabled { opacity: 0.65; cursor: wait; }
-
-        .sf-spinner {
-          width: 16px;
-          height: 16px;
-          border: 2px solid transparent;
-          border-top-color: var(--color-text-inverse);
-          border-radius: 50%;
-          animation: sf-spin 0.65s linear infinite;
-          flex-shrink: 0;
-        }
-
-        .sf-code {
-          font-family: var(--font-data);
-          font-size: 11px;
-          background: var(--color-bg-subtle);
-          color: var(--color-text-secondary);
-          padding: 2px 7px;
-          border-radius: var(--radius-sm);
-        }
-      `}</style>
-
-      <div className="sf-card">
-
-        {/* Topo — gradiente brand */}
-        <div className="sf-card-head">
-          <Package size={28} strokeWidth={1.75} />
-          <div>
-            <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.2 }}>StockFlow</div>
-            <div style={{ fontSize: 12, color: 'var(--color-brand-200)', marginTop: 2 }}>
-              Enterprise v2.0
+          {/* Header — gradiente brand */}
+          <div style={{
+            background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))',
+            padding: '28px 32px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* Detalhe geométrico interno */}
+            <div style={{
+              position: 'absolute', top: -30, right: -30,
+              width: 120, height: 120, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.06)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              position: 'relative',
+            }}>
+              <Box size={28} color="var(--color-text-inverse)" strokeWidth={1.75} />
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-inverse)', lineHeight: 1.2 }}>
+                  StockFlow
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-brand-200)', marginTop: 2 }}>
+                  Enterprise v2.0
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Corpo — formulário */}
-        <div className="sf-card-body">
+          {/* Body */}
+          <div style={{ padding: '28px 32px' }}>
 
-          {apiErr && (
-            <div className="sf-api-error">
-              <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>{apiErr}</span>
-            </div>
-          )}
+            {/* Campo Código */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'var(--color-text-tertiary)',
+                display: 'block', marginBottom: 6,
+              }}>
+                Código do Operador
+              </label>
 
-          <form onSubmit={handleSubmit} noValidate>
-
-            {/* E-mail */}
-            <div style={{ marginBottom: 14 }}>
-              <label className="sf-label" htmlFor="sf-email">E-mail</label>
-              <div className="sf-input-wrap">
-                <span className="sf-input-icon"><Mail size={15} /></span>
-                <input
-                  id="sf-email"
-                  className={`sf-input${emailErr ? ' invalid' : ''}`}
-                  type="email"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setEmailErr(''); setApiErr('') }}
-                  placeholder="seu.nome@empresa.com"
-                  autoComplete="email"
-                />
-              </div>
-              {emailErr && (
-                <div className="sf-field-error">
-                  <AlertTriangle size={11} /><span>{emailErr}</span>
+              {nomeUsuario && (
+                <div style={{
+                  fontSize: 20, fontWeight: 700, letterSpacing: '0.02em',
+                  color: 'var(--color-text-primary)', marginBottom: 8,
+                  textTransform: 'uppercase',
+                  animation: 'fadeIn 0.2s ease',
+                  lineHeight: 1.2,
+                }}>
+                  {nomeUsuario}
                 </div>
               )}
+              {!nomeUsuario && codigo && !buscandoUsuario && (
+                <div style={{ fontSize: 13, color: 'var(--color-danger-600)', marginBottom: 8 }}>
+                  Operador não encontrado
+                </div>
+              )}
+              {buscandoUsuario && (
+                <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
+                  Buscando…
+                </div>
+              )}
+
+              <div style={{ position: 'relative' }}>
+                <Hash size={16} style={{
+                  position: 'absolute', left: 12, top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--color-text-tertiary)', pointerEvents: 'none',
+                }} />
+                <input
+                  className="sf-code-input"
+                  type="number"
+                  min="1"
+                  value={codigo}
+                  onChange={e => { setCodigo(e.target.value); setErro('') }}
+                  placeholder="Digite seu número"
+                  autoFocus
+                  style={{
+                    border: `1px solid ${usuarioEncontrado
+                      ? 'var(--color-success-600)'
+                      : 'var(--color-border-default)'}`,
+                  }}
+                />
+                {usuarioEncontrado && (
+                  <CheckCircle size={16} style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--color-success-600)',
+                    pointerEvents: 'none',
+                  }} />
+                )}
+              </div>
             </div>
 
-            {/* Senha */}
-            <div style={{ marginBottom: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                <label className="sf-label" htmlFor="sf-senha" style={{ marginBottom: 0 }}>Senha</label>
-                <a href="#" style={{ fontSize: 12, color: 'var(--color-text-link)', fontWeight: 500, textDecoration: 'none' }}>
-                  Esqueci minha senha
-                </a>
-              </div>
-              <div className="sf-input-wrap">
-                <span className="sf-input-icon"><Lock size={15} /></span>
+            {/* Campo Senha */}
+            <div style={{
+              marginBottom: 20,
+              opacity: usuarioEncontrado ? 1 : 0.45,
+              transition: 'opacity 0.3s',
+            }}>
+              <label style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'var(--color-text-tertiary)',
+                display: 'block', marginBottom: 6,
+              }}>
+                Senha
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{
+                  position: 'absolute', left: 12, top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--color-text-tertiary)', pointerEvents: 'none',
+                }} />
                 <input
-                  id="sf-senha"
-                  className={`sf-input sf-input-pwd${pwdErr ? ' invalid' : ''}`}
-                  type={showPwd ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setPwdErr(''); setApiErr('') }}
-                  placeholder="••••••••••••"
+                  id="campo-senha"
+                  className="sf-senha-input"
+                  type={showSenha ? 'text' : 'password'}
+                  value={senha}
+                  onChange={e => { setSenha(e.target.value); setErro('') }}
+                  placeholder="••••••••"
+                  disabled={!usuarioEncontrado}
                   autoComplete="current-password"
+                  style={{
+                    border: '1px solid var(--color-border-default)',
+                    background: usuarioEncontrado
+                      ? 'var(--color-bg-default)'
+                      : 'var(--color-bg-subtle)',
+                  }}
                 />
                 <button
                   type="button"
-                  className="sf-eye"
-                  onClick={() => setShowPwd(s => !s)}
-                  aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+                  onClick={() => setShowSenha(s => !s)}
+                  disabled={!usuarioEncontrado}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none',
+                    cursor: usuarioEncontrado ? 'pointer' : 'default',
+                    color: 'var(--color-text-tertiary)', padding: 4,
+                    display: 'flex', alignItems: 'center',
+                  }}
+                  aria-label={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
                 >
-                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showSenha ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {pwdErr && (
-                <div className="sf-field-error">
-                  <AlertTriangle size={11} /><span>{pwdErr}</span>
-                </div>
-              )}
             </div>
 
-            <button type="submit" className="sf-btn" disabled={loading}>
-              {loading
-                ? <><span className="sf-spinner" />Autenticando…</>
-                : <><span>Entrar</span><ArrowRight size={14} /></>
-              }
+            {/* Erro */}
+            {erro && (
+              <div style={{
+                background: 'var(--color-danger-50)',
+                border: '1px solid var(--color-danger-200)',
+                borderRadius: 'var(--radius-md)',
+                padding: '8px 12px', marginBottom: 16,
+                fontSize: 13, color: 'var(--color-danger-600)',
+              }}>
+                {erro}
+              </div>
+            )}
+
+            {/* Botão */}
+            <button
+              type="submit"
+              disabled={loading || !usuarioEncontrado}
+              className="sf-submit-btn"
+              style={{
+                background: usuarioEncontrado
+                  ? 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))'
+                  : 'var(--color-bg-muted)',
+                color: usuarioEncontrado
+                  ? 'var(--color-text-inverse)'
+                  : 'var(--color-text-tertiary)',
+                cursor: usuarioEncontrado && !loading ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {loading ? (
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTopColor: 'var(--color-text-inverse)',
+                  animation: 'spin 0.8s linear infinite',
+                }} />
+              ) : (
+                <><LogIn size={16} /> Entrar</>
+              )}
             </button>
 
-          </form>
-        </div>
-
-        {/* Rodapé */}
-        <div className="sf-card-foot">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-            <span className="sf-live-dot" />
-            Sistema online
           </div>
-          <span className="sf-code">v1.3.0</span>
-        </div>
 
+          {/* Rodapé */}
+          <div style={{
+            padding: '14px 32px',
+            borderTop: '1px solid var(--color-border-muted)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 12, color: 'var(--color-text-tertiary)',
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: 'var(--color-success-600)',
+                display: 'inline-block',
+                boxShadow: '0 0 0 2px var(--color-pulse-success-start)',
+              }} />
+              Sistema online
+            </div>
+            <span style={{
+              fontSize: 11, color: 'var(--color-text-tertiary)',
+              background: 'var(--color-bg-subtle)',
+              border: '1px solid var(--color-border-muted)',
+              borderRadius: 'var(--radius-sm)', padding: '2px 8px',
+              fontFamily: 'var(--font-data)',
+            }}>
+              v1.3.0
+            </span>
+          </div>
+
+        </div>
       </div>
-    </div>
+    </form>
   )
 }

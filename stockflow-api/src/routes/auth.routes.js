@@ -1,15 +1,17 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { login, logout, alterarSenha } = require('../controllers/auth.controller');
+const { login, logout, alterarSenha, usuarioPorCodigo } = require('../controllers/auth.controller');
 const { authMiddleware } = require('../middleware/auth');
 const { loginLimiter } = require('../middlewares/rateLimiter');
 const { validate } = require('../middlewares/validate');
 
 const router = Router();
 
+router.get('/usuario-por-codigo/:codigo', usuarioPorCodigo);
+
 router.post('/login',
   loginLimiter,
-  body('email').isEmail().normalizeEmail().withMessage('E-mail inválido'),
+  body('identifier').notEmpty().withMessage('Código ou e-mail obrigatório'),
   body('senha').isLength({ min: 6 }).trim().withMessage('Senha deve ter no mínimo 6 caracteres'),
   validate,
   login
