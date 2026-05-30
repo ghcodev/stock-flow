@@ -13,5 +13,7 @@ router.get('/ocupacao-corredores', ctrl.ocupacaoCorredores);
 router.get('/top-produtos', ctrl.topProdutos);
 router.get('/operadores-hoje', ctrl.operadoresHoje);
 router.get('/saude-estoque', ctrl.saudeEstoque);
+router.get('/rupturas', ctrl.rupturas);
+router.get('/curva-abc', ctrl.curvaAbc);
 
 module.exports = router;

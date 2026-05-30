@@ -5,12 +5,8 @@ import api from '../api/axios.js'
 import {
   Package, Layers, AlertTriangle, RefreshCw, Download, ArrowDownLeft,
   ArrowUpRight, ArrowRight, Activity, Clock, TrendingDown, Lock, ShieldCheck,
-  Circle,
+  Circle, TrendingUp, Users, BarChart2, CheckCircle,
 } from 'lucide-react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Sector, LineChart, Line,
-} from 'recharts'
 
 const MOV_COLORS = {
   entradas: 'var(--color-success-600)',
@@ -26,6 +22,39 @@ const CORREDORES = {
   'CF-04': 'Camara Fria 04',
   'ES-01': 'Estoque Seco 01',
   'ES-02': 'Estoque Seco 02',
+}
+
+function smoothPath(points) {
+  if (points.length < 2) return ''
+  let d = `M ${points[0].x},${points[0].y}`
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const curr = points[i]
+    const prevPrev = points[i - 2] || prev
+    const next = points[i + 1] || curr
+    const cp1x = prev.x + (curr.x - prevPrev.x) / 6
+    const cp1y = prev.y + (curr.y - prevPrev.y) / 6
+    const cp2x = curr.x - (next.x - prev.x) / 6
+    const cp2y = curr.y - (next.y - prev.y) / 6
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${curr.x},${curr.y}`
+  }
+  return d
+}
+
+function cssVar(name) {
+  if (typeof document === 'undefined') return ''
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+function calcPoints(data, key, w, h, pad, maxValue) {
+  const max = Math.max(maxValue || 0, ...data.map(d => Number(d[key] || 0)), 1)
+  if (data.length === 1) {
+    return [{ x: w / 2, y: h - pad - (Number(data[0][key] || 0) / max) * (h - pad * 2) }]
+  }
+  return data.map((d, i) => ({
+    x: pad + (i / (data.length - 1)) * (w - pad * 2),
+    y: h - pad - (Number(d[key] || 0) / max) * (h - pad * 2),
+  }))
 }
 
 function SkeletonCard({ height = 110 }) {
@@ -52,6 +81,10 @@ function fmtTime(value) {
   return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
+function money(value) {
+  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
+}
+
 function trendPercent(today, yesterday) {
   const t = Number(today || 0)
   const y = Number(yesterday || 0)
@@ -65,57 +98,44 @@ function pctColor(pct) {
   return 'var(--color-success-600)'
 }
 
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  const values = Object.fromEntries(payload.map(p => [p.dataKey, Number(p.value || 0)]))
-  const total = (values.entradas || 0) + (values.saidas || 0) + (values.transferencias || 0)
-  const title = payload[0]?.payload?.dataLonga || label
-
-  return (
-    <div style={{ background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-      <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 6 }}>{title}</div>
-      {[
-        ['entradas', 'Entradas'],
-        ['saidas', 'Saidas'],
-        ['transferencias', 'Transf.'],
-      ].map(([key, name]) => (
-        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: MOV_COLORS[key] }} />
-          <span>{name}: {values[key] || 0} un</span>
-        </div>
-      ))}
-      <div style={{ borderTop: '1px solid var(--color-border-muted)', marginTop: 6, paddingTop: 6, fontWeight: 800 }}>Total: {total} un</div>
-    </div>
-  )
+function toneColor(tone, step = 600) {
+  const map = {
+    success: `var(--color-success-${step})`,
+    info: `var(--color-info-${step})`,
+    warning: `var(--color-warning-${step})`,
+    danger: `var(--color-danger-${step})`,
+    brand: `var(--color-brand-${step})`,
+  }
+  return map[tone] || 'var(--color-text-secondary)'
 }
 
-function PieTooltip({ active, payload, total }) {
-  if (!active || !payload?.length) return null
-  const item = payload[0]
-  const value = Number(item.value || 0)
-  const pct = total ? Math.round((value / total) * 100) : 0
+function MiniBadge({ children, tone = 'neutral' }) {
+  const colors = {
+    danger: ['var(--color-danger-50)', 'var(--color-danger-700)', 'var(--color-danger-200)'],
+    warning: ['var(--color-warning-50)', 'var(--color-warning-700)', 'var(--color-warning-200)'],
+    success: ['var(--color-success-50)', 'var(--color-success-700)', 'var(--color-success-200)'],
+    info: ['var(--color-info-50)', 'var(--color-info-700)', 'var(--color-info-100)'],
+    brand: ['var(--color-brand-100)', 'var(--color-brand-700)', 'var(--color-brand-200)'],
+    neutral: ['var(--color-bg-subtle)', 'var(--color-text-secondary)', 'var(--color-border-muted)'],
+  }[tone]
   return (
-    <div style={{ background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-      <strong>{item.name}</strong>: {value} un - {pct}%
-    </div>
+    <span style={{ display: 'inline-flex', alignItems: 'center', border: `1px solid ${colors[2]}`, background: colors[0], color: colors[1], borderRadius: 999, padding: '2px 7px', fontSize: 10, fontWeight: 800, whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
   )
-}
-
-function renderActiveShape(props) {
-  return <Sector {...props} outerRadius={90} />
 }
 
 function Sparkline({ data }) {
   const rows = (data || []).map(item => ({ ...item, total: Number(item.total || 0) }))
   if (!rows.length) return null
+  const w = 96
+  const h = 32
+  const pad = 3
+  const points = calcPoints(rows, 'total', w, h, pad)
   return (
-    <div style={{ width: 96, height: 32 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={rows}>
-          <Line type="monotone" dataKey="total" stroke="var(--color-brand-600)" strokeWidth={2} dot={false} isAnimationActive={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} width="96" height="32" aria-hidden="true">
+      <path d={smoothPath(points)} fill="none" stroke="var(--color-brand-600)" strokeWidth="2" />
+    </svg>
   )
 }
 
@@ -151,47 +171,304 @@ function KpiCard({ item }) {
   )
 }
 
-function MiniBadge({ children, tone = 'neutral' }) {
-  const colors = {
-    danger: ['var(--color-danger-50)', 'var(--color-danger-700)', 'var(--color-danger-200)'],
-    warning: ['var(--color-warning-50)', 'var(--color-warning-700)', 'var(--color-warning-200)'],
-    orange: ['#fff7ed', '#c2410c', '#fed7aa'],
-    success: ['var(--color-success-50)', 'var(--color-success-700)', 'var(--color-success-200)'],
-    info: ['var(--color-brand-50)', 'var(--color-brand-700)', 'var(--color-brand-200)'],
-    neutral: ['var(--color-bg-muted)', 'var(--color-text-secondary)', 'var(--color-border-muted)'],
-  }[tone]
+function TrendBadge({ direction, pct }) {
+  if (direction === 'stable') return <MiniBadge>estavel</MiniBadge>
+  const up = direction === 'up'
+  return <MiniBadge tone={up ? 'success' : 'danger'}>{up ? '↑' : '↓'} {up ? '+' : ''}{Number(pct || 0).toFixed(1)}%</MiniBadge>
+}
+
+function MiniMetric({ label, value, children }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', border: `1px solid ${colors[2]}`, background: colors[0], color: colors[1], borderRadius: 999, padding: '2px 7px', fontSize: 10, fontWeight: 800, whiteSpace: 'nowrap' }}>
-      {children}
-    </span>
+    <div className="card" style={{ padding: '16px 18px', minHeight: 112 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ marginTop: 10 }}>{children}</div>
+    </div>
   )
 }
 
-function AlertItem({ item }) {
-  const config = {
-    urgente: { icon: AlertTriangle, label: 'URGENTE', tone: 'danger', bg: 'var(--color-danger-50)', border: 'var(--color-danger-500)', color: 'var(--color-danger-600)' },
-    atencao: { icon: Clock, label: 'ATENCAO', tone: 'warning', bg: 'var(--color-warning-50)', border: 'var(--color-warning-400)', color: 'var(--color-warning-600)' },
-    vencimento: { icon: Clock, label: 'ATENCAO', tone: 'warning', bg: 'var(--color-warning-50)', border: 'var(--color-warning-400)', color: 'var(--color-warning-600)' },
-    estoque: { icon: TrendingDown, label: 'ESTOQUE BAIXO', tone: 'orange', bg: '#fff7ed', border: '#fb923c', color: '#c2410c' },
-    bloqueado: { icon: Lock, label: 'BLOQUEADO', tone: 'neutral', bg: 'var(--color-bg-subtle)', border: 'var(--color-text-tertiary)', color: 'var(--color-text-secondary)' },
-  }[item.tipo] || {}
-  const Icon = config.icon || AlertTriangle
-  const subtitle = item.tipo === 'estoque'
-    ? `Estoque: ${Number(item.quantidade || 0)} / Min: ${Number(item.estoque_minimo || 0)}`
-    : item.tipo === 'bloqueado'
-      ? `Bloqueado ha ${Number(item.dias_bloqueado || 0)} dias`
-      : `Vence em ${Number(item.dias || 0)} dias · Qtd: ${Number(item.quantidade || 0)} un`
+function SaudeOperacional({ kpis }) {
+  const saude = kpis?.saude_operacional || {}
+  const tone = saude.cor || 'info'
+  const scoreColor = toneColor(tone, 600)
+  const fatores = saude.fatores || {}
+  const rows = [
+    [AlertTriangle, 'Rupturas', fatores.rupturas ?? kpis?.lotes_abaixo_minimo ?? 0],
+    [Clock, 'Vencimentos', fatores.vencimentos ?? kpis?.vencem_semana ?? 0],
+    [Lock, 'Bloqueios', fatores.bloqueios ?? kpis?.lotes_bloqueados ?? 0],
+    [TrendingUp, 'Giro', fatores.giro ?? kpis?.movimentacoes_hoje ?? 0],
+  ]
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${config.border}`, background: config.bg, borderRadius: 8, padding: '10px 12px', marginBottom: 6 }}>
-      <Icon size={14} color={config.color} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {item.tipo === 'estoque' ? item.produto : `${item.lote} - ${item.produto}`}
-        </div>
-        <div style={{ fontSize: 11, color: config.color, marginTop: 2 }}>{subtitle}</div>
+    <div className="card" style={{ padding: '18px 20px', minHeight: 252 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 10 }}>SAUDE OPERACIONAL</div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        <div style={{ fontSize: 52, fontWeight: 800, color: scoreColor, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{Number(saude.score || 0)}</div>
+        <div style={{ fontSize: 18, color: 'var(--color-text-tertiary)', fontWeight: 700, paddingBottom: 6 }}>/100</div>
       </div>
-      <MiniBadge tone={config.tone}>{config.label}</MiniBadge>
+      <div style={{ marginTop: 10 }}>
+        <MiniBadge tone={tone}>{saude.label || 'SEM DADOS'}</MiniBadge>
+      </div>
+      <div style={{ height: 1, background: 'var(--color-border-muted)', margin: '16px 0 10px' }} />
+      <div style={{ display: 'grid', gap: 9 }}>
+        {rows.map(([Icon, label, value]) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <Icon size={14} color="var(--color-text-tertiary)" />
+            <span style={{ color: 'var(--color-text-secondary)', flex: 1 }}>{label}</span>
+            <span style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Number(value || 0)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }) {
+  const w = 600
+  const h = 200
+  const pad = 28
+  const current = period === 30 ? data.slice(-30) : data.slice(-60)
+  const previous = period === 30 ? data.slice(-60, -30) : []
+  const max = Math.max(
+    ...current.flatMap(d => [d.entradas, d.saidas]),
+    ...previous.flatMap(d => [d.entradas, d.saidas]),
+    1
+  )
+  const entradaPoints = calcPoints(current, 'entradas', w, h, pad, max)
+  const saidaPoints = calcPoints(current, 'saidas', w, h, pad, max)
+  const prevEntradaPoints = calcPoints(previous, 'entradas', w, h, pad, max)
+  const prevSaidaPoints = calcPoints(previous, 'saidas', w, h, pad, max)
+  const entradaPath = smoothPath(entradaPoints)
+  const saidaPath = smoothPath(saidaPoints)
+  const entradaArea = entradaPoints.length ? `${entradaPath} L ${entradaPoints.at(-1).x},${h - pad} L ${entradaPoints[0].x},${h - pad} Z` : ''
+  const saidaArea = saidaPoints.length ? `${saidaPath} L ${saidaPoints.at(-1).x},${h - pad} L ${saidaPoints[0].x},${h - pad} Z` : ''
+  const success500 = cssVar('--color-success-500')
+  const danger500 = cssVar('--color-danger-500')
+
+  function onMove(e) {
+    if (!current.length) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * w
+    const idx = Math.max(0, Math.min(current.length - 1, Math.round(((x - pad) / (w - pad * 2)) * (current.length - 1))))
+    const point = current[idx]
+    setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, item: point })
+  }
+
+  const yGuides = [0, 1, 2].map(i => {
+    const y = pad + i * ((h - pad * 2) / 2)
+    const value = Math.round(max - i * (max / 2))
+    return { y, value }
+  })
+
+  return (
+    <div className="card" style={{ position: 'relative' }}>
+      <div className="card-header">
+        <span className="card-title">Movimentacoes por Dia</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[30, 60].map(days => (
+            <button key={days} type="button" className={`btn btn-sm ${period === days ? 'btn-primary' : 'btn-outline'}`} style={{ height: 30 }} onClick={() => onPeriodChange(days)}>
+              {days}d
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding: '16px 20px 14px' }}>
+        {current.length === 0 ? (
+          <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
+        ) : (
+          <>
+            <div style={{ height: 240, position: 'relative' }}>
+              <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height="100%" onMouseMove={onMove} onMouseLeave={() => setTooltip(null)}>
+                <defs>
+                  <linearGradient id="entradasGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={success500} stopOpacity="0.3" />
+                    <stop offset="1" stopColor={success500} stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="saidasGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={danger500} stopOpacity="0.3" />
+                    <stop offset="1" stopColor={danger500} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {yGuides.map(guide => (
+                  <line key={guide.y} x1={pad} x2={w - pad} y1={guide.y} y2={guide.y} stroke="var(--color-border-muted)" strokeWidth="1" />
+                ))}
+                {yGuides.map(guide => (
+                  <text key={guide.value} x="4" y={guide.y + 4} fill="var(--color-text-tertiary)" fontSize="10">{guide.value}</text>
+                ))}
+                <line x1={pad} x2={w - pad} y1={h - pad} y2={h - pad} stroke="var(--color-border-default)" strokeWidth="1" />
+                {current.map((point, index) => index % 5 === 0 ? (
+                  <text key={point.dia} x={entradaPoints[index]?.x || pad} y={h - 8} fill="var(--color-text-tertiary)" fontSize="10" textAnchor="middle">{point.dia}</text>
+                ) : null)}
+                <path d={entradaArea} fill="url(#entradasGradient)" />
+                <path d={saidaArea} fill="url(#saidasGradient)" />
+                {prevEntradaPoints.length > 1 && <path d={smoothPath(prevEntradaPoints)} fill="none" stroke="var(--color-success-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
+                {prevSaidaPoints.length > 1 && <path d={smoothPath(prevSaidaPoints)} fill="none" stroke="var(--color-danger-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
+                <path d={entradaPath} fill="none" stroke="var(--color-success-600)" strokeWidth="2" />
+                <path d={saidaPath} fill="none" stroke="var(--color-danger-600)" strokeWidth="2" />
+              </svg>
+              {tooltip && (
+                <div style={{ position: 'absolute', left: Math.min(Math.max(tooltip.x + 12, 8), 420), top: Math.max(tooltip.y - 18, 8), background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12, pointerEvents: 'none', zIndex: 2 }}>
+                  <div style={{ fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 5 }}>{tooltip.item.dataLonga}</div>
+                  <div style={{ color: 'var(--color-success-600)' }}>Entradas: {tooltip.item.entradas}</div>
+                  <div style={{ color: 'var(--color-danger-600)' }}>Saidas: {tooltip.item.saidas}</div>
+                  <div style={{ color: 'var(--color-brand-600)' }}>Transferencias: {tooltip.item.transferencias}</div>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Circle size={8} fill="var(--color-success-600)" color="var(--color-success-600)" />Entradas</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Circle size={8} fill="var(--color-danger-600)" color="var(--color-danger-600)" />Saidas</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Circle size={8} fill="var(--color-text-tertiary)" color="var(--color-text-tertiary)" />Periodo anterior</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SmartAlerts({ alertas, rupturas }) {
+  const rupturaItems = (rupturas || [])
+    .filter(item => Number(item.dias_para_ruptura || 0) <= 7)
+    .map(item => ({
+      key: `ruptura-${item.nome_produto}`,
+      icon: AlertTriangle,
+      color: 'var(--color-danger-600)',
+      text: `${item.nome_produto} ficara indisponivel em ${Math.ceil(Number(item.dias_para_ruptura || 0))} dias`,
+    }))
+  const alertaItems = (alertas || []).map((item, index) => {
+    if (item.tipo_alerta === 'abaixo_minimo' || item.tipo === 'estoque') {
+      return { key: `estoque-${index}`, icon: TrendingDown, color: 'var(--color-warning-600)', text: `${item.produto} esta abaixo do estoque minimo` }
+    }
+    if (item.tipo_alerta === 'vencendo' || ['urgente', 'atencao', 'vencimento'].includes(item.tipo)) {
+      return { key: `vence-${index}`, icon: Clock, color: 'var(--color-warning-600)', text: `Lote ${item.numero_lote || item.lote || '-'} vence em ${Number(item.dias_para_vencer ?? item.dias ?? 0)} dias` }
+    }
+    return { key: `alerta-${index}`, icon: Lock, color: 'var(--color-text-tertiary)', text: `${item.produto || item.lote || 'Item'} requer atencao` }
+  })
+  const items = [...rupturaItems, ...alertaItems].slice(0, 8)
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title">Alertas Inteligentes</span>
+        <MiniBadge tone={items.length ? 'warning' : 'success'}>{items.length}</MiniBadge>
+      </div>
+      <div style={{ padding: '4px 20px 14px' }}>
+        {items.length === 0 ? (
+          <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Nenhum alerta critico agora.</div>
+        ) : (
+          <>
+            {items.map(item => {
+              const Icon = item.icon
+              return (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--color-border-muted)' }}>
+                  <Icon size={15} color={item.color} />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.35 }}>{item.text}</span>
+                </div>
+              )
+            })}
+            <a href="/alertas" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 12, fontSize: 12, color: 'var(--color-brand-600)', fontWeight: 700 }}>Ver todos os alertas <ArrowRight size={12} /></a>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TopOperadoresCard({ operadores }) {
+  const rows = operadores || []
+  return (
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Users size={15} /> TOP OPERADORES HOJE</span>
+      </div>
+      <div style={{ padding: '12px 20px 18px' }}>
+        {rows.length === 0 ? (
+          <div style={{ height: 160, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13, textAlign: 'center' }}>Nenhuma movimentacao hoje</div>
+        ) : rows.slice(0, 3).map((op, index) => (
+          <div key={`${op.nome}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: index < Math.min(rows.length, 3) - 1 ? '1px solid var(--color-border-muted)' : 'none' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center', background: index === 0 ? 'var(--color-brand-100)' : 'var(--color-bg-subtle)', color: index === 0 ? 'var(--color-brand-700)' : 'var(--color-text-secondary)', fontWeight: 800, fontSize: 12 }}>{index + 1}</div>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.nome}</div>
+            <MiniBadge tone={index === 0 ? 'brand' : 'neutral'}>{Number(op.total_movimentacoes || 0)}</MiniBadge>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RupturaCard({ rupturas }) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={15} /> PREVISAO DE RUPTURA</span>
+      </div>
+      <div style={{ padding: '12px 20px 18px' }}>
+        {(rupturas || []).length === 0 ? (
+          <div style={{ height: 160, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13, textAlign: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><CheckCircle size={16} color="var(--color-success-600)" /> Nenhum produto em risco</span>
+          </div>
+        ) : rupturas.map(item => {
+          const dias = Number(item.dias_para_ruptura || 0)
+          const color = dias <= 7 ? 'var(--color-danger-600)' : dias <= 15 ? 'var(--color-warning-600)' : 'var(--color-text-secondary)'
+          return (
+            <div key={item.nome_produto} style={{ marginBottom: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nome_produto}</div>
+                <div style={{ fontSize: 12, color, fontWeight: 800, flexShrink: 0 }}>Ruptura em {Math.ceil(dias)} dias</div>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: 'var(--color-bg-muted)', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.max(4, Math.min(100, ((30 - dias) / 30) * 100))}%`, height: '100%', borderRadius: 999, background: color }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function CurvaAbcCard({ curvaAbc }) {
+  const resumo = curvaAbc?.resumo
+  const rows = resumo ? [
+    ['CLASSE A', resumo.classe_a, 'brand'],
+    ['CLASSE B', resumo.classe_b, 'warning'],
+    ['CLASSE C', resumo.classe_c, 'neutral'],
+  ] : []
+  return (
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><BarChart2 size={15} /> CURVA ABC - 90 dias</span>
+      </div>
+      <div style={{ padding: '14px 20px 18px' }}>
+        {!resumo ? (
+          <div style={{ height: 160, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem dados ABC</div>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {rows.map(([label, item, tone]) => {
+                const pct = Number(item?.pct_movimentacoes || 0)
+                const fill = tone === 'brand' ? 'var(--color-brand-600)' : tone === 'warning' ? 'var(--color-warning-500)' : 'var(--color-text-tertiary)'
+                return (
+                  <div key={label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 5 }}>
+                      <MiniBadge tone={tone}>{label}</MiniBadge>
+                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{Number(item?.qtd_produtos || 0)} produtos</span>
+                    </div>
+                    <div style={{ height: 7, borderRadius: 999, background: 'var(--color-bg-muted)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, borderRadius: 999, background: fill, opacity: tone === 'neutral' ? 0.4 : 1 }} />
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 3 }}>{pct.toFixed(1)}% das movimentacoes</div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ marginTop: 14, fontSize: 12, color: 'var(--color-text-secondary)' }}>Top produto: {curvaAbc?.top10?.[0]?.nome_produto || '-'}</div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -215,6 +492,44 @@ function Gauge({ value }) {
   )
 }
 
+function DonutChart({ data, total }) {
+  const size = 190
+  const radius = 62
+  const circumference = 2 * Math.PI * radius
+  let offset = 0
+  return (
+    <div style={{ position: 'relative', height: 218, display: 'grid', placeItems: 'center' }}>
+      <svg viewBox={`0 0 ${size} ${size}`} width="190" height="190">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-bg-muted)" strokeWidth="22" />
+        {data.map(item => {
+          const length = total ? (item.value / total) * circumference : 0
+          const dash = `${length} ${circumference - length}`
+          const dashOffset = -offset
+          offset += length
+          return (
+            <circle
+              key={item.name}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={item.color}
+              strokeWidth="22"
+              strokeDasharray={dash}
+              strokeDashoffset={dashOffset}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
+          )
+        })}
+      </svg>
+      <div style={{ position: 'absolute', textAlign: 'center', pointerEvents: 'none' }}>
+        <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4 }}>movimentacoes</div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const toast = useToast()
   const [kpis, setKpis] = useState(null)
@@ -230,27 +545,43 @@ export default function Dashboard() {
   const [activePie, setActivePie] = useState(null)
   const [alertTab, setAlertTab] = useState('todos')
   const [topPeriodo, setTopPeriodo] = useState('mes')
+  const [rupturas, setRupturas] = useState([])
+  const [curvaAbc, setCurvaAbc] = useState(null)
+  const [tooltip, setTooltip] = useState(null)
+  const [chartPeriod, setChartPeriod] = useState(30)
   const scrollRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
 
+  async function safeGet(request, fallback) {
+    try {
+      const response = await request()
+      return response.data ?? fallback
+    } catch (err) {
+      console.error(err)
+      return fallback
+    }
+  }
+
   async function load() {
     setLoading(true)
     try {
-      const [kpisRes, movRes, alertasRes, alertasPendRes, ocupacaoRes, topProdRes, operadoresRes, saudeRes, recentesRes] = await Promise.all([
-        api.get('/dashboard/kpis'),
-        api.get('/dashboard/movimentacoes'),
-        api.get('/dashboard/alertas'),
-        api.get('/dashboard/alertas-pendentes'),
-        api.get('/dashboard/ocupacao-corredores'),
-        api.get('/dashboard/top-produtos', { params: { periodo: topPeriodo === 'semana' ? 'semana' : 'mes' } }),
-        api.get('/dashboard/operadores-hoje'),
-        api.get('/dashboard/saude-estoque'),
-        api.get('/movimentacoes', { params: { limit: 8, order: 'desc' } }),
+      const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, operadoresData, saudeData, recentesData, rupturasData, abcData] = await Promise.all([
+        safeGet(() => api.get('/dashboard/kpis'), null),
+        safeGet(() => api.get('/dashboard/movimentacoes'), []),
+        safeGet(() => api.get('/dashboard/alertas'), { total: 0, alertas: [] }),
+        safeGet(() => api.get('/dashboard/alertas-pendentes'), { total: 0, itens: [] }),
+        safeGet(() => api.get('/dashboard/ocupacao-corredores'), { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] }),
+        safeGet(() => api.get('/dashboard/top-produtos', { params: { periodo: topPeriodo === 'semana' ? 'semana' : 'mes' } }), []),
+        safeGet(() => api.get('/dashboard/operadores-hoje'), []),
+        safeGet(() => api.get('/dashboard/saude-estoque'), null),
+        safeGet(() => api.get('/movimentacoes', { params: { limit: 8, order: 'desc' } }), { data: [] }),
+        safeGet(() => api.get('/dashboard/rupturas'), []),
+        safeGet(() => api.get('/dashboard/curva-abc'), null),
       ])
-      setKpis(kpisRes.data)
-      setMovData((movRes.data || []).map(d => ({
+      setKpis(kpisData)
+      setMovData((movRows || []).map(d => ({
         dataLonga: fmtDateLong(d.dia),
         dia: new Date(d.dia).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
         entradas: Number(d.entradas || 0),
@@ -258,16 +589,16 @@ export default function Dashboard() {
         transferencias: Number(d.transferencias || 0),
         ajustes: Number(d.ajustes || 0),
       })))
-      setAlertasBase(alertasRes.data || { total: 0, alertas: [] })
-      setAlertasPendentes(alertasPendRes.data || { total: 0, itens: [] })
-      setOcupacao(ocupacaoRes.data || { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] })
-      setTopProdutos(topProdRes.data || [])
-      setOperadores(operadoresRes.data || [])
-      setSaudeEstoque(saudeRes.data || null)
-      setRecentes(recentesRes.data?.data || [])
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao carregar dados do dashboard.')
+      setAlertasBase(alertasData || { total: 0, alertas: [] })
+      setAlertasPendentes(alertasPendData || { total: 0, itens: [] })
+      setOcupacao(ocupacaoData || { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] })
+      setTopProdutos(topProdData || [])
+      setOperadores(operadoresData || [])
+      setSaudeEstoque(saudeData || null)
+      setRecentes(recentesData?.data || [])
+      setRupturas(rupturasData || [])
+      setCurvaAbc(abcData || null)
+      if (!kpisData) toast.error('Erro ao carregar KPIs do dashboard.')
     } finally {
       setLoading(false)
     }
@@ -352,6 +683,7 @@ export default function Dashboard() {
     }
   })
   const maxTop = Math.max(...topProdutos.map(p => Number(p.total_movimentado || 0)), 1)
+  const allSmartAlerts = [...(alertasBase.alertas || []), ...(alertasPendentes.itens || [])]
 
   return (
     <Layout breadcrumb={['Dashboard']}>
@@ -369,58 +701,55 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="dashboard-health-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginBottom: 24 }}>
+        {loading ? (
+          <>
+            <SkeletonCard height={252} />
+            <SkeletonCard height={252} />
+          </>
+        ) : (
+          <>
+            <SaudeOperacional kpis={kpis} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
+              <MiniMetric label="ENTRADAS HOJE" value={Number(kpis?.tendencias?.entradas_hoje || 0)}>
+                <TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} />
+              </MiniMetric>
+              <MiniMetric label="SAIDAS HOJE" value={Number(kpis?.tendencias?.saidas_hoje || 0)}>
+                <TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} />
+              </MiniMetric>
+              <MiniMetric label="CAPITAL EM ESTOQUE" value={money(kpis?.capital?.capital_imobilizado)}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
+              </MiniMetric>
+              <MiniMetric label="MOVIMENTACOES HOJE" value={Number(kpis?.movimentacoes_hoje || 0)}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
+              </MiniMetric>
+            </div>
+          </>
+        )}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         {loading ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />) : kpiItems.map(item => <KpiCard key={item.label} item={item} />)}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 16, marginBottom: 24 }}>
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Movimentacoes por Dia - Ultimos 30 dias</span>
-          </div>
-          <div style={{ padding: '8px 20px 16px' }}>
-            {loading ? (
-              <div style={{ height: 180, background: 'var(--color-bg-subtle)', borderRadius: 8, animation: 'shimmer 1.2s ease-in-out infinite' }} />
-            ) : (
-              <>
-                <div
-                  ref={scrollRef}
-                  onMouseDown={onDragStart}
-                  onMouseMove={onDragMove}
-                  onMouseUp={() => setIsDragging(false)}
-                  onMouseLeave={() => setIsDragging(false)}
-                  style={{ overflowX: 'auto', cursor: isDragging ? 'grabbing' : 'grab', userSelect: isDragging ? 'none' : 'auto', paddingBottom: 6 }}
-                >
-                  <div style={{ width: movData.length > 15 ? Math.max(720, movData.length * 48) : '100%', height: 188 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={movData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barGap={2}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-bg-elevated)" />
-                        <XAxis dataKey="dia" tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
-                        <YAxis width={32} tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
-                        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(46,117,182,0.05)' }} />
-                        <Bar dataKey="entradas" name="Entradas" fill={MOV_COLORS.entradas} radius={[3, 3, 0, 0]} barSize={6} animationDuration={800} animationEasing="ease-out" />
-                        <Bar dataKey="saidas" name="Saidas" fill={MOV_COLORS.saidas} radius={[3, 3, 0, 0]} barSize={6} animationDuration={800} animationEasing="ease-out" />
-                        <Bar dataKey="transferencias" name="Transferencias" fill={MOV_COLORS.transferencias} radius={[3, 3, 0, 0]} barSize={6} animationDuration={800} animationEasing="ease-out" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 18, fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>
-                  {[
-                    ['Entradas', MOV_COLORS.entradas],
-                    ['Saidas', MOV_COLORS.saidas],
-                    ['Transferencias', MOV_COLORS.transferencias],
-                  ].map(([label, color]) => (
-                    <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />{label}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+      <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 16, marginBottom: 24 }}>
+        {loading ? <SkeletonCard height={330} /> : <AreaMovementChart data={movData} period={chartPeriod} onPeriodChange={setChartPeriod} tooltip={tooltip} setTooltip={setTooltip} />}
+        {loading ? <SkeletonCard height={330} /> : <SmartAlerts alertas={allSmartAlerts} rupturas={rupturas} />}
+      </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} height={240} />)
+        ) : (
+          <>
+            <TopOperadoresCard operadores={kpis?.top_operadores || []} />
+            <RupturaCard rupturas={rupturas} />
+            <CurvaAbcCard curvaAbc={curvaAbc} />
+          </>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Distribuicao por Tipo</span>
@@ -432,42 +761,16 @@ export default function Dashboard() {
               <div style={{ height: 240, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
             ) : (
               <>
-                <div style={{ position: 'relative', height: 218 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        activeIndex={activePie}
-                        activeShape={renderActiveShape}
-                        dataKey="value"
-                        onMouseEnter={(_, index) => setActivePie(index)}
-                        onMouseLeave={() => setActivePie(null)}
-                        animationDuration={800}
-                        animationEasing="ease-out"
-                      >
-                        {pieData.map(entry => <Cell key={entry.name} fill={entry.color} />)}
-                      </Pie>
-                      <Tooltip content={<PieTooltip total={pieTotal} />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pieTotal}</div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4 }}>movimentacoes</div>
-                    </div>
-                  </div>
+                <div onMouseLeave={() => setActivePie(null)}>
+                  <DonutChart data={pieData} total={pieTotal} />
                 </div>
                 <div style={{ display: 'grid', gap: 8, marginTop: 2 }}>
-                  {pieData.map(item => {
+                  {pieData.map((item, index) => {
                     const pct = pieTotal ? Math.round((item.value / pieTotal) * 100) : 0
                     return (
-                      <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 12 }}>
+                      <div key={item.name} onMouseEnter={() => setActivePie(index)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 12, opacity: activePie == null || activePie === index ? 1 : 0.45 }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--color-text-secondary)' }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />{item.name}
+                          <Circle size={8} fill={item.color} color={item.color} />{item.name}
                         </span>
                         <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{pct}% <span style={{ fontWeight: 500, color: 'var(--color-text-tertiary)' }}>({item.value} un)</span></span>
                       </div>
@@ -478,16 +781,14 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Alertas Pendentes</span>
             <MiniBadge tone="danger">{alertasPendentes.total || alertasBase.total || 0}</MiniBadge>
           </div>
           <div style={{ padding: '0 20px 18px' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
               {[
                 ['todos', 'Todos'],
                 ['vencimento', 'Vencimento'],
@@ -505,13 +806,35 @@ export default function Dashboard() {
               <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Nenhum alerta pendente.</div>
             ) : (
               <div style={{ maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-                {filteredAlertas.map((item, index) => <AlertItem key={`${item.lote}-${item.tipo}-${index}`} item={item} />)}
+                {filteredAlertas.map((item, index) => {
+                  const isEstoque = item.tipo === 'estoque'
+                  const isBloqueado = item.tipo === 'bloqueado'
+                  const Icon = isEstoque ? TrendingDown : isBloqueado ? Lock : Clock
+                  const color = isEstoque ? 'var(--color-warning-600)' : isBloqueado ? 'var(--color-text-tertiary)' : 'var(--color-warning-600)'
+                  const title = isEstoque ? item.produto : `${item.lote} - ${item.produto}`
+                  const subtitle = isEstoque
+                    ? `Estoque: ${Number(item.quantidade || 0)} / Min: ${Number(item.estoque_minimo || 0)}`
+                    : isBloqueado
+                      ? `Bloqueado ha ${Number(item.dias_bloqueado || 0)} dias`
+                      : `Vence em ${Number(item.dias || 0)} dias - Qtd: ${Number(item.quantidade || 0)} un`
+                  return (
+                    <div key={`${item.lote}-${item.tipo}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${color}`, background: 'var(--color-bg-subtle)', borderRadius: 8, padding: '10px 12px', marginBottom: 6 }}>
+                      <Icon size={14} color={color} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+                        <div style={{ fontSize: 11, color, marginTop: 2 }}>{subtitle}</div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
             <a href="/alertas" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 12, fontSize: 12, color: 'var(--color-brand-600)', fontWeight: 700 }}>Ver todos os alertas <ArrowRight size={12} /></a>
           </div>
         </div>
+      </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Ocupacao do Armazem</span>
@@ -553,9 +876,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Mais Movimentados</span>
@@ -586,7 +907,9 @@ export default function Dashboard() {
             })}
           </div>
         </div>
+      </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Equipe Hoje</span>
@@ -601,7 +924,7 @@ export default function Dashboard() {
                   <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', background: 'var(--color-brand-100)', color: 'var(--color-brand-700)', fontSize: 12, fontWeight: 800 }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.nome}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{Number(op.total_hoje || 0)} movimentacoes hoje · Ultima atividade: {fmtTime(op.ultima_atividade)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{Number(op.total_hoje || 0)} movimentacoes hoje - Ultima atividade: {fmtTime(op.ultima_atividade)}</div>
                   </div>
                   <MiniBadge tone={op.perfil === 'administrador' ? 'info' : 'neutral'}>{op.perfil === 'administrador' ? 'Administrador' : 'Operador'}</MiniBadge>
                 </div>
@@ -640,7 +963,13 @@ export default function Dashboard() {
           <span className="card-title">Movimentacoes recentes</span>
           <a href="/historico" style={{ fontSize: 12, color: 'var(--color-brand-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>Ver historico completo <ArrowRight size={12} /></a>
         </div>
-        <div>
+        <div
+          ref={scrollRef}
+          onMouseDown={onDragStart}
+          onMouseMove={onDragMove}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
+        >
           {loading ? (
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--color-border-muted)' }}>
@@ -666,13 +995,13 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.produto_nome || r.codigo_lote || '-'}</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{r.codigo_lote || r.numero_lote || '-'} · {fmtTipo(tipo)} · {localizacao}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{r.codigo_lote || r.numero_lote || '-'} - {fmtTipo(tipo)} - {localizacao}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: isEntrada ? 'var(--color-success-600)' : isSaida ? 'var(--color-danger-600)' : 'var(--color-brand-600)' }}>
                     {isEntrada ? '+' : isSaida ? '-' : ''}{Number(r.quantidade || 0)} un
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{r.usuario_nome || 'Operador'} · {fmtTime(r.criado_em || r.data_movimentacao)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{r.usuario_nome || 'Operador'} - {fmtTime(r.criado_em || r.data_movimentacao)}</div>
                 </div>
               </div>
             )
@@ -686,9 +1015,10 @@ export default function Dashboard() {
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           [style*="repeat(3,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }
+          .dashboard-health-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 900px) {
-          [style*="minmax(0, 3fr)"] { grid-template-columns: 1fr !important; }
+          .dashboard-main-grid { grid-template-columns: 1fr !important; }
           [style*="repeat(2,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }
         }
       `}</style>
