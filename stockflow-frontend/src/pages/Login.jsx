@@ -8,11 +8,11 @@ export default function Login() {
   const { login, user } = useAuth()
   const navigate = useNavigate()
 
-  const [codigo, setCodigo]                   = useState('')
+  const [codigo, setCodigo]                   = useState('1')
   const [nomeUsuario, setNomeUsuario]         = useState('')
   const [buscandoUsuario, setBuscandoUsuario] = useState(false)
   const [usuarioEncontrado, setUsuarioEncontrado] = useState(false)
-  const [senha, setSenha]     = useState('')
+  const [senha, setSenha]     = useState('Admin@1234')
   const [erro, setErro]       = useState('')
   const [loading, setLoading] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
