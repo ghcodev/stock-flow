@@ -125,7 +125,34 @@ function MiniBadge({ children, tone = 'neutral' }) {
   )
 }
 
-function Sparkline({ data }) {
+function Sparkline({ data, color = 'var(--color-brand-600)', width = 80, height = 28 }) {
+  if (Array.isArray(data) && (data.length === 0 || typeof data[0] === 'number')) {
+    if (!data || data.length < 2) return null
+    const max = Math.max(...data, 1)
+    const min = Math.min(...data)
+    const range = max - min || 1
+    const pts = data.map((v, i) => ({
+      x: (i / (data.length - 1)) * width,
+      y: height - ((v - min) / range) * height,
+    }))
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ')
+    const area = `${line} L ${width},${height} L 0,${height} Z`
+    const gradientId = `sg-${color.replace(/[^a-z]/gi, '')}`
+
+    return (
+      <svg width={width} height={height} style={{ display: 'block' }} aria-hidden="true">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${gradientId})`} />
+        <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    )
+  }
+
   const rows = (data || []).map(item => ({ ...item, total: Number(item.total || 0) }))
   if (!rows.length) return null
   const w = 96
@@ -134,7 +161,7 @@ function Sparkline({ data }) {
   const points = calcPoints(rows, 'total', w, h, pad)
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="96" height="32" aria-hidden="true">
-      <path d={smoothPath(points)} fill="none" stroke="var(--color-brand-600)" strokeWidth="2" />
+      <path d={smoothPath(points)} fill="none" stroke={color} strokeWidth="2" />
     </svg>
   )
 }
@@ -142,7 +169,7 @@ function Sparkline({ data }) {
 function KpiCard({ item }) {
   const Icon = item.icon
   return (
-    <div className="card" style={{ padding: '18px 20px', position: 'relative', minHeight: 132 }}>
+    <div className="card" style={{ padding: '14px 16px', position: 'relative', minHeight: 100, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 14, right: 14, color: 'var(--color-bg-muted)' }}>
         <Icon size={22} />
       </div>
@@ -151,7 +178,7 @@ function KpiCard({ item }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <div style={{ fontSize: 34, fontWeight: 800, color: item.color || 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: item.color || 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
             {item.value}
           </div>
           <div style={{ fontSize: 11, color: item.trendColor || 'var(--color-text-tertiary)', marginTop: 7, fontWeight: item.trendColor ? 700 : 500 }}>
@@ -167,6 +194,11 @@ function KpiCard({ item }) {
         </div>
       )}
       {item.secondary && <div style={{ marginTop: 4, fontSize: 11, color: item.secondaryColor || 'var(--color-text-tertiary)', fontWeight: 700 }}>{item.secondary}</div>}
+      {item.sparklineData && (
+        <div style={{ position: 'absolute', right: 12, bottom: 10, opacity: 0.8 }}>
+          <Sparkline data={item.sparklineData} color={item.sparklineColor} />
+        </div>
+      )}
     </div>
   )
 }
@@ -177,13 +209,53 @@ function TrendBadge({ direction, pct }) {
   return <MiniBadge tone={up ? 'success' : 'danger'}>{up ? '↑' : '↓'} {up ? '+' : ''}{Number(pct || 0).toFixed(1)}%</MiniBadge>
 }
 
-function MiniMetric({ label, value, children }) {
+function MiniMetric({ label, value, children, sparkline, sparklineColor }) {
   return (
-    <div className="card" style={{ padding: '16px 18px', minHeight: 112 }}>
+    <div className="card" style={{ padding: '16px 18px', minHeight: 112, position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
       <div style={{ marginTop: 10 }}>{children}</div>
+      {sparkline && (
+        <div style={{ position: 'absolute', right: 12, bottom: 12, opacity: 0.8 }}>
+          <Sparkline data={sparkline} color={sparklineColor} />
+        </div>
+      )}
     </div>
+  )
+}
+
+function GaugeSVG({ score, cor }) {
+  const r = 54
+  const cx = 70
+  const cy = 70
+  const circum = Math.PI * r
+  const filled = (Number(score || 0) / 100) * circum
+  const colorMap = {
+    success: 'var(--color-success-600)',
+    info: 'var(--color-info-600)',
+    warning: 'var(--color-warning-500)',
+    danger: 'var(--color-danger-600)',
+  }
+  const stroke = colorMap[cor] || 'var(--color-text-tertiary)'
+
+  return (
+    <svg width="140" height="80" viewBox="0 0 140 80" aria-hidden="true">
+      <path
+        d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
+        fill="none"
+        stroke="var(--color-border-default)"
+        strokeWidth="10"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circum}`}
+      />
+    </svg>
   )
 }
 
@@ -202,11 +274,14 @@ function SaudeOperacional({ kpis }) {
   return (
     <div className="card" style={{ padding: '18px 20px', minHeight: 252 }}>
       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 10 }}>SAUDE OPERACIONAL</div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: -4, marginBottom: 2 }}>
+        <GaugeSVG score={saude.score} cor={tone} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 8 }}>
         <div style={{ fontSize: 52, fontWeight: 800, color: scoreColor, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{Number(saude.score || 0)}</div>
         <div style={{ fontSize: 18, color: 'var(--color-text-tertiary)', fontWeight: 700, paddingBottom: 6 }}>/100</div>
       </div>
-      <div style={{ marginTop: 10 }}>
+      <div style={{ marginTop: 10, textAlign: 'center' }}>
         <MiniBadge tone={tone}>{saude.label || 'SEM DADOS'}</MiniBadge>
       </div>
       <div style={{ height: 1, background: 'var(--color-border-muted)', margin: '16px 0 10px' }} />
@@ -226,7 +301,7 @@ function SaudeOperacional({ kpis }) {
 function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }) {
   const w = 600
   const h = 200
-  const pad = 28
+  const pad = 40
   const current = period === 30 ? data.slice(-30) : data.slice(-60)
   const previous = period === 30 ? data.slice(-60, -30) : []
   const max = Math.max(
@@ -245,13 +320,30 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
   const success500 = cssVar('--color-success-500')
   const danger500 = cssVar('--color-danger-500')
 
-  function onMove(e) {
+  function handleMouseMove(e) {
     if (!current.length) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * w
-    const idx = Math.max(0, Math.min(current.length - 1, Math.round(((x - pad) / (w - pad * 2)) * (current.length - 1))))
-    const point = current[idx]
-    setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, item: point })
+    const svg = e.currentTarget
+    const rect = svg.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const chartW = rect.width - pad * 2
+    const idx = Math.max(0, Math.min(
+      current.length - 1,
+      Math.round(((mouseX - pad) / chartW) * (current.length - 1))
+    ))
+    setTooltip({
+      idx,
+      x: Math.max(pad, Math.min(rect.width - pad, mouseX)),
+      item: current[idx],
+    })
+  }
+
+  function handleMouseLeave() {
+    setTooltip(null)
+  }
+
+  function tooltipViewBoxX() {
+    if (!tooltip) return null
+    return (tooltip.x / 600) * w
   }
 
   const yGuides = [0, 1, 2].map(i => {
@@ -278,7 +370,7 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
         ) : (
           <>
             <div style={{ height: 240, position: 'relative' }}>
-              <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height="100%" onMouseMove={onMove} onMouseLeave={() => setTooltip(null)}>
+              <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height="100%" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                 <defs>
                   <linearGradient id="entradasGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stopColor={success500} stopOpacity="0.3" />
@@ -299,19 +391,53 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                 {current.map((point, index) => index % 5 === 0 ? (
                   <text key={point.dia} x={entradaPoints[index]?.x || pad} y={h - 8} fill="var(--color-text-tertiary)" fontSize="10" textAnchor="middle">{point.dia}</text>
                 ) : null)}
-                <path d={entradaArea} fill="url(#entradasGradient)" />
-                <path d={saidaArea} fill="url(#saidasGradient)" />
+                {tooltip && (
+                  <line
+                    x1={tooltipViewBoxX()}
+                    y1={8}
+                    x2={tooltipViewBoxX()}
+                    y2={192}
+                    stroke="var(--color-border-strong)"
+                    strokeWidth="1"
+                    strokeDasharray="4 3"
+                    pointerEvents="none"
+                  />
+                )}
+                <path d={entradaArea} fill="url(#entradasGradient)" style={{ animation: 'fadeArea 0.8s var(--ease-default) 0.4s forwards', opacity: 0 }} />
+                <path d={saidaArea} fill="url(#saidasGradient)" style={{ animation: 'fadeArea 0.8s var(--ease-default) 0.4s forwards', opacity: 0 }} />
                 {prevEntradaPoints.length > 1 && <path d={smoothPath(prevEntradaPoints)} fill="none" stroke="var(--color-success-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
                 {prevSaidaPoints.length > 1 && <path d={smoothPath(prevSaidaPoints)} fill="none" stroke="var(--color-danger-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
-                <path d={entradaPath} fill="none" stroke="var(--color-success-600)" strokeWidth="2" />
-                <path d={saidaPath} fill="none" stroke="var(--color-danger-600)" strokeWidth="2" />
+                <path d={entradaPath} fill="none" stroke="var(--color-success-600)" strokeWidth="2" style={{ animation: 'drawLine 1.2s var(--ease-default) forwards' }} />
+                <path d={saidaPath} fill="none" stroke="var(--color-danger-600)" strokeWidth="2" style={{ animation: 'drawLine 1.2s var(--ease-default) forwards' }} />
+                {tooltip && entradaPoints[tooltip.idx] && (
+                  <circle
+                    cx={entradaPoints[tooltip.idx].x}
+                    cy={entradaPoints[tooltip.idx].y}
+                    r="4"
+                    fill="var(--color-success-600)"
+                    stroke="var(--color-bg-default)"
+                    strokeWidth="2"
+                    pointerEvents="none"
+                  />
+                )}
+                {tooltip && saidaPoints[tooltip.idx] && (
+                  <circle
+                    cx={saidaPoints[tooltip.idx].x}
+                    cy={saidaPoints[tooltip.idx].y}
+                    r="4"
+                    fill="var(--color-danger-600)"
+                    stroke="var(--color-bg-default)"
+                    strokeWidth="2"
+                    pointerEvents="none"
+                  />
+                )}
               </svg>
               {tooltip && (
-                <div style={{ position: 'absolute', left: Math.min(Math.max(tooltip.x + 12, 8), 420), top: Math.max(tooltip.y - 18, 8), background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12, pointerEvents: 'none', zIndex: 2 }}>
-                  <div style={{ fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 5 }}>{tooltip.item.dataLonga}</div>
-                  <div style={{ color: 'var(--color-success-600)' }}>Entradas: {tooltip.item.entradas}</div>
-                  <div style={{ color: 'var(--color-danger-600)' }}>Saidas: {tooltip.item.saidas}</div>
-                  <div style={{ color: 'var(--color-brand-600)' }}>Transferencias: {tooltip.item.transferencias}</div>
+                <div style={{ position: 'absolute', left: Math.min(tooltip.x + 12, 520), top: 40, background: 'var(--color-bg-default)', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', padding: '8px 12px', fontSize: 12, boxShadow: 'var(--shadow-md)', pointerEvents: 'none', zIndex: 10, minWidth: 140 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--color-text-primary)' }}>{tooltip.item?.dataLonga}</div>
+                  <div style={{ color: 'var(--color-success-600)' }}>Entradas: {tooltip.item?.entradas}</div>
+                  <div style={{ color: 'var(--color-danger-600)' }}>Saidas: {tooltip.item?.saidas}</div>
+                  <div style={{ color: 'var(--color-text-secondary)' }}>Transferencias: {tooltip.item?.transferencias}</div>
                 </div>
               )}
             </div>
@@ -619,6 +745,7 @@ export default function Dashboard() {
   }
 
   const movTrend = kpis ? trendPercent(kpis.movimentacoes_hoje, kpis.movimentacoes_ontem) : 0
+  const trendSpark = movData.slice(-7)
   const kpiItems = kpis ? [
     {
       label: 'Movimentacoes Hoje',
@@ -627,6 +754,8 @@ export default function Dashboard() {
       trend: `${movTrend >= 0 ? '↑' : '↓'} ${Math.abs(movTrend)}% vs ontem`,
       trendColor: movTrend >= 0 ? 'var(--color-success-600)' : 'var(--color-danger-600)',
       sparkline: kpis.sparkline_movimentacoes,
+      sparklineData: trendSpark.map(d => d.entradas + d.saidas),
+      sparklineColor: 'var(--color-brand-500)',
     },
     {
       label: 'Total Produtos',
@@ -711,21 +840,86 @@ export default function Dashboard() {
           <>
             <SaudeOperacional kpis={kpis} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
-              <MiniMetric label="ENTRADAS HOJE" value={Number(kpis?.tendencias?.entradas_hoje || 0)}>
+              <MiniMetric
+                label="ENTRADAS HOJE"
+                value={Number(kpis?.tendencias?.entradas_hoje || 0)}
+                sparkline={trendSpark.map(d => d.entradas)}
+                sparklineColor="var(--color-success-600)"
+              >
                 <TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} />
               </MiniMetric>
-              <MiniMetric label="SAIDAS HOJE" value={Number(kpis?.tendencias?.saidas_hoje || 0)}>
+              <MiniMetric
+                label="SAIDAS HOJE"
+                value={Number(kpis?.tendencias?.saidas_hoje || 0)}
+                sparkline={trendSpark.map(d => d.saidas)}
+                sparklineColor="var(--color-danger-600)"
+              >
                 <TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} />
               </MiniMetric>
-              <MiniMetric label="CAPITAL EM ESTOQUE" value={money(kpis?.capital?.capital_imobilizado)}>
+              <MiniMetric
+                label="CAPITAL EM ESTOQUE"
+                value={money(kpis?.capital?.capital_imobilizado)}
+                sparkline={[0, 0, 0, 0, 0, 0, 0]}
+                sparklineColor="var(--color-brand-600)"
+              >
                 <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
               </MiniMetric>
-              <MiniMetric label="MOVIMENTACOES HOJE" value={Number(kpis?.movimentacoes_hoje || 0)}>
+              <MiniMetric
+                label="MOVIMENTACOES HOJE"
+                value={Number(kpis?.movimentacoes_hoje || 0)}
+                sparkline={trendSpark.map(d => d.entradas + d.saidas)}
+                sparklineColor="var(--color-brand-500)"
+              >
                 <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
               </MiniMetric>
             </div>
           </>
         )}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        gap: 24,
+        padding: '10px 16px',
+        background: 'var(--color-bg-subtle)',
+        border: '1px solid var(--color-border-muted)',
+        borderRadius: 'var(--radius-md)',
+        marginBottom: 16,
+        fontSize: 12,
+        color: 'var(--color-text-secondary)',
+        flexWrap: 'wrap',
+      }}>
+        <span>
+          <strong style={{ color: 'var(--color-text-primary)' }}>
+            {kpis?.capital?.capital_imobilizado
+              ? `R$ ${Number(kpis.capital.capital_imobilizado).toLocaleString('pt-BR')}`
+              : '-'}
+          </strong>
+          {' '}em estoque
+        </span>
+        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
+        <span>
+          Cobertura media:{' '}
+          <strong style={{ color: 'var(--color-text-primary)' }}>
+            {rupturas.length > 0
+              ? `${Math.round(rupturas.reduce((a, r) => a + r.dias_para_ruptura, 0) / rupturas.length)} dias`
+              : '-'}
+          </strong>
+        </span>
+        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
+        <span>
+          Produtos em risco:{' '}
+          <strong style={{ color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
+            {rupturas.length}
+          </strong>
+        </span>
+        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
+        <span>
+          Lotes ativos:{' '}
+          <strong style={{ color: 'var(--color-text-primary)' }}>
+            {kpis?.total_lotes_ativos ?? '-'}
+          </strong>
+        </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
@@ -1012,6 +1206,14 @@ export default function Dashboard() {
       <style>{`
         @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes pulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.5} }
+        @keyframes drawLine {
+          from { stroke-dashoffset: 2000; stroke-dasharray: 2000; }
+          to { stroke-dashoffset: 0; stroke-dasharray: 2000; }
+        }
+        @keyframes fadeArea {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           [style*="repeat(3,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }

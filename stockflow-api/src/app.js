@@ -5,7 +5,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
-const { globalLimiter } = require('./middlewares/rateLimiter');
 
 const REQUIRED_ENV = ['JWT_SECRET', 'FRONTEND_URL'];
 const hasDatabaseConfig = process.env.DATABASE_URL || process.env.DB_URL ||
@@ -35,7 +34,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
-app.use('/api', globalLimiter);
 app.use(express.json());
 
 // Documentação
