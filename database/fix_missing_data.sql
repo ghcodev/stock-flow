@@ -3,6 +3,10 @@ USE stockflow;
 ALTER TABLE auditoria_log
   ADD COLUMN IF NOT EXISTS observacao TEXT NULL;
 
+SET @audit_user_id = NULL;
+SET @audit_ip = 'seed';
+SET @audit_op = 'UPDATE';
+
 UPDATE usuario
 SET email = 'carlos.matos.legacy@artetrigo.com.br'
 WHERE email = 'carlos.matos@artetrigo.com.br' AND id <> 1;
@@ -106,10 +110,10 @@ BEGIN
     'movimentacao',
     'INSERT',
     NULL,
-    JSON_OBJECT('tipo', NEW.tipo, 'quantidade', NEW.quantidade, 'id_lote', NEW.id_lote),
+    JSON_OBJECT('descricao', COALESCE(NEW.observacao, NEW.motivo_movimentacao, NEW.tipo), 'quantidade', NEW.quantidade, 'id_lote', NEW.id_lote),
     NEW.id_usuario,
     NOW(),
-    COALESCE(@audit_ip, '192.168.1.1')
+    COALESCE(NULLIF(@audit_ip, ''), 'interno')
   );
 END$$
 
@@ -122,11 +126,11 @@ BEGIN
     VALUES (
       'lote',
       IF(@audit_op = 'AJUSTE', 'AJUSTE', 'UPDATE'),
-      JSON_OBJECT('quantidade', OLD.quantidade),
-      JSON_OBJECT('quantidade', NEW.quantidade),
+      JSON_OBJECT('campo', 'quantidade', 'valor', OLD.quantidade, 'lote', OLD.numero_lote),
+      JSON_OBJECT('campo', 'quantidade', 'valor', NEW.quantidade, 'lote', NEW.numero_lote),
       @audit_user_id,
       NOW(),
-      @audit_ip
+      COALESCE(NULLIF(@audit_ip, ''), 'interno')
     );
   END IF;
 END$$

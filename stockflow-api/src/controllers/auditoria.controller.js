@@ -16,9 +16,15 @@ async function listar(req, res) {
             a.operacao AS acao,
             a.tabela_afetada AS entidade,
             COALESCE(a.observacao, a.valor_novo, a.valor_anterior) AS detalhe,
-            a.ip_usuario AS ip,
+            COALESCE(NULLIF(a.ip_usuario, ''), 'interno') AS ip,
             SHA2(CONCAT(a.id, '|', a.tabela_afetada, '|', a.operacao, '|', COALESCE(a.valor_novo, '')), 256) AS hash,
-            u.nome AS usuario_nome,
+            COALESCE(NULLIF(u.nome, ''),
+              CASE
+                WHEN a.ip_usuario = 'seed' THEN 'Sistema (seed)'
+                WHEN a.ip_usuario = 'job' THEN 'Sistema (job)'
+                ELSE 'Sistema'
+              END
+            ) AS usuario_nome,
             u.email AS usuario_email
      FROM auditoria_log a LEFT JOIN usuario u ON u.id = a.id_usuario
      ${where} ORDER BY a.data_hora DESC LIMIT ${Number(limit)} OFFSET ${offset}`,
@@ -30,7 +36,15 @@ async function listar(req, res) {
 
 async function porLote(req, res) {
   const [rows] = await pool.execute(
-    `SELECT a.*, u.nome AS usuario_nome
+    `SELECT a.*,
+            COALESCE(NULLIF(a.ip_usuario, ''), 'interno') AS ip,
+            COALESCE(NULLIF(u.nome, ''),
+              CASE
+                WHEN a.ip_usuario = 'seed' THEN 'Sistema (seed)'
+                WHEN a.ip_usuario = 'job' THEN 'Sistema (job)'
+                ELSE 'Sistema'
+              END
+            ) AS usuario_nome
      FROM auditoria_log a LEFT JOIN usuario u ON u.id = a.id_usuario
      WHERE a.tabela_afetada IN ('lote','movimentacao')
        AND (a.valor_novo LIKE ? OR a.valor_anterior LIKE ?)

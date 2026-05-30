@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
+const { normalizarIP } = require('../middleware/audit');
 
 const router = Router();
 router.use(authMiddleware);
@@ -172,6 +173,11 @@ router.patch('/:id/finalizar', async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [
+      req.user?.id || null,
+      normalizarIP(req),
+      'AJUSTE',
+    ]);
     for (const item of inventario.itens) {
       const divergencia = Number(item.divergencia || 0);
       if (divergencia === 0) continue;

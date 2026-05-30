@@ -8,9 +8,9 @@ FOR EACH ROW
   VALUES (
     'movimentacao',
     'INSERT',
-    CONCAT('tipo:', NEW.tipo, ',qtd:', NEW.quantidade, ',lote:', NEW.id_lote),
+    JSON_OBJECT('descricao', COALESCE(NEW.observacao, NEW.motivo_movimentacao, NEW.tipo), 'quantidade', NEW.quantidade, 'id_lote', NEW.id_lote),
     NEW.id_usuario,
-    @audit_ip
+    COALESCE(NULLIF(@audit_ip, ''), 'interno')
   );
 
 DELIMITER $$
@@ -23,10 +23,10 @@ BEGIN
     VALUES (
       'lote',
       IF(@audit_op = 'AJUSTE', 'AJUSTE', 'UPDATE'),
-      CONCAT('quantidade:', OLD.quantidade),
-      CONCAT('lote:', NEW.numero_lote, ',quantidade:', NEW.quantidade),
+      JSON_OBJECT('campo', 'quantidade', 'valor', OLD.quantidade, 'lote', OLD.numero_lote),
+      JSON_OBJECT('campo', 'quantidade', 'valor', NEW.quantidade, 'lote', NEW.numero_lote),
       @audit_user_id,
-      @audit_ip
+      COALESCE(NULLIF(@audit_ip, ''), 'interno')
     );
   END IF;
 END$$

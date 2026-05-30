@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) throw new Error('JWT_SECRET não definido no .env');
 
 const blacklist = new Set();
 
@@ -20,7 +23,7 @@ async function authMiddleware(req, res, next) {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
     const [rows] = await pool.execute(
       'SELECT id, nome, email, perfil, permissoes FROM usuario WHERE id = ? AND ativo = 1',
       [payload.id]

@@ -4,6 +4,7 @@ const ctrl = require('../controllers/produtos.controller');
 const { authMiddleware } = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 const { checkPermission } = require('../middleware/permission');
+const { validate } = require('../middlewares/validate');
 
 const router = Router();
 router.use(authMiddleware);
@@ -12,16 +13,20 @@ router.get('/', checkPermission('produtos', 'ver'), ctrl.listar);
 router.get('/:id', checkPermission('produtos', 'ver'), ctrl.buscarPorId);
 
 router.post('/',
-  body('nome').notEmpty().withMessage('Nome obrigatório'),
-  body('categoria').notEmpty().withMessage('Categoria obrigatória'),
-  body('unidade_medida').notEmpty().withMessage('Unidade de medida obrigatória'),
+  body('nome').trim().notEmpty().withMessage('Nome obrigatório'),
+  body('categoria').trim().notEmpty().withMessage('Categoria obrigatória'),
+  body('unidade_medida').trim().notEmpty().withMessage('Unidade de medida obrigatória'),
+  body('estoque_minimo').optional().isFloat({ min: 0 }).withMessage('Estoque mínimo deve ser >= 0'),
   checkPermission('produtos', 'criar'),
+  validate,
   ctrl.criar
 );
 
 router.put('/:id',
-  body('nome').optional().notEmpty().withMessage('Nome não pode ser vazio'),
+  body('nome').optional().trim().notEmpty().withMessage('Nome não pode ser vazio'),
+  body('estoque_minimo').optional().isFloat({ min: 0 }).withMessage('Estoque mínimo deve ser >= 0'),
   checkPermission('produtos', 'editar'),
+  validate,
   ctrl.atualizar
 );
 
