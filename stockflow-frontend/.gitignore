@@ -1,0 +1,20 @@
+# Build
+dist/
+dist-ssr/
+
+# Variáveis de ambiente locais
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

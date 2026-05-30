@@ -673,14 +673,11 @@ export default function MapaArmazem() {
       ])
       const localizacoes = locRes.data?.data || locRes.data || []
       const lotes = loteRes.data?.data || loteRes.data || []
-      console.log('[Mapa] localizacoes:', localizacoes.length)
-      console.log('[Mapa] lotes:', lotes.length)
       const byZone = lotes.reduce((acc, lote) => {
         const zoneId = normalizeZoneId(lote.zona || lote.corredor || lote.area || lote.setor)
         if (zoneId) acc[zoneId] = (acc[zoneId] || 0) + 1
         return acc
       }, {})
-      console.log('[Mapa] lotes por zona:', byZone)
       setSlots(buildSlots(localizacoes, lotes))
       setLastSync(0)
     } catch (err) {
