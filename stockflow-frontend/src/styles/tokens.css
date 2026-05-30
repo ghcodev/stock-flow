@@ -104,6 +104,22 @@
 
   --ease-default: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Focus rings */
+  --color-focus-ring: rgba(46, 117, 182, 0.15);
+  --color-focus-ring-danger: rgba(239, 68, 68, 0.15);
+
+  /* Pulse animations */
+  --color-pulse-success-start: rgba(34, 197, 94, 0.18);
+  --color-pulse-warning-start: rgba(245, 158, 11, 0.18);
+
+  /* Warning bg/border (alertas estoque baixo) */
+  --color-warning-bg: #fff7ed;
+  --color-warning-border: #fb923c;
+  --color-warning-text-strong: #c2410c;
+
+  /* Texto intermediário */
+  --color-text-muted: #64748b;
 }
 
 html[data-theme="dark"] {
@@ -143,4 +159,10 @@ html[data-theme="dark"] {
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.30);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.50), 0 4px 6px rgba(0, 0, 0, 0.30);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.55), 0 8px 10px rgba(0, 0, 0, 0.30);
+  --color-focus-ring: rgba(46, 117, 182, 0.25);
+  --color-focus-ring-danger: rgba(239, 68, 68, 0.25);
+  --color-warning-bg: #2a1d04;
+  --color-warning-border: #92400e;
+  --color-warning-text-strong: #fbbf24;
+  --color-text-muted: #475569;
 }
