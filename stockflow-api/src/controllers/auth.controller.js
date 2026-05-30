@@ -13,9 +13,13 @@ async function login(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
 
-  const { email, senha } = req.body;
+  const { identifier, senha } = req.body;
 
-  const [rows] = await pool.execute('SELECT * FROM usuario WHERE email = ? AND ativo = 1', [email]);
+  const isNumerico = /^\d+$/.test(String(identifier || ''));
+  const [rows] = isNumerico
+    ? await pool.execute('SELECT * FROM usuario WHERE id = ? AND ativo = 1 LIMIT 1', [identifier])
+    : await pool.execute('SELECT * FROM usuario WHERE email = ? AND ativo = 1 LIMIT 1', [identifier]);
+
   if (!rows.length) {
     return res.status(401).json({ error: 'Credenciais inválidas', timestamp: new Date().toISOString() });
   }
@@ -67,4 +71,15 @@ async function alterarSenha(req, res) {
   return res.json({ mensagem: 'Senha alterada com sucesso' });
 }
 
-module.exports = { login, logout, alterarSenha };
+async function usuarioPorCodigo(req, res) {
+  const { codigo } = req.params;
+  if (!codigo || !/^\d+$/.test(codigo)) return res.json({ encontrado: false });
+  const [rows] = await pool.execute(
+    'SELECT id, nome FROM usuario WHERE id = ? AND ativo = 1 LIMIT 1',
+    [codigo]
+  );
+  if (!rows.length) return res.json({ encontrado: false });
+  return res.json({ encontrado: true, nome: rows[0].nome });
+}
+
+module.exports = { login, logout, alterarSenha, usuarioPorCodigo };
