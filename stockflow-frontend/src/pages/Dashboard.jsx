@@ -13,10 +13,10 @@ import {
 } from 'recharts'
 
 const MOV_COLORS = {
-  entradas: '#16a34a',
-  saidas: '#dc2626',
-  transferencias: '#2E75B6',
-  ajustes: '#d97706',
+  entradas: 'var(--color-success-600)',
+  saidas: 'var(--color-danger-600)',
+  transferencias: 'var(--color-brand-600)',
+  ajustes: 'var(--color-warning-600)',
 }
 
 const CORREDORES = {
@@ -72,7 +72,7 @@ function ChartTooltip({ active, payload, label }) {
   const title = payload[0]?.payload?.dataLonga || label
 
   return (
-    <div style={{ background: '#fff', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+    <div style={{ background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
       <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 6 }}>{title}</div>
       {[
         ['entradas', 'Entradas'],
@@ -95,7 +95,7 @@ function PieTooltip({ active, payload, total }) {
   const value = Number(item.value || 0)
   const pct = total ? Math.round((value / total) * 100) : 0
   return (
-    <div style={{ background: '#fff', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+    <div style={{ background: 'var(--color-bg-default)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-muted)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
       <strong>{item.name}</strong>: {value} un - {pct}%
     </div>
   )
@@ -173,7 +173,7 @@ function AlertItem({ item }) {
     atencao: { icon: Clock, label: 'ATENCAO', tone: 'warning', bg: 'var(--color-warning-50)', border: 'var(--color-warning-400)', color: 'var(--color-warning-600)' },
     vencimento: { icon: Clock, label: 'ATENCAO', tone: 'warning', bg: 'var(--color-warning-50)', border: 'var(--color-warning-400)', color: 'var(--color-warning-600)' },
     estoque: { icon: TrendingDown, label: 'ESTOQUE BAIXO', tone: 'orange', bg: '#fff7ed', border: '#fb923c', color: '#c2410c' },
-    bloqueado: { icon: Lock, label: 'BLOQUEADO', tone: 'neutral', bg: 'var(--color-bg-subtle)', border: 'var(--color-slate-400, #94a3b8)', color: 'var(--color-text-secondary)' },
+    bloqueado: { icon: Lock, label: 'BLOQUEADO', tone: 'neutral', bg: 'var(--color-bg-subtle)', border: 'var(--color-text-tertiary)', color: 'var(--color-text-secondary)' },
   }[item.tipo] || {}
   const Icon = config.icon || AlertTriangle
   const subtitle = item.tipo === 'estoque'
@@ -394,7 +394,7 @@ export default function Dashboard() {
                   <div style={{ width: movData.length > 15 ? Math.max(720, movData.length * 48) : '100%', height: 188 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={movData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barGap={2}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-bg-elevated)" />
                         <XAxis dataKey="dia" tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
                         <YAxis width={32} tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(46,117,182,0.05)' }} />
