@@ -308,13 +308,13 @@ async function alertasPendentes(req, res) {
 async function ocupacaoCorredores(req, res) {
   const [rows] = await pool.execute(
     `SELECT
-       SUBSTRING_INDEX(loc.corredor, '-', 2) AS zona,
+       CONCAT(LEFT(loc.corredor, 2), '-', SUBSTRING(loc.corredor, 3, 2)) AS zona,
        COUNT(*) AS total_posicoes,
        SUM(CASE WHEN l.id IS NOT NULL THEN 1 ELSE 0 END) AS ocupadas,
        ROUND(SUM(CASE WHEN l.id IS NOT NULL THEN 1 ELSE 0 END) / COUNT(*) * 100, 1) AS percentual
      FROM localizacao loc
      LEFT JOIN lote l ON l.id_localizacao = loc.id AND l.status_lote = 'ativo'
-     GROUP BY SUBSTRING_INDEX(loc.corredor, '-', 2)
+     GROUP BY CONCAT(LEFT(loc.corredor, 2), '-', SUBSTRING(loc.corredor, 3, 2))
      ORDER BY zona`
   );
 

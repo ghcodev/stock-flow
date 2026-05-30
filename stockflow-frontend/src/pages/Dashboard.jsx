@@ -125,47 +125,6 @@ function MiniBadge({ children, tone = 'neutral' }) {
   )
 }
 
-function Sparkline({ data, color = 'var(--color-brand-600)', width = 80, height = 28 }) {
-  if (Array.isArray(data) && (data.length === 0 || typeof data[0] === 'number')) {
-    if (!data || data.length < 2) return null
-    const max = Math.max(...data, 1)
-    const min = Math.min(...data)
-    const range = max - min || 1
-    const pts = data.map((v, i) => ({
-      x: (i / (data.length - 1)) * width,
-      y: height - ((v - min) / range) * height,
-    }))
-    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ')
-    const area = `${line} L ${width},${height} L 0,${height} Z`
-    const gradientId = `sg-${color.replace(/[^a-z]/gi, '')}`
-
-    return (
-      <svg width={width} height={height} style={{ display: 'block' }} aria-hidden="true">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill={`url(#${gradientId})`} />
-        <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    )
-  }
-
-  const rows = (data || []).map(item => ({ ...item, total: Number(item.total || 0) }))
-  if (!rows.length) return null
-  const w = 96
-  const h = 32
-  const pad = 3
-  const points = calcPoints(rows, 'total', w, h, pad)
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="96" height="32" aria-hidden="true">
-      <path d={smoothPath(points)} fill="none" stroke={color} strokeWidth="2" />
-    </svg>
-  )
-}
-
 function KpiCard({ item }) {
   const Icon = item.icon
   return (
@@ -185,7 +144,6 @@ function KpiCard({ item }) {
             {item.trend}
           </div>
         </div>
-        {item.sparkline && <Sparkline data={item.sparkline} />}
       </div>
       {item.detail && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 11, color: item.detailColor || 'var(--color-text-tertiary)', fontWeight: item.detailColor ? 700 : 500 }}>
@@ -194,11 +152,6 @@ function KpiCard({ item }) {
         </div>
       )}
       {item.secondary && <div style={{ marginTop: 4, fontSize: 11, color: item.secondaryColor || 'var(--color-text-tertiary)', fontWeight: 700 }}>{item.secondary}</div>}
-      {item.sparklineData && (
-        <div style={{ position: 'absolute', right: 12, bottom: 10, opacity: 0.8 }}>
-          <Sparkline data={item.sparklineData} color={item.sparklineColor} />
-        </div>
-      )}
     </div>
   )
 }
@@ -209,17 +162,12 @@ function TrendBadge({ direction, pct }) {
   return <MiniBadge tone={up ? 'success' : 'danger'}>{up ? '↑' : '↓'} {up ? '+' : ''}{Number(pct || 0).toFixed(1)}%</MiniBadge>
 }
 
-function MiniMetric({ label, value, children, sparkline, sparklineColor }) {
+function MiniMetric({ label, value, children }) {
   return (
     <div className="card" style={{ padding: '16px 18px', minHeight: 112, position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
       <div style={{ marginTop: 10 }}>{children}</div>
-      {sparkline && (
-        <div style={{ position: 'absolute', right: 12, bottom: 12, opacity: 0.8 }}>
-          <Sparkline data={sparkline} color={sparklineColor} />
-        </div>
-      )}
     </div>
   )
 }
@@ -745,7 +693,6 @@ export default function Dashboard() {
   }
 
   const movTrend = kpis ? trendPercent(kpis.movimentacoes_hoje, kpis.movimentacoes_ontem) : 0
-  const trendSpark = movData.slice(-7)
   const kpiItems = kpis ? [
     {
       label: 'Movimentacoes Hoje',
@@ -753,9 +700,6 @@ export default function Dashboard() {
       icon: Activity,
       trend: `${movTrend >= 0 ? '↑' : '↓'} ${Math.abs(movTrend)}% vs ontem`,
       trendColor: movTrend >= 0 ? 'var(--color-success-600)' : 'var(--color-danger-600)',
-      sparkline: kpis.sparkline_movimentacoes,
-      sparklineData: trendSpark.map(d => d.entradas + d.saidas),
-      sparklineColor: 'var(--color-brand-500)',
     },
     {
       label: 'Total Produtos',
@@ -843,32 +787,24 @@ export default function Dashboard() {
               <MiniMetric
                 label="ENTRADAS HOJE"
                 value={Number(kpis?.tendencias?.entradas_hoje || 0)}
-                sparkline={trendSpark.map(d => d.entradas)}
-                sparklineColor="var(--color-success-600)"
               >
                 <TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} />
               </MiniMetric>
               <MiniMetric
                 label="SAIDAS HOJE"
                 value={Number(kpis?.tendencias?.saidas_hoje || 0)}
-                sparkline={trendSpark.map(d => d.saidas)}
-                sparklineColor="var(--color-danger-600)"
               >
                 <TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} />
               </MiniMetric>
               <MiniMetric
                 label="CAPITAL EM ESTOQUE"
                 value={money(kpis?.capital?.capital_imobilizado)}
-                sparkline={[0, 0, 0, 0, 0, 0, 0]}
-                sparklineColor="var(--color-brand-600)"
               >
                 <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
               </MiniMetric>
               <MiniMetric
                 label="MOVIMENTACOES HOJE"
                 value={Number(kpis?.movimentacoes_hoje || 0)}
-                sparkline={trendSpark.map(d => d.entradas + d.saidas)}
-                sparklineColor="var(--color-brand-500)"
               >
                 <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
               </MiniMetric>
