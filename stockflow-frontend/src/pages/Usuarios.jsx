@@ -63,7 +63,7 @@ function Toggle({ checked, disabled, onChange }) {
         transition: 'background 150ms ease',
       }}
     >
-      <span style={{ position: 'absolute', top: 3, left: checked ? 17 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 150ms ease', boxShadow: 'var(--shadow-xs)' }} />
+      <span style={{ position: 'absolute', top: 3, left: checked ? 17 : 3, width: 14, height: 14, borderRadius: '50%', background: 'var(--color-bg-default)', transition: 'left 150ms ease', boxShadow: 'var(--shadow-xs)' }} />
     </button>
   )
 }
@@ -202,7 +202,7 @@ export default function Usuarios() {
               const ativo = u.ativo !== false && u.status !== 'inativo'
               return (
                 <tr key={u.id}>
-                  <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2E75B6,#1F3864)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 }}>{initials(u.nome)}</div><span style={{ fontWeight: 600, fontSize: 13 }}>{u.nome}</span></div></td>
+                  <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))', color: 'var(--color-text-inverse)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 }}>{initials(u.nome)}</div><span style={{ fontWeight: 600, fontSize: 13 }}>{u.nome}</span></div></td>
                   <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12 }}>{u.email}</td>
                   <td><span className={`badge ${PERFIL_CFG[perfilKey] || 'badge-neutral'}`}><Shield size={10} /> {u.perfil}</span></td>
                   <td style={{ textAlign: 'center' }}><span className={`badge ${ativo ? 'badge-success' : 'badge-neutral'}`}>{ativo ? <UserCheck size={10} /> : <UserX size={10} />} {ativo ? 'Ativo' : 'Inativo'}</span></td>
