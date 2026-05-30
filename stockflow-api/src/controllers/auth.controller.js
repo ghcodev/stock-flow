@@ -4,6 +4,10 @@ const { validationResult } = require('express-validator');
 const pool = require('../config/database');
 const { addToBlacklist } = require('../middleware/auth');
 const logAudit = require('../middleware/audit');
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
+
+if (!JWT_SECRET) throw new Error('JWT_SECRET não definido no .env');
 
 async function login(req, res) {
   const errors = validationResult(req);
@@ -23,12 +27,12 @@ async function login(req, res) {
   }
 
   const payload = { id: usuario.id, email: usuario.email, perfil: usuario.perfil, nome: usuario.nome, permissoes: usuario.permissoes || null };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
   await logAudit({
     tabela: 'usuario',
     operacao: 'LOGIN',
-    valorNovo: `email:${usuario.email}`,
+    valorNovo: { email: usuario.email, sucesso: true },
     idUsuario: usuario.id,
     ip: req.ip,
   });
@@ -58,7 +62,7 @@ async function alterarSenha(req, res) {
   const hash = await bcrypt.hash(nova_senha, 12);
   await pool.execute('UPDATE usuario SET senha_hash = ? WHERE id = ?', [hash, req.user.id]);
 
-  await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorNovo: 'senha alterada', idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorNovo: { descricao: 'senha alterada' }, idUsuario: req.user.id, ip: req.ip });
 
   return res.json({ mensagem: 'Senha alterada com sucesso' });
 }

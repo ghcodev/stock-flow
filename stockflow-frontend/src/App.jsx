@@ -58,10 +58,15 @@ function AppRoutes() {
       <Route path="/dashboard"    element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/produtos"     element={<PrivateRoute><Produtos /></PrivateRoute>} />
       <Route path="/lotes"        element={<PrivateRoute><Lotes /></PrivateRoute>} />
+      <Route path="/lotes/novo"   element={<PrivateRoute><Lotes /></PrivateRoute>} />
       <Route path="/mapa"         element={<PrivateRoute><MapaArmazem /></PrivateRoute>} />
       <Route path="/entrada"      element={<PrivateRoute><Entrada /></PrivateRoute>} />
       <Route path="/saida"        element={<PrivateRoute><Saida /></PrivateRoute>} />
       <Route path="/transferencia" element={<PrivateRoute><Transferencia /></PrivateRoute>} />
+      <Route path="/movimentacoes" element={<PrivateRoute><Historico /></PrivateRoute>} />
+      <Route path="/movimentacoes/entrada" element={<PrivateRoute><Entrada /></PrivateRoute>} />
+      <Route path="/movimentacoes/saida" element={<PrivateRoute><Saida /></PrivateRoute>} />
+      <Route path="/movimentacoes/transferencia" element={<PrivateRoute><Transferencia /></PrivateRoute>} />
       <Route path="/historico"    element={<PrivateRoute><Historico /></PrivateRoute>} />
       <Route path="/rastreabilidade" element={<PrivateRoute><Rastreabilidade /></PrivateRoute>} />
       <Route path="/alertas"      element={<PrivateRoute><AlertasVencimento /></PrivateRoute>} />

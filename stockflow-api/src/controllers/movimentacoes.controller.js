@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const pool = require('../config/database');
+const { normalizarIP } = require('../middleware/audit');
 
 function err(res, status, msg, codigo = null) {
   return res.status(status).json({ error: msg, ...(codigo && { codigo }), timestamp: new Date().toISOString() });
@@ -63,7 +64,7 @@ async function entrada(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, normalizarIP(req), 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, id_localizacao_destino, observacao, status)
        VALUES ('entrada',?,?,?,?,?,'concluida')`,
@@ -96,7 +97,7 @@ async function saida(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, normalizarIP(req), 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, observacao, status)
        VALUES ('saida',?,?,?,?,'concluida')`,
@@ -128,7 +129,7 @@ async function transferencia(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'UPDATE']);
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, normalizarIP(req), 'UPDATE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, id_localizacao_origem, id_localizacao_destino, motivo_movimentacao, status)
        VALUES ('transferencia', ?, ?, ?, ?, ?, ?, 'concluida')`,
@@ -161,7 +162,7 @@ async function ajuste(req, res) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, req.ip || null, 'AJUSTE']);
+    await conn.execute('SET @audit_user_id = ?, @audit_ip = ?, @audit_op = ?', [req.user.id, normalizarIP(req), 'AJUSTE']);
     const [result] = await conn.execute(
       `INSERT INTO movimentacao (tipo, quantidade, id_lote, id_usuario, motivo_movimentacao, status)
        VALUES ('ajuste', ?, ?, ?, ?, 'concluida')`,

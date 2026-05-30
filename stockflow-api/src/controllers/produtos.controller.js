@@ -48,7 +48,7 @@ async function criar(req, res) {
     [nome, categoria, descricao || null, unidade_medida, estoque_minimo]
   );
 
-  await logAudit({ tabela: 'produto', operacao: 'INSERT', valorNovo: `nome:${nome}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'produto', operacao: 'INSERT', valorNovo: { nome, categoria, unidade_medida }, idUsuario: req.user.id, ip: req.ip });
   return res.status(201).json({ id: result.insertId, nome, categoria, unidade_medida, estoque_minimo });
 }
 
@@ -70,7 +70,8 @@ async function atualizar(req, res) {
 
   await logAudit({
     tabela: 'produto', operacao: 'UPDATE',
-    valorAnterior: `nome:${anterior.nome}`, valorNovo: `nome:${nome ?? anterior.nome}`,
+    valorAnterior: { nome: anterior.nome },
+    valorNovo: { nome: nome ?? anterior.nome, categoria: categoria ?? anterior.categoria },
     idUsuario: req.user.id, ip: req.ip,
   });
   return res.json({ mensagem: 'Produto atualizado' });
@@ -81,7 +82,7 @@ async function inativar(req, res) {
   if (!rows.length) return res.status(404).json({ error: 'Produto não encontrado' });
 
   await pool.execute('UPDATE produto SET ativo = 0 WHERE id = ?', [req.params.id]);
-  await logAudit({ tabela: 'produto', operacao: 'UPDATE', valorNovo: `inativado:${rows[0].nome}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'produto', operacao: 'UPDATE', valorNovo: { produto: rows[0].nome, ativo: false }, idUsuario: req.user.id, ip: req.ip });
   return res.json({ mensagem: 'Produto inativado' });
 }
 

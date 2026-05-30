@@ -2,12 +2,40 @@ require('dotenv').config();
 require('express-async-errors');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { globalLimiter } = require('./middlewares/rateLimiter');
+
+const REQUIRED_ENV = ['JWT_SECRET', 'FRONTEND_URL'];
+const hasDatabaseConfig = process.env.DATABASE_URL || process.env.DB_URL ||
+  (process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
+
+REQUIRED_ENV.forEach(key => {
+  if (!process.env[key]) {
+    console.error(`ERRO: variável de ambiente ${key} não definida`);
+    process.exit(1);
+  }
+});
+
+if (!hasDatabaseConfig) {
+  console.error('ERRO: configuração de banco não definida. Use DATABASE_URL/DB_URL ou DB_HOST, DB_USER e DB_NAME.');
+  process.exit(1);
+}
 
 const app = express();
 
-app.use(cors());
+app.use(helmet());
+app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
+app.use(helmet.noSniff());
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+app.use('/api', globalLimiter);
 app.use(express.json());
 
 // Documentação
@@ -40,7 +68,11 @@ app.use((req, res) => res.status(404).json({ error: `Rota ${req.method} ${req.pa
 // Error handler global
 app.use((err, req, res, _next) => {
   console.error(`[${req.method} ${req.path}]`, err.message, err.stack?.split('\n')[1]);
-  res.status(500).json({ error: 'Erro interno do servidor', detalhe: err.message, timestamp: new Date().toISOString() });
+  res.status(500).json({
+    error: 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' ? { detalhe: err.message } : {}),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 const PORT = process.env.PORT || 3000;

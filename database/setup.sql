@@ -140,12 +140,14 @@ CREATE TRIGGER trg_audit_movimentacao_insert
 AFTER INSERT ON movimentacao
 FOR EACH ROW
 BEGIN
-  INSERT INTO auditoria_log (tabela_afetada, operacao, valor_novo, data_hora)
+  INSERT INTO auditoria_log (tabela_afetada, operacao, valor_novo, id_usuario, data_hora, ip_usuario)
   VALUES (
     'movimentacao',
     'INSERT',
-    CONCAT('tipo:', NEW.tipo, ',quantidade:', NEW.quantidade, ',id_lote:', NEW.id_lote, ',status:', NEW.status),
-    NOW()
+    JSON_OBJECT('descricao', COALESCE(NEW.observacao, NEW.motivo_movimentacao, NEW.tipo), 'quantidade', NEW.quantidade, 'id_lote', NEW.id_lote, 'status', NEW.status),
+    NEW.id_usuario,
+    NOW(),
+    COALESCE(NULLIF(@audit_ip, ''), 'interno')
   );
 END$$
 
@@ -156,13 +158,15 @@ AFTER UPDATE ON lote
 FOR EACH ROW
 BEGIN
   IF OLD.quantidade != NEW.quantidade OR OLD.status_lote != NEW.status_lote THEN
-    INSERT INTO auditoria_log (tabela_afetada, operacao, valor_anterior, valor_novo, data_hora)
+    INSERT INTO auditoria_log (tabela_afetada, operacao, valor_anterior, valor_novo, id_usuario, data_hora, ip_usuario)
     VALUES (
       'lote',
-      'UPDATE',
-      CONCAT('quantidade:', OLD.quantidade, ',status_lote:', OLD.status_lote),
-      CONCAT('quantidade:', NEW.quantidade, ',status_lote:', NEW.status_lote),
-      NOW()
+      IF(@audit_op = 'AJUSTE', 'AJUSTE', 'UPDATE'),
+      JSON_OBJECT('campo', 'quantidade_status', 'quantidade', OLD.quantidade, 'status_lote', OLD.status_lote, 'lote', OLD.numero_lote),
+      JSON_OBJECT('campo', 'quantidade_status', 'quantidade', NEW.quantidade, 'status_lote', NEW.status_lote, 'lote', NEW.numero_lote),
+      @audit_user_id,
+      NOW(),
+      COALESCE(NULLIF(@audit_ip, ''), 'interno')
     );
   END IF;
 END$$
@@ -173,16 +177,22 @@ CREATE TRIGGER trg_audit_usuario_insert
 AFTER INSERT ON usuario
 FOR EACH ROW
 BEGIN
-  INSERT INTO auditoria_log (tabela_afetada, operacao, valor_novo, data_hora)
+  INSERT INTO auditoria_log (tabela_afetada, operacao, valor_novo, id_usuario, data_hora, ip_usuario)
   VALUES (
     'usuario',
     'INSERT',
-    CONCAT('email:', NEW.email, ',perfil:', NEW.perfil),
-    NOW()
+    JSON_OBJECT('nome', NEW.nome, 'perfil', NEW.perfil),
+    @audit_user_id,
+    NOW(),
+    COALESCE(NULLIF(@audit_ip, ''), 'interno')
   );
 END$$
 
 DELIMITER ;
+
+SET @audit_user_id = NULL;
+SET @audit_ip = 'seed';
+SET @audit_op = 'UPDATE';
 
 -- =============================================================
 -- SEED: dados iniciais

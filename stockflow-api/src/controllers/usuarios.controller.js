@@ -41,7 +41,7 @@ async function criar(req, res) {
     [nome, email, hash, p]
   );
 
-  await logAudit({ tabela: 'usuario', operacao: 'INSERT', valorNovo: `email:${email},perfil:${p}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'usuario', operacao: 'INSERT', valorNovo: { nome, perfil: p }, idUsuario: req.user.id, ip: req.ip });
   return res.status(201).json({ id: result.insertId, nome, email, perfil: p });
 }
 
@@ -61,7 +61,14 @@ async function atualizar(req, res) {
     [nome ?? ant.nome, email ?? ant.email, p ?? ant.perfil, permissoesValue, req.params.id]
   );
 
-  await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorAnterior: `email:${ant.email}`, valorNovo: `email:${email ?? ant.email}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({
+    tabela: 'usuario',
+    operacao: 'UPDATE',
+    valorAnterior: { nome: ant.nome, email: ant.email, perfil: ant.perfil },
+    valorNovo: { nome: nome ?? ant.nome, email: email ?? ant.email, perfil: p ?? ant.perfil },
+    idUsuario: req.user.id,
+    ip: req.ip,
+  });
   return res.json({ mensagem: 'Usuário atualizado' });
 }
 
@@ -70,7 +77,7 @@ async function inativar(req, res) {
   if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' });
 
   await pool.execute('UPDATE usuario SET ativo = 0 WHERE id = ?', [req.params.id]);
-  await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorNovo: `inativado:${rows[0].email}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'usuario', operacao: 'UPDATE', valorNovo: { email: rows[0].email, ativo: false }, idUsuario: req.user.id, ip: req.ip });
   return res.json({ mensagem: 'Usuário inativado' });
 }
 

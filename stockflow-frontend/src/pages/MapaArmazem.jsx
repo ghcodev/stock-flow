@@ -10,14 +10,18 @@ const RACK_H = 28
 const SHELF_H = 14
 const TOP_H = TILE_H / 2
 
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 const STATUS_ORDER = ['bloqueado', 'quarentena', 'vencendo', 'ativo', 'livre']
 const STATUS_META = {
-  ativo: { top: '#3b82f6', left: '#1d4ed8', right: '#1e3a8a', label: 'Ocupado ativo' },
-  livre: { top: '#86efac', left: '#16a34a', right: '#14532d', label: 'Posição livre' },
-  vencendo: { top: '#fcd34d', left: '#d97706', right: '#92400e', label: 'Vencimento próximo' },
-  bloqueado: { top: '#f87171', left: '#dc2626', right: '#7f1d1d', label: 'Bloqueado' },
-  quarentena: { top: '#c4b5fd', left: '#7c3aed', right: '#4c1d95', label: 'Quarentena' },
-  piso: { top: '#e2e8f0', left: '#cbd5e1', right: '#94a3b8', label: 'Piso' },
+  ativo:      { top: getCSSVar('--color-brand-500'),   left: '#1d4ed8', right: '#1e3a8a', label: 'Ocupado ativo' },      // TODO: #1d4ed8, #1e3a8a sem token DS
+  livre:      { top: '#86efac', left: getCSSVar('--color-success-600'), right: '#14532d', label: 'Posição livre' },       // TODO: #86efac, #14532d sem token DS
+  vencendo:   { top: '#fcd34d', left: getCSSVar('--color-warning-600'), right: '#92400e', label: 'Vencimento próximo' },  // TODO: #fcd34d, #92400e sem token DS
+  bloqueado:  { top: '#f87171', left: getCSSVar('--color-danger-600'),  right: '#7f1d1d', label: 'Bloqueado' },           // TODO: #f87171, #7f1d1d sem token DS
+  quarentena: { top: '#c4b5fd', left: getCSSVar('--color-admin-600'),   right: '#4c1d95', label: 'Quarentena' },          // TODO: #c4b5fd, #4c1d95 sem token DS
+  piso:       { top: '#e2e8f0', left: getCSSVar('--color-border-strong'), right: getCSSVar('--color-text-tertiary'), label: 'Piso' }, // TODO: #e2e8f0 sem token DS
 }
 
 const ZONES = [
@@ -128,11 +132,11 @@ function diasParaVencer(dataISO) {
 function labelValidade(dataISO) {
   const dias = diasParaVencer(dataISO)
   if (dias === null) return null
-  if (dias < 0) return { texto: `Vencido há ${Math.abs(dias)} dias`, cor: '#E24B4A' }
-  if (dias === 0) return { texto: 'Vence hoje', cor: '#E24B4A' }
-  if (dias <= 30) return { texto: `Vence em ${dias} dias`, cor: '#EF9F27' }
-  if (dias <= 60) return { texto: `Vence em ${dias} dias`, cor: '#BA7517' }
-  return { texto: `Válido por ${dias} dias`, cor: '#639922' }
+  if (dias < 0) return { texto: `Vencido há ${Math.abs(dias)} dias`, cor: getCSSVar('--color-danger-500') }
+  if (dias === 0) return { texto: 'Vence hoje', cor: getCSSVar('--color-danger-500') }
+  if (dias <= 30) return { texto: `Vence em ${dias} dias`, cor: getCSSVar('--color-warning-500') }
+  if (dias <= 60) return { texto: `Vence em ${dias} dias`, cor: getCSSVar('--color-warning-700') }
+  return { texto: `Válido por ${dias} dias`, cor: '#639922' } // TODO: sem token verde DS
 }
 
 function normalizeStatus(lote) {
@@ -376,16 +380,16 @@ function drawLabel(ctx, text, x, y, status, scale = 1) {
     quarentena: 'rgba(83, 74, 183, 0.82)',
   }
   const textMap = {
-    livre: '#1a4010',
-    ativo: '#ffffff',
-    ocupado: '#ffffff',
-    vencendo: '#ffffff',
-    vencimento_proximo: '#ffffff',
-    bloqueado: '#ffffff',
-    quarentena: '#ffffff',
+    livre: '#1a4010', // TODO: sem token verde DS
+    ativo: getCSSVar('--color-text-inverse'),
+    ocupado: getCSSVar('--color-text-inverse'),
+    vencendo: getCSSVar('--color-text-inverse'),
+    vencimento_proximo: getCSSVar('--color-text-inverse'),
+    bloqueado: getCSSVar('--color-text-inverse'),
+    quarentena: getCSSVar('--color-text-inverse'),
   }
   const bg = bgMap[status] || 'rgba(255,255,255,0.82)'
-  const color = textMap[status] || '#1a1a1a'
+  const color = textMap[status] || '#1a1a1a' // TODO: #1a1a1a sem token DS
 
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,0.25)'
@@ -508,12 +512,12 @@ function progressForZone(zoneId, animationStart) {
 function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
   const lote = detalhe || slot.lote
   const statusConfig = {
-    ativo: { label: 'Ocupado', cor: '#639922', bg: '#EAF3DE' },
-    ocupado: { label: 'Ocupado', cor: '#639922', bg: '#EAF3DE' },
-    vencendo: { label: 'Vencimento próximo', cor: '#BA7517', bg: '#FAEEDA' },
-    vencimento_proximo: { label: 'Vencimento próximo', cor: '#BA7517', bg: '#FAEEDA' },
-    bloqueado: { label: 'Bloqueado', cor: '#A32D2D', bg: '#FCEBEB' },
-    quarentena: { label: 'Quarentena', cor: '#534AB7', bg: '#EEEDFE' },
+    ativo:              { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },                         // TODO: #639922, #EAF3DE sem token DS
+    ocupado:            { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },                         // TODO: sem token DS
+    vencendo:           { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },                         // TODO: sem token DS
+    vencimento_proximo: { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },                         // TODO: sem token DS
+    bloqueado:          { label: 'Bloqueado',           cor: getCSSVar('--color-danger-700'),    bg: getCSSVar('--color-danger-50') },
+    quarentena:         { label: 'Quarentena',          cor: getCSSVar('--color-admin-700'),     bg: getCSSVar('--color-admin-100') },
   }
   const sc = statusConfig[slot.status] || statusConfig.ativo
   const validade = lote?.data_validade || lote?.validade
@@ -581,7 +585,7 @@ function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
             ))}
 
             {dias !== null && dias <= 60 && (
-              <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 'var(--border-radius-md, 8px)', background: dias < 0 ? '#FCEBEB' : dias <= 30 ? '#FAEEDA' : '#EAF3DE', color: dias < 0 ? '#A32D2D' : dias <= 30 ? '#BA7517' : '#3B6D11', fontSize: 12, fontWeight: 500 }}>
+              <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 'var(--border-radius-md, 8px)', background: dias < 0 ? 'var(--color-danger-50)' : dias <= 30 ? '#FAEEDA' : '#EAF3DE', color: dias < 0 ? 'var(--color-danger-700)' : dias <= 30 ? '#BA7517' : '#3B6D11', fontSize: 12, fontWeight: 500 }}>
                 {dias < 0 ? `Vencido há ${Math.abs(dias)} dias` : dias === 0 ? 'Vence hoje' : `Vence em ${dias} dias`}
               </div>
             )}
@@ -743,7 +747,7 @@ export default function MapaArmazem() {
       const isDark = document.documentElement.dataset.theme === 'dark'
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, rect.width, rect.height)
-      ctx.fillStyle = isDark ? '#0f172a' : '#f8fafc'
+      ctx.fillStyle = isDark ? getCSSVar('--color-bg-canvas') : getCSSVar('--color-bg-elevated')
       ctx.fillRect(0, 0, rect.width, rect.height)
 
       ctx.save()
@@ -778,7 +782,7 @@ export default function MapaArmazem() {
         ctx.textAlign = 'center'
         ctx.shadowColor = 'rgba(15,23,42,0.75)'
         ctx.shadowBlur = 6
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = getCSSVar('--color-text-inverse')
         ctx.fillText(zone.id, point.x, point.y)
         ctx.restore()
         ctx.restore()
@@ -1022,12 +1026,12 @@ export default function MapaArmazem() {
                     ) : null
                   })()}
                   {tooltip.slot.status === 'bloqueado' && (
-                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: '#E24B4A', background: '#E24B4A18', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: 'var(--color-danger-500)', background: 'var(--color-bg-elevated-danger)', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>
                       Bloqueado
                     </div>
                   )}
                   {tooltip.slot.status === 'quarentena' && (
-                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: '#7F77DD', background: '#7F77DD18', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: 'var(--color-admin-600)', background: '#7F77DD18', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>{/* TODO: #7F77DD18 bg sem token DS */}
                       Quarentena
                     </div>
                   )}
@@ -1120,11 +1124,11 @@ export default function MapaArmazem() {
           overflow: hidden;
           border: 1px solid var(--color-border-default);
           border-radius: 12px;
-          background: #f8fafc;
+          background: var(--color-bg-elevated);
           box-shadow: var(--shadow-sm);
         }
 
-        html[data-theme="dark"] .warehouse-canvas-shell { background: #0f172a; }
+        html[data-theme="dark"] .warehouse-canvas-shell { background: var(--color-bg-canvas); }
 
         .warehouse-canvas-shell.is-fullscreen {
           width: 100vw;
@@ -1162,7 +1166,7 @@ export default function MapaArmazem() {
           border: 0.5px solid var(--color-border-secondary, var(--color-border-default));
           border-radius: 10px;
           background: var(--color-background-primary, var(--color-bg-default));
-          box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+          box-shadow: var(--shadow-md);
           color: var(--color-text-primary);
           pointer-events: none;
         }
@@ -1178,7 +1182,7 @@ export default function MapaArmazem() {
           width: 10px;
           height: 10px;
           border-radius: 999px;
-          box-shadow: 0 0 0 2px rgba(15,23,42,0.08);
+          box-shadow: var(--shadow-xs);
         }
 
         .tooltip-rule {
@@ -1276,7 +1280,7 @@ export default function MapaArmazem() {
           display: block;
           height: 100%;
           border-radius: inherit;
-          background: linear-gradient(90deg, #22c55e 0%, #f59e0b 62%, #ef4444 100%);
+          background: linear-gradient(90deg, var(--color-success-500) 0%, var(--color-warning-500) 62%, var(--color-danger-500) 100%);
         }
 
         .zone-list {
@@ -1352,7 +1356,7 @@ export default function MapaArmazem() {
           width: 12px;
           height: 12px;
           border-radius: 3px;
-          border: 1px solid rgba(15,23,42,0.16);
+          border: 1px solid var(--color-border-default);
         }
 
         @media (max-width: 1100px) {

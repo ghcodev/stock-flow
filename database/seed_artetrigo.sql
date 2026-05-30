@@ -5,6 +5,10 @@
 
 USE stockflow;
 
+SET @audit_user_id = NULL;
+SET @audit_ip = 'seed';
+SET @audit_op = 'UPDATE';
+
 -- ------------------------------------------------------------
 -- ETAPA 1: Remover produtos genéricos de demonstração
 -- ------------------------------------------------------------

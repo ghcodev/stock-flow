@@ -94,7 +94,7 @@ async function abaixoMinimo(req, res) {
      LEFT JOIN lote l ON l.id_produto = p.id AND l.status_lote = 'ativo'
      WHERE p.ativo = 1
      GROUP BY p.id, p.nome, p.estoque_minimo, p.unidade_medida
-     HAVING estoque_atual < p.estoque_minimo
+     HAVING COUNT(l.id) > 0 AND estoque_atual < p.estoque_minimo
      ORDER BY p.nome`
   );
   return res.json(rows);
@@ -119,7 +119,7 @@ async function criar(req, res) {
     vals
   );
 
-  await logAudit({ tabela: 'lote', operacao: 'INSERT', valorNovo: `numero_lote:${numero_lote}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({ tabela: 'lote', operacao: 'INSERT', valorNovo: { lote: numero_lote, quantidade, id_produto, id_localizacao }, idUsuario: req.user.id, ip: req.ip });
   return res.status(201).json({ id: result.insertId, numero_lote });
 }
 
@@ -139,7 +139,14 @@ async function atualizar(req, res) {
      data_validade ?? ant.data_validade, id_localizacao ?? ant.id_localizacao, req.params.id]
   );
 
-  await logAudit({ tabela: 'lote', operacao: 'UPDATE', valorAnterior: `numero_lote:${ant.numero_lote}`, valorNovo: `numero_lote:${numero_lote ?? ant.numero_lote}`, idUsuario: req.user.id, ip: req.ip });
+  await logAudit({
+    tabela: 'lote',
+    operacao: 'UPDATE',
+    valorAnterior: { lote: ant.numero_lote, id_localizacao: ant.id_localizacao },
+    valorNovo: { campo: 'cadastro', lote: numero_lote ?? ant.numero_lote, id_localizacao: id_localizacao ?? ant.id_localizacao },
+    idUsuario: req.user.id,
+    ip: req.ip,
+  });
   return res.json({ mensagem: 'Lote atualizado' });
 }
 
@@ -158,8 +165,8 @@ async function bloquear(req, res) {
 
   await logAudit({
     tabela: 'lote', operacao: 'BLOQUEIO',
-    valorAnterior: `status:${rows[0].status_lote}`,
-    valorNovo: `status:bloqueado,motivo:${motivo}`,
+    valorAnterior: { lote: rows[0].numero_lote, status: rows[0].status_lote },
+    valorNovo: { lote: rows[0].numero_lote, motivo, autorizadoPor: req.user.nome },
     idUsuario: req.user.id, ip: req.ip,
   });
   return res.json({ mensagem: 'Lote bloqueado' });
@@ -174,7 +181,14 @@ async function desbloquear(req, res) {
     [req.params.id]
   );
 
-  await logAudit({ tabela: 'lote', operacao: 'UPDATE', valorAnterior: `status:${rows[0].status_lote}`, valorNovo: 'status:ativo', idUsuario: req.user.id, ip: req.ip });
+  await logAudit({
+    tabela: 'lote',
+    operacao: 'UPDATE',
+    valorAnterior: { lote: rows[0].numero_lote, status: rows[0].status_lote },
+    valorNovo: { lote: rows[0].numero_lote, status: 'ativo' },
+    idUsuario: req.user.id,
+    ip: req.ip,
+  });
   return res.json({ mensagem: 'Lote desbloqueado' });
 }
 
