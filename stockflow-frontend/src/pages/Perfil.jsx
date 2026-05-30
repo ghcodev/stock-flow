@@ -70,7 +70,7 @@ export default function Perfil() {
         {/* Left — identity card */}
         <div>
           <div className="card" style={{ padding: 24, textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg,#2E75B6,#1F3864)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700, margin: '0 auto 16px' }}>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))', color: 'var(--color-text-inverse)', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700, margin: '0 auto 16px' }}>
               {user?.initials}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{user?.name}</div>
@@ -118,7 +118,7 @@ export default function Perfil() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                   <button type="submit" className="btn btn-primary" disabled={saving}>
                     {saving
-                      ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} /> Salvando…</>
+                      ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--color-text-inverse)', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} /> Salvando…</>
                       : <><CheckCircle size={14} /> Salvar alterações</>
                     }
                   </button>

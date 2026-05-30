@@ -214,7 +214,7 @@ export default function Saida() {
                 <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
                   {submitting
-                    ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} /> Registrando…</>
+                    ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--color-text-inverse)', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} /> Registrando…</>
                     : <><CheckCircle size={14} /> Confirmar saída</>
                   }
                 </button>

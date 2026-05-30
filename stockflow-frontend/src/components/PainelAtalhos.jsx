@@ -47,7 +47,7 @@ export function PainelAtalhos({ aberto, onFechar }) {
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.25)',
+          background: 'var(--color-bg-overlay)',
           zIndex: 998,
         }}
       />
@@ -63,7 +63,7 @@ export function PainelAtalhos({ aberto, onFechar }) {
         padding: '20px 24px',
         minWidth: '320px',
         maxWidth: '380px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        boxShadow: 'var(--shadow-lg)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)' }}>
