@@ -1,7 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useToast } from '../context/ToastContext.jsx'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.js'
 import { PainelAtalhos } from './PainelAtalhos.jsx'
+import api from '../api/axios.js'
 import {
   LayoutDashboard, Package, Layers, Map, ArrowDownLeft, ArrowUpRight,
   Shuffle, Clipboard, History, ScanLine, Clock, Activity, Users, Shield,
@@ -52,10 +54,13 @@ const NAV = [
 
 export default function Layout({ children, breadcrumb }) {
   const { user, logout } = useAuth()
+  const toast = useToast()
   const navigate = useNavigate()
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [ajudaAberta, setAjudaAberta] = useState(false)
+  const [globalSearch, setGlobalSearch] = useState('')
+  const [alertasCount, setAlertasCount] = useState(0)
   const buscaRef = useRef(null)
 
   useEffect(() => {
@@ -73,6 +78,35 @@ export default function Layout({ children, breadcrumb }) {
 
   const alternarAjuda = useCallback(() => {
     setAjudaAberta(v => !v)
+  }, [])
+
+  const handleGlobalSearch = useCallback((e) => {
+    e?.preventDefault()
+    const termo = globalSearch.trim()
+
+    if (!termo) {
+      toast?.warning('Digite um lote, produto ou código para buscar.')
+      return
+    }
+
+    navigate(`/rastreabilidade?busca=${encodeURIComponent(termo)}`)
+  }, [globalSearch, navigate, toast])
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarAlertas() {
+      try {
+        const { data } = await api.get('/lotes/vencendo')
+        const items = data.data || data || []
+        if (ativo) setAlertasCount(items.length)
+      } catch {
+        if (ativo) setAlertasCount(0)
+      }
+    }
+
+    carregarAlertas()
+    return () => { ativo = false }
   }, [])
 
   useKeyboardShortcuts({
@@ -176,7 +210,7 @@ export default function Layout({ children, breadcrumb }) {
               ))}
             </nav>
 
-            <div className="topbar-search">
+            <form className="topbar-search" onSubmit={handleGlobalSearch}>
               <Search size={14} />
               <input
                 ref={buscaRef}
@@ -184,17 +218,23 @@ export default function Layout({ children, breadcrumb }) {
                 type="text"
                 placeholder="Buscar lote, produto, RFID... (Ctrl+K)"
                 aria-label="Buscar"
+                value={globalSearch}
+                onChange={e => setGlobalSearch(e.target.value)}
               />
               <span className="topbar-search-kbd">Ctrl K</span>
-            </div>
+            </form>
 
             <div className="topbar-spacer" />
 
             <div className="topbar-right">
-              <button className="alerts-pill" aria-label="14 alertas">
+              <button
+                className="alerts-pill"
+                aria-label={`${alertasCount} alertas`}
+                onClick={() => navigate('/alertas-vencimento')}
+              >
                 <span className="dot" />
                 <Bell size={14} />
-                <span>4 alertas</span>
+                <span>{alertasCount} alertas</span>
               </button>
 
               <button

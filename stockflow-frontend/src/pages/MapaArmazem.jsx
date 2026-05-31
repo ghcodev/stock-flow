@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import api from '../api/axios.js'
-import { Download, Home, Maximize2, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, Home, Maximize2, RefreshCw, Search, ZoomIn, ZoomOut } from 'lucide-react'
 
 const TILE_W = 72
 const TILE_H = 36
 const RACK_H = 28
 const SHELF_H = 14
 const TOP_H = TILE_H / 2
+const LABEL_ZOOM_OCCUPIED = 1.05
+const LABEL_ZOOM_ALL = 1.35
 
 function getCSSVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -16,12 +18,12 @@ function getCSSVar(name) {
 
 const STATUS_ORDER = ['bloqueado', 'quarentena', 'vencendo', 'ativo', 'livre']
 const STATUS_META = {
-  ativo:      { top: getCSSVar('--color-brand-500'),   left: '#1d4ed8', right: '#1e3a8a', label: 'Ocupado ativo' },      // TODO: #1d4ed8, #1e3a8a sem token DS
-  livre:      { top: '#86efac', left: getCSSVar('--color-success-600'), right: '#14532d', label: 'Posição livre' },       // TODO: #86efac, #14532d sem token DS
-  vencendo:   { top: '#fcd34d', left: getCSSVar('--color-warning-600'), right: '#92400e', label: 'Vencimento próximo' },  // TODO: #fcd34d, #92400e sem token DS
-  bloqueado:  { top: '#f87171', left: getCSSVar('--color-danger-600'),  right: '#7f1d1d', label: 'Bloqueado' },           // TODO: #f87171, #7f1d1d sem token DS
-  quarentena: { top: '#c4b5fd', left: getCSSVar('--color-admin-600'),   right: '#4c1d95', label: 'Quarentena' },          // TODO: #c4b5fd, #4c1d95 sem token DS
-  piso:       { top: '#e2e8f0', left: getCSSVar('--color-border-strong'), right: getCSSVar('--color-text-tertiary'), label: 'Piso' }, // TODO: #e2e8f0 sem token DS
+  ativo:      { top: getCSSVar('--color-brand-500'),   left: '#1d4ed8', right: '#1e3a8a', label: 'Ocupado ativo' },
+  livre:      { top: '#86efac', left: getCSSVar('--color-success-600'), right: '#14532d', label: 'Posição livre' },
+  vencendo:   { top: '#fcd34d', left: getCSSVar('--color-warning-600'), right: '#92400e', label: 'Vencimento próximo' },
+  bloqueado:  { top: '#f87171', left: getCSSVar('--color-danger-600'),  right: '#7f1d1d', label: 'Bloqueado' },
+  quarentena: { top: '#c4b5fd', left: getCSSVar('--color-admin-600'),   right: '#4c1d95', label: 'Quarentena' },
+  piso:       { top: '#e2e8f0', left: getCSSVar('--color-border-strong'), right: getCSSVar('--color-text-tertiary'), label: 'Piso' },
 }
 
 const ZONES = [
@@ -136,7 +138,7 @@ function labelValidade(dataISO) {
   if (dias === 0) return { texto: 'Vence hoje', cor: getCSSVar('--color-danger-500') }
   if (dias <= 30) return { texto: `Vence em ${dias} dias`, cor: getCSSVar('--color-warning-500') }
   if (dias <= 60) return { texto: `Vence em ${dias} dias`, cor: getCSSVar('--color-warning-700') }
-  return { texto: `Válido por ${dias} dias`, cor: '#639922' } // TODO: sem token verde DS
+  return { texto: `Válido por ${dias} dias`, cor: '#639922' }
 }
 
 function normalizeStatus(lote) {
@@ -380,7 +382,7 @@ function drawLabel(ctx, text, x, y, status, scale = 1) {
     quarentena: 'rgba(83, 74, 183, 0.82)',
   }
   const textMap = {
-    livre: '#1a4010', // TODO: sem token verde DS
+    livre: '#1a4010',
     ativo: getCSSVar('--color-text-inverse'),
     ocupado: getCSSVar('--color-text-inverse'),
     vencendo: getCSSVar('--color-text-inverse'),
@@ -389,7 +391,7 @@ function drawLabel(ctx, text, x, y, status, scale = 1) {
     quarentena: getCSSVar('--color-text-inverse'),
   }
   const bg = bgMap[status] || 'rgba(255,255,255,0.82)'
-  const color = textMap[status] || '#1a1a1a' // TODO: #1a1a1a sem token DS
+  const color = textMap[status] || '#1a1a1a'
 
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,0.25)'
@@ -425,20 +427,18 @@ function drawLabel(ctx, text, x, y, status, scale = 1) {
   ctx.restore()
 }
 
-function topFace(slot, progress = 1) {
-  const top = topFaceCenter(slot, progress)
-  return [
-    { x: top.x, y: top.y - TOP_H },
-    { x: top.x + TILE_W / 2, y: top.y },
-    { x: top.x, y: top.y + TOP_H },
-    { x: top.x - TILE_W / 2, y: top.y },
-  ]
+function shouldDrawSlotLabel(slot, hovered, selected, highlighted, scale) {
+  if (hovered || selected || highlighted) return true
+  if (scale >= LABEL_ZOOM_ALL) return true
+  if (scale >= LABEL_ZOOM_OCCUPIED && slot.status !== 'livre') return true
+  return false
 }
 
-function drawCube(ctx, slot, progress, hovered, selected, scale = 1) {
+function drawCube(ctx, slot, progress, hovered, selected, highlighted, dimmed, scale = 1) {
   const h = (slot.level === 0 ? RACK_H : 20) * progress
   const base = isoProject(slot.col, slot.row, slot.level)
-  const top = { x: base.x, y: base.y - h }
+  const lift = hovered ? 5 / Math.max(scale, 0.01) : 0
+  const top = { x: base.x, y: base.y - h - lift }
   const topPoly = [
     { x: top.x, y: top.y - TOP_H },
     { x: top.x + TILE_W / 2, y: top.y },
@@ -449,11 +449,20 @@ function drawCube(ctx, slot, progress, hovered, selected, scale = 1) {
   const right = [topPoly[1], topPoly[2], { x: topPoly[2].x, y: topPoly[2].y + h }, { x: topPoly[1].x, y: topPoly[1].y + h }]
   const colors = STATUS_META[slot.status] || STATUS_META.livre
 
-  if (selected) {
+  ctx.save()
+  if (dimmed) ctx.globalAlpha *= 0.28
+
+  if (hovered) {
+    ctx.shadowColor = 'rgba(15,23,42,0.28)'
+    ctx.shadowBlur = 12 / Math.max(scale, 0.01)
+    ctx.shadowOffsetY = 5 / Math.max(scale, 0.01)
+  }
+
+  if (selected || highlighted) {
     ctx.save()
-    ctx.shadowColor = 'rgba(255,255,255,0.75)'
-    ctx.shadowBlur = 18
-    drawPolygon(ctx, topPoly, colors.top, 'rgba(255,255,255,0.55)', 1)
+    ctx.shadowColor = highlighted ? 'rgba(250,204,21,0.82)' : 'rgba(255,255,255,0.75)'
+    ctx.shadowBlur = highlighted ? 22 : 18
+    drawPolygon(ctx, topPoly, colors.top, highlighted ? 'rgba(250,204,21,0.95)' : 'rgba(255,255,255,0.55)', 1)
     ctx.restore()
   }
 
@@ -469,17 +478,19 @@ function drawCube(ctx, slot, progress, hovered, selected, scale = 1) {
   ctx.lineWidth = 1
   ctx.stroke()
 
-  if (scale >= 0.55) {
+  if (shouldDrawSlotLabel(slot, hovered, selected, highlighted, scale)) {
     const labelText = scale < 0.8 ? String(slot.codigo || slot.label).split('-').pop() : (slot.codigo || slot.label)
     drawLabel(ctx, labelText, top.x, top.y, slot.status, scale)
   }
 
-  if (hovered || selected) {
+  if (hovered || selected || highlighted) {
     pathFace(ctx, topPoly)
-    ctx.strokeStyle = selected ? 'rgba(55, 138, 221, 0.9)' : '#facc15'
-    ctx.lineWidth = (selected ? 2 : 2) / Math.max(scale, 0.01)
+    ctx.strokeStyle = highlighted ? 'rgba(250,204,21,0.95)' : selected ? 'rgba(55, 138, 221, 0.9)' : '#facc15'
+    ctx.lineWidth = (highlighted ? 3 : 2) / Math.max(scale, 0.01)
     ctx.stroke()
   }
+
+  ctx.restore()
 }
 
 function drawFloorTile(ctx, col, row, isDark) {
@@ -512,14 +523,16 @@ function progressForZone(zoneId, animationStart) {
 function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
   const lote = detalhe || slot.lote
   const statusConfig = {
-    ativo:              { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },                         // TODO: #639922, #EAF3DE sem token DS
-    ocupado:            { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },                         // TODO: sem token DS
-    vencendo:           { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },                         // TODO: sem token DS
-    vencimento_proximo: { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },                         // TODO: sem token DS
+    ativo:              { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },
+    ocupado:            { label: 'Ocupado',             cor: '#639922',                          bg: '#EAF3DE' },
+    vencendo:           { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },
+    vencimento_proximo: { label: 'Vencimento próximo',  cor: '#BA7517',                          bg: '#FAEEDA' },
     bloqueado:          { label: 'Bloqueado',           cor: getCSSVar('--color-danger-700'),    bg: getCSSVar('--color-danger-50') },
     quarentena:         { label: 'Quarentena',          cor: getCSSVar('--color-admin-700'),     bg: getCSSVar('--color-admin-100') },
   }
-  const sc = statusConfig[slot.status] || statusConfig.ativo
+  const sc = slot.status === 'livre'
+    ? { label: 'Livre', cor: getCSSVar('--color-success-700'), bg: getCSSVar('--color-success-50') }
+    : (statusConfig[slot.status] || statusConfig.ativo)
   const validade = lote?.data_validade || lote?.validade
   const dias = diasParaVencer(validade)
   const numeroLote = lote?.numero_lote || lote?.codigo || '—'
@@ -528,13 +541,17 @@ function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
     ? `${Number(lote.quantidade).toLocaleString('pt-BR')} ${lote.unidade || lote.produto?.unidade || 'un'}`
     : '—'
   const campos = [
+    { label: 'Status', value: sc.label },
     { label: 'Número do lote', value: numeroLote, mono: true },
     { label: 'Produto', value: produto },
+    { label: 'Lote', value: numeroLote, mono: true },
     { label: 'Quantidade', value: quantidade },
     { label: 'Fabricação', value: lote?.data_fabricacao ? formatDate(lote.data_fabricacao) : '—' },
     { label: 'Validade', value: validade ? formatDate(validade) : '—' },
     { label: 'RFID', value: lote?.rfid || '—', mono: true },
     { label: 'Fornecedor', value: lote?.fornecedor?.nome || lote?.nome_fornecedor || '—' },
+    { label: 'Responsavel', value: lote?.usuario_nome || lote?.responsavel || '—' },
+    { label: 'Ultima movimentacao', value: lote?.ultima_movimentacao ? formatDate(lote.ultima_movimentacao) : '—' },
   ]
 
   return (
@@ -595,7 +612,7 @@ function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
               type="button"
               style={{ marginTop: 16, width: '100%', padding: '9px 0', cursor: 'pointer', background: 'var(--color-background-info, var(--color-bg-subtle))', color: 'var(--color-text-info, var(--color-text-link))', border: '0.5px solid var(--color-border-info, var(--color-border-default))', borderRadius: 'var(--border-radius-md, 8px)', fontSize: 13, fontWeight: 500 }}
             >
-              Ver lote completo →
+              Abrir Rastreabilidade
             </button>
           </>
         ) : (
@@ -627,10 +644,14 @@ export default function MapaArmazem() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [camera, setCamera] = useState({ scale: 0.86, x: 450, y: 78 })
   const [dragging, setDragging] = useState(false)
+  const [selectedZone, setSelectedZone] = useState('todos')
+  const [positionSearch, setPositionSearch] = useState('')
+  const [highlightedSlotId, setHighlightedSlotId] = useState(null)
 
   const occupied = slots.filter(slot => slot.status !== 'livre').length
   const capacity = slots.length
   const occupancy = capacity ? Math.round((occupied / capacity) * 100) : 0
+  const free = capacity - occupied
 
   const zoneSummary = useMemo(() => calcOcupacaoPorZona(slots), [slots])
 
@@ -664,6 +685,18 @@ export default function MapaArmazem() {
     })
   }, [])
 
+  const centerSlot = useCallback((slot, nextScale = Math.max(camera.scale, 1.25)) => {
+    const canvas = canvasRef.current
+    if (!canvas || !slot) return
+    const rect = canvas.getBoundingClientRect()
+    const center = topFaceCenter(slot, 1)
+    setCamera({
+      scale: nextScale,
+      x: rect.width / 2 - center.x * nextScale,
+      y: rect.height / 2 - center.y * nextScale,
+    })
+  }, [camera.scale])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -673,11 +706,6 @@ export default function MapaArmazem() {
       ])
       const localizacoes = locRes.data?.data || locRes.data || []
       const lotes = loteRes.data?.data || loteRes.data || []
-      const byZone = lotes.reduce((acc, lote) => {
-        const zoneId = normalizeZoneId(lote.zona || lote.corredor || lote.area || lote.setor)
-        if (zoneId) acc[zoneId] = (acc[zoneId] || 0) + 1
-        return acc
-      }, {})
       setSlots(buildSlots(localizacoes, lotes))
       setLastSync(0)
     } catch (err) {
@@ -768,7 +796,9 @@ export default function MapaArmazem() {
           .forEach(slot => {
             const progress = progressForSlot(slot, animationStartRef.current)
             if (progress <= 0) return
-            drawCube(ctx, slot, progress, hovered?.id === slot.id, selectedSlot?.id === slot.id, camera.scale)
+            const dimmed = selectedZone !== 'todos' && slot.zoneId !== selectedZone
+            const highlighted = highlightedSlotId === slot.id
+            drawCube(ctx, slot, progress, hovered?.id === slot.id, selectedSlot?.id === slot.id, highlighted, dimmed, camera.scale)
           })
 
         const midCol = (zone.cols[0] + zone.cols[1]) / 2
@@ -779,7 +809,9 @@ export default function MapaArmazem() {
         ctx.textAlign = 'center'
         ctx.shadowColor = 'rgba(15,23,42,0.75)'
         ctx.shadowBlur = 6
-        ctx.fillStyle = getCSSVar('--color-text-inverse')
+        ctx.fillStyle = selectedZone !== 'todos' && zone.id !== selectedZone
+          ? getCSSVar('--color-text-tertiary')
+          : getCSSVar('--color-text-inverse')
         ctx.fillText(zone.id, point.x, point.y)
         ctx.restore()
         ctx.restore()
@@ -790,7 +822,7 @@ export default function MapaArmazem() {
     }
     rafRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [camera, hovered, selectedSlot, slots])
+  }, [camera, highlightedSlotId, hovered, selectedSlot, selectedZone, slots])
 
   const screenToWorld = useCallback((event) => {
     const canvas = canvasRef.current
@@ -857,7 +889,7 @@ export default function MapaArmazem() {
     if (wasDrag) return
     const { slot } = hitTest(event)
 
-    if (!slot || slot.status === 'livre') {
+    if (!slot) {
       clearSelectedSlot()
       return
     }
@@ -865,6 +897,20 @@ export default function MapaArmazem() {
     setSelectedSlot(slot)
     setDetalheCompleto(null)
     fetchDetalheSlot(slot)
+  }
+
+  function handlePositionSearch(e) {
+    e.preventDefault()
+    const termo = positionSearch.trim().toUpperCase()
+    if (!termo) return
+    const found = slots.find(slot => String(slot.codigo).toUpperCase() === termo)
+      || slots.find(slot => String(slot.codigo).toUpperCase().includes(termo))
+    if (!found) return
+    setHighlightedSlotId(found.id)
+    setSelectedSlot(found)
+    setDetalheCompleto(null)
+    fetchDetalheSlot(found)
+    centerSlot(found)
   }
 
   function handlePointerMove(event) {
@@ -940,6 +986,37 @@ export default function MapaArmazem() {
         </div>
       </div>
 
+      <div className="warehouse-command-bar">
+        <div className="zone-filter" aria-label="Filtrar corredores">
+          {['todos', ...ZONES.map(zone => zone.id)].map(zoneId => (
+            <button
+              key={zoneId}
+              type="button"
+              className={selectedZone === zoneId ? 'active' : ''}
+              onClick={() => setSelectedZone(zoneId)}
+            >
+              {zoneId === 'todos' ? 'Todos' : zoneId}
+            </button>
+          ))}
+        </div>
+        <form className="position-search" onSubmit={handlePositionSearch}>
+          <Search size={14} />
+          <input
+            value={positionSearch}
+            onChange={event => setPositionSearch(event.target.value)}
+            placeholder="Buscar posicao..."
+            aria-label="Buscar posicao"
+          />
+        </form>
+      </div>
+
+      <div className="warehouse-kpi-strip">
+        <div><span>Posicoes ocupadas</span><strong>{occupied}</strong></div>
+        <div><span>Posicoes livres</span><strong>{free}</strong></div>
+        <div><span>Capacidade total</span><strong>{capacity}</strong></div>
+        <div><span>Ocupacao</span><strong>{occupancy}%</strong></div>
+      </div>
+
       <div className="warehouse-layout">
         <div ref={wrapRef} className={`warehouse-canvas-shell ${isFullscreen ? 'is-fullscreen' : ''}`}>
           <canvas
@@ -968,7 +1045,7 @@ export default function MapaArmazem() {
             }}
             onPointerMove={handlePointerMove}
             onWheel={handleWheel}
-            style={{ cursor: dragging ? 'grabbing' : hovered && hovered.status !== 'livre' ? 'pointer' : 'grab' }}
+            style={{ cursor: dragging ? 'grabbing' : hovered ? 'pointer' : 'grab' }}
           />
 
           <div className="canvas-toolbar" aria-label="Controles do mapa">
@@ -993,6 +1070,10 @@ export default function MapaArmazem() {
                 <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                   {tooltip.slot.codigo}
                 </span>
+              </div>
+
+              <div style={{ fontSize: 11, fontWeight: 700, color: STATUS_META[tooltip.slot.status]?.top || 'var(--color-text-secondary)', marginBottom: 6 }}>
+                {STATUS_META[tooltip.slot.status]?.label || tooltip.slot.status}
               </div>
 
               {tooltip.slot.lote ? (
@@ -1028,7 +1109,7 @@ export default function MapaArmazem() {
                     </div>
                   )}
                   {tooltip.slot.status === 'quarentena' && (
-                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: 'var(--color-admin-600)', background: '#7F77DD18', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>{/* TODO: #7F77DD18 bg sem token DS */}
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 500, color: 'var(--color-admin-600)', background: '#7F77DD18', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>
                       Quarentena
                     </div>
                   )}
@@ -1052,7 +1133,7 @@ export default function MapaArmazem() {
               onVerLote={() => {
                 const lote = detalheCompleto || selectedSlot.lote
                 const query = lote?.numero_lote || lote?.id || ''
-                navigate(query ? `/lotes?search=${encodeURIComponent(query)}` : '/lotes')
+                navigate(query ? `/rastreabilidade?busca=${encodeURIComponent(query)}` : '/rastreabilidade')
               }}
             />
           ) : (
@@ -1066,11 +1147,11 @@ export default function MapaArmazem() {
                 <div className="progress-track"><span style={{ width: `${occupancy}%` }} /></div>
                 <div className="zone-list">
                   {zoneSummary.map(zone => (
-                    <div className="zone-row" key={zone.id}>
+                    <div className={`zone-row${zone.used === 0 ? ' empty' : ''}`} key={zone.id}>
                       <span>{zone.id}</span>
                       <div className="mini-track"><span style={{ width: `${zone.percent}%`, background: corBarra(zone.percent) }} /></div>
                       <strong>{zone.percent}%</strong>
-                      <em>[{zone.total} pos]</em>
+                      <em>{zone.used === 0 ? 'Sem ocupacao' : `${zone.used}/${zone.total}`}</em>
                     </div>
                   ))}
                 </div>
@@ -1106,6 +1187,93 @@ export default function MapaArmazem() {
       </div>
 
       <style>{`
+        .warehouse-command-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
+        .zone-filter {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .zone-filter button,
+        .position-search {
+          border: 1px solid var(--color-border-default);
+          background: var(--color-bg-default);
+          border-radius: var(--radius-md);
+        }
+
+        .zone-filter button {
+          height: 32px;
+          padding: 0 12px;
+          color: var(--color-text-secondary);
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+        }
+
+        .zone-filter button.active {
+          color: var(--color-text-inverse);
+          background: var(--color-brand-600);
+          border-color: var(--color-brand-600);
+        }
+
+        .position-search {
+          width: min(280px, 100%);
+          height: 34px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 11px;
+          color: var(--color-text-tertiary);
+        }
+
+        .position-search input {
+          border: 0;
+          outline: 0;
+          min-width: 0;
+          flex: 1;
+          background: transparent;
+          color: var(--color-text-primary);
+          font-size: 13px;
+        }
+
+        .warehouse-kpi-strip {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+
+        .warehouse-kpi-strip div {
+          border: 1px solid var(--color-border-muted);
+          border-radius: var(--radius-md);
+          background: var(--color-bg-default);
+          padding: 10px 12px;
+        }
+
+        .warehouse-kpi-strip span {
+          display: block;
+          font-size: 11px;
+          color: var(--color-text-tertiary);
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .warehouse-kpi-strip strong {
+          display: block;
+          margin-top: 4px;
+          color: var(--color-text-primary);
+          font-size: 20px;
+          font-variant-numeric: tabular-nums;
+        }
+
         .warehouse-layout {
           display: flex;
           gap: 16px;
@@ -1287,7 +1455,7 @@ export default function MapaArmazem() {
 
         .zone-row {
           display: grid;
-          grid-template-columns: 42px 1fr 34px 46px;
+          grid-template-columns: 42px 1fr 34px 72px;
         }
 
         .zone-row span {
@@ -1301,6 +1469,11 @@ export default function MapaArmazem() {
           color: var(--color-text-tertiary);
           font-size: 11px;
           text-align: right;
+        }
+
+        .zone-row.empty em {
+          color: var(--color-text-secondary);
+          font-weight: 700;
         }
 
         .alert-list {
@@ -1354,6 +1527,7 @@ export default function MapaArmazem() {
           height: 12px;
           border-radius: 3px;
           border: 1px solid var(--color-border-default);
+          box-shadow: inset 0 0 0 1px rgba(15,23,42,0.18);
         }
 
         @media (max-width: 1100px) {
@@ -1367,6 +1541,9 @@ export default function MapaArmazem() {
         }
 
         @media (max-width: 760px) {
+          .warehouse-command-bar { align-items: stretch; flex-direction: column; }
+          .position-search { width: 100%; }
+          .warehouse-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .warehouse-layout { min-height: auto; }
           .warehouse-canvas-shell { min-height: 520px; }
           .warehouse-side { grid-template-columns: 1fr; }

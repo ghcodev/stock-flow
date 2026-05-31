@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
@@ -13,19 +14,22 @@ const TIPO_CFG = {
 
 export default function Rastreabilidade() {
   const toast = useToast()
+  const [searchParams] = useSearchParams()
+  const buscaParam = searchParams.get('busca') || ''
+  const ultimaBuscaUrlRef = useRef('')
   const [query, setQuery] = useState('')
   const [lote, setLote] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [loading, setLoading] = useState(false)
 
-  async function handleSearch(e) {
-    e.preventDefault()
-    if (!query.trim()) return
+  async function buscarTermo(termo) {
+    const busca = termo.trim()
+    if (!busca) return
     setLoading(true)
     setLote(null)
     setTimeline([])
     try {
-      const { data: lotesData } = await api.get('/lotes', { params: { search: query.trim(), limit: 1 } })
+      const { data: lotesData } = await api.get('/lotes', { params: { search: busca, limit: 1 } })
       const items = lotesData.data || []
       if (items.length === 0) {
         toast.warning('Nenhum lote encontrado para esse termo de busca.')
@@ -42,6 +46,20 @@ export default function Rastreabilidade() {
       setLoading(false)
     }
   }
+
+  function handleSearch(e) {
+    e.preventDefault()
+    buscarTermo(query)
+  }
+
+  useEffect(() => {
+    const termo = buscaParam.trim()
+    if (!termo || ultimaBuscaUrlRef.current === termo) return
+
+    ultimaBuscaUrlRef.current = termo
+    setQuery(termo)
+    buscarTermo(termo)
+  }, [buscaParam])
 
   function fmtLoc(e) {
     if (e.corredor) return `${e.corredor}-N${e.nivel}-P${e.posicao}`
