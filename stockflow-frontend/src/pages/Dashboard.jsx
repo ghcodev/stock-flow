@@ -5,7 +5,7 @@ import api from '../api/axios.js'
 import {
   Package, Layers, AlertTriangle, RefreshCw, Download, ArrowDownLeft,
   ArrowUpRight, ArrowRight, Activity, Clock, TrendingDown, Lock, ShieldCheck,
-  Circle, TrendingUp, Users, BarChart2, CheckCircle,
+  Circle, TrendingUp, Users, BarChart2, CheckCircle, FileText, FileSpreadsheet,
 } from 'lucide-react'
 
 const MOV_COLORS = {
@@ -668,6 +668,114 @@ function DonutChart({ data, total }) {
   )
 }
 
+function ExportMenu({ kpis, movData, rupturas, curvaAbc, periodo }) {
+  const [open, setOpen] = useState(false)
+  const [exporting, setExporting] = useState(null)
+
+  async function exportarPDF() {
+    setExporting('pdf')
+    setOpen(false)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const { jsPDF } = await import('jspdf')
+      const elemento = document.getElementById('dashboard-content')
+      const canvas = await html2canvas(elemento, { scale: 1.5, useCORS: true, backgroundColor: 'white' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('l', 'mm', 'a4')
+      const pdfW = pdf.internal.pageSize.getWidth()
+      const pdfH = (canvas.height * pdfW) / canvas.width
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+      pdf.save(`stockflow-dashboard-${periodo}-${new Date().toISOString().slice(0, 10)}.pdf`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  async function exportarExcel() {
+    setExporting('excel')
+    setOpen(false)
+    try {
+      const XLSX = await import('xlsx')
+      const wb = XLSX.utils.book_new()
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+        ['Métrica', 'Valor', 'Período'],
+        ['Saúde Operacional', kpis?.saude_operacional?.score, periodo],
+        ['Entradas', kpis?.tendencias?.entradas_hoje, periodo],
+        ['Saídas', kpis?.tendencias?.saidas_hoje, periodo],
+        ['Capital em Estoque', kpis?.capital?.capital_imobilizado, periodo],
+        ['Capital Parado', kpis?.capital?.capital_parado, periodo],
+        ['Movimentações', kpis?.movimentacoes_hoje, periodo],
+        ['Total Produtos', kpis?.total_produtos, periodo],
+        ['Lotes Vencendo', kpis?.lotes_vencendo, periodo],
+        ['Lotes Bloqueados', kpis?.lotes_bloqueados, periodo],
+      ]), 'KPIs')
+
+      const movRows = movData.map(d => [d.dia, d.entradas, d.saidas, d.transferencias, d.ajustes])
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+        ['Data', 'Entradas', 'Saídas', 'Transferências', 'Ajustes'],
+        ...movRows,
+      ]), 'Movimentações')
+
+      const rupRows = rupturas.map(r => [r.nome_produto, r.estoque_atual, r.unidade, r.dias_para_ruptura])
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+        ['Produto', 'Estoque Atual', 'Unidade', 'Dias para Ruptura'],
+        ...rupRows,
+      ]), 'Rupturas')
+
+      if (curvaAbc?.top10) {
+        const abcRows = curvaAbc.top10.map(p => [p.classe, p.nome_produto, p.total_mov, p.pct_acumulado])
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+          ['Classe', 'Produto', 'Total Mov', '% Acumulado'],
+          ...abcRows,
+        ]), 'Curva ABC')
+      }
+
+      XLSX.writeFile(wb, `stockflow-dashboard-${periodo}-${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        className="btn btn-outline btn-sm"
+        onClick={() => setOpen(o => !o)}
+        disabled={!!exporting}
+        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+      >
+        {exporting
+          ? <><div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid var(--color-border-strong)', borderTopColor: 'var(--color-brand-600)', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} /> Exportando...</>
+          : <><Download size={14} /> Exportar</>}
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+          <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: 'var(--color-bg-default)', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', zIndex: 20, minWidth: 160, overflow: 'hidden' }}>
+            <button
+              onClick={exportarPDF}
+              style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-subtle)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <FileText size={14} color="var(--color-danger-600)" /> Exportar PDF
+            </button>
+            <button
+              onClick={exportarExcel}
+              style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid var(--color-border-muted)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-subtle)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <FileSpreadsheet size={14} color="var(--color-success-600)" /> Exportar Excel
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const toast = useToast()
   const [kpis, setKpis] = useState(null)
@@ -869,11 +977,12 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <button className="btn btn-outline btn-sm"><Download size={14} /> Exportar</button>
+          <ExportMenu kpis={kpis} movData={movData} rupturas={rupturas} curvaAbc={curvaAbc} periodo={periodo} />
           <button className="btn btn-outline btn-sm" onClick={load}><RefreshCw size={14} /> Atualizar</button>
         </div>
       </div>
 
+      <div id="dashboard-content">
       <div className="dashboard-health-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginBottom: 24 }}>
         {loading ? (
           <>
@@ -1259,6 +1368,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      </div>
       <style>{`
         @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes pulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.5} }
@@ -1315,6 +1425,7 @@ export default function Dashboard() {
           0%, 100% { border-color: var(--color-border-muted); }
           50% { border-color: var(--color-danger-600); }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           [style*="repeat(3,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }
