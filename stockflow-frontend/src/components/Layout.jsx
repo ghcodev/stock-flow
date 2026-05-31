@@ -16,38 +16,43 @@ const NAV = [
   {
     section: 'Operação',
     items: [
-      { label: 'Dashboard',      to: '/dashboard',      icon: LayoutDashboard },
-      { label: 'Produtos',       to: '/produtos',        icon: Package },
-      { label: 'Lotes',          to: '/lotes',           icon: Layers,  badge: '4',  badgeKind: 'warn' },
-      { label: 'Mapa do Armazém',to: '/mapa',            icon: Map },
+      { label: 'Dashboard',       to: '/dashboard',       icon: LayoutDashboard },
+      { label: 'Produtos',        to: '/produtos',        icon: Package },
+      { label: 'Lotes',           to: '/lotes',           icon: Layers,  badge: '4', badgeKind: 'warn' },
+      { label: 'Mapa do Armazém', to: '/mapa',            icon: Map },
     ],
   },
   {
     section: 'Movimentações',
     items: [
-      { label: 'Entrada',        to: '/entrada',         icon: ArrowDownLeft },
-      { label: 'Saída',          to: '/saida',           icon: ArrowUpRight },
-      { label: 'Transferência',  to: '/transferencia',   icon: Shuffle },
-      { label: 'Inventário',     to: '/inventario',      icon: Clipboard },
+      { label: 'Entrada',         to: '/entrada',         icon: ArrowDownLeft },
+      { label: 'Saída',           to: '/saida',           icon: ArrowUpRight },
+      { label: 'Transferência',   to: '/transferencia',   icon: Shuffle },
+      { label: 'Inventário',      to: '/inventario',      icon: Clipboard },
+      { label: 'Histórico',       to: '/historico',       icon: History },
     ],
   },
   {
     section: 'Análise',
     items: [
-      { label: 'Histórico',      to: '/historico',       icon: History },
-      { label: 'Rastreabilidade',to: '/rastreabilidade', icon: ScanLine },
-      { label: 'Vencimentos',    to: '/alertas',         icon: Clock,   badge: '4'  },
-      { label: 'Relatórios',     to: '/relatorios',      icon: Activity },
+      { label: 'Rastreabilidade', to: '/rastreabilidade', icon: ScanLine },
+      { label: 'Vencimentos',     to: '/alertas',         icon: Clock,   badge: '4' },
+      { label: 'Relatórios',      to: '/relatorios',      icon: Activity },
     ],
   },
   {
     section: 'Administração',
     items: [
-      { label: 'Usuários',       to: '/usuarios',        icon: Users },
-      { label: 'Auditoria',      to: '/auditoria',       icon: Shield,  badge: 'A', badgeKind: 'admin' },
-      { label: 'Ajuste Estoque', to: '/ajuste',          icon: Sliders },
-      { label: 'Integração SAP', to: '/sap',             icon: Link2, adminOnly: true },
-      { label: 'Meu Perfil',     to: '/perfil',          icon: User },
+      { label: 'Usuários',        to: '/usuarios',        icon: Users,   adminOnly: true },
+      { label: 'Auditoria',       to: '/auditoria',       icon: Shield,  adminOnly: true },
+      { label: 'Ajuste Estoque',  to: '/ajuste',          icon: Sliders, adminOnly: true },
+      { label: 'Integração SAP',  to: '/sap',             icon: Link2,   adminOnly: true },
+    ],
+  },
+  {
+    section: null,
+    items: [
+      { label: 'Meu Perfil',      to: '/perfil',          icon: User },
     ],
   },
 ]
@@ -144,30 +149,38 @@ export default function Layout({ children, breadcrumb }) {
           </div>
 
           <nav className="sidebar-nav">
-            {NAV.map(group => (
-              <div key={group.section}>
-                {sidebarOpen && (
-                  <div className="sidebar-section-label">{group.section}</div>
-                )}
-                {group.items.filter(item => !item.adminOnly || user?.isAdmin).map(item => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={!sidebarOpen ? item.label : undefined}
-                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                    style={!sidebarOpen ? { justifyContent: 'center', padding: '0 8px' } : undefined}
-                  >
-                    <item.icon size={16} />
-                    {sidebarOpen && <span>{item.label}</span>}
-                    {sidebarOpen && item.badge && (
-                      <span className={`nav-badge${item.badgeKind ? ` ${item.badgeKind}` : ''}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
-              </div>
-            ))}
+            {NAV.map((group, gIdx) => {
+              const visibleItems = group.items.filter(item => !item.adminOnly || user?.isAdmin)
+              if (visibleItems.length === 0) return null
+              return (
+                <div key={gIdx}>
+                  {/* Separator + no label for the null section (Meu Perfil) */}
+                  {!group.section && (
+                    <div style={{ borderTop: '1px solid var(--color-sidebar-border)', margin: '6px 0 4px' }} />
+                  )}
+                  {group.section && sidebarOpen && (
+                    <div className="sidebar-section-label">{group.section}</div>
+                  )}
+                  {visibleItems.map(item => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      title={!sidebarOpen ? item.label : undefined}
+                      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                      style={!sidebarOpen ? { justifyContent: 'center', padding: '0 8px' } : undefined}
+                    >
+                      <item.icon size={16} />
+                      {sidebarOpen && <span>{item.label}</span>}
+                      {sidebarOpen && item.badge && (
+                        <span className={`nav-badge${item.badgeKind ? ` ${item.badgeKind}` : ''}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              )
+            })}
           </nav>
 
           <div className="sidebar-footer" style={{ justifyContent: sidebarOpen ? undefined : 'center', padding: sidebarOpen ? undefined : '10px 0' }}>
