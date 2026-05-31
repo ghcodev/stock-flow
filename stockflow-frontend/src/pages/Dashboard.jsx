@@ -272,26 +272,24 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
     if (!current.length) return
     const svg = e.currentTarget
     const rect = svg.getBoundingClientRect()
-    const mouseX = e.clientX - rect.left
-    const chartW = rect.width - pad * 2
+    const scaleX = w / rect.width
+    const mouseXViewBox = (e.clientX - rect.left) * scaleX
     const idx = Math.max(0, Math.min(
       current.length - 1,
-      Math.round(((mouseX - pad) / chartW) * (current.length - 1))
+      Math.round(((mouseXViewBox - pad) / (w - pad * 2)) * (current.length - 1))
     ))
+    const xViewBox = entradaPoints[idx]?.x ?? mouseXViewBox
     setTooltip({
       idx,
-      x: Math.max(pad, Math.min(rect.width - pad, mouseX)),
+      xViewBox,
+      xDiv: e.clientX - rect.left,
+      containerWidth: rect.width,
       item: current[idx],
     })
   }
 
   function handleMouseLeave() {
     setTooltip(null)
-  }
-
-  function tooltipViewBoxX() {
-    if (!tooltip) return null
-    return (tooltip.x / 600) * w
   }
 
   const yGuides = [0, 1, 2].map(i => {
@@ -341,9 +339,9 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                 ) : null)}
                 {tooltip && (
                   <line
-                    x1={tooltipViewBoxX()}
+                    x1={tooltip.xViewBox}
                     y1={8}
-                    x2={tooltipViewBoxX()}
+                    x2={tooltip.xViewBox}
                     y2={192}
                     stroke="var(--color-border-strong)"
                     strokeWidth="1"
@@ -381,7 +379,7 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                 )}
               </svg>
               {tooltip && (
-                <div style={{ position: 'absolute', left: Math.min(tooltip.x + 12, 520), top: 40, background: 'var(--color-bg-default)', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', padding: '8px 12px', fontSize: 12, boxShadow: 'var(--shadow-md)', pointerEvents: 'none', zIndex: 10, minWidth: 140 }}>
+                <div style={{ position: 'absolute', left: Math.min(tooltip.xDiv + 12, tooltip.containerWidth - 160), top: 40, background: 'var(--color-bg-default)', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', padding: '8px 12px', fontSize: 12, boxShadow: 'var(--shadow-md)', pointerEvents: 'none', zIndex: 10, minWidth: 140 }}>
                   <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--color-text-primary)' }}>{tooltip.item?.dataLonga}</div>
                   <div style={{ color: 'var(--color-success-600)' }}>Entradas: {tooltip.item?.entradas}</div>
                   <div style={{ color: 'var(--color-danger-600)' }}>Saidas: {tooltip.item?.saidas}</div>
