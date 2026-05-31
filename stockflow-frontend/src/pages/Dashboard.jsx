@@ -730,6 +730,104 @@ function PizzaMini({ dados, size = 56 }) {
   )
 }
 
+const CATEGORY_COLORS = [
+  'var(--color-brand-600)',
+  'var(--color-success-600)',
+  'var(--color-warning-500)',
+  'var(--color-danger-600)',
+  'var(--color-brand-500)',
+  'var(--color-text-tertiary)',
+]
+function getCategoryCor(index) {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+}
+
+function PizzaCategoria({ data, size = 120 }) {
+  if (!data || data.length === 0) return (
+    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-tertiary)', fontSize: 11 }}>
+      Sem dados
+    </div>
+  )
+  const total = data.reduce((s, d) => s + d.total_movimentacoes, 0)
+  if (total === 0) return null
+  const cx = size / 2, cy = size / 2
+  const r = size / 2 - 6
+  const rInner = r * 0.55
+  let startAngle = -Math.PI / 2
+  const slices = data.map((d, i) => {
+    const angle = (d.total_movimentacoes / total) * 2 * Math.PI
+    const x1 = cx + r * Math.cos(startAngle)
+    const y1 = cy + r * Math.sin(startAngle)
+    startAngle += angle
+    const x2 = cx + r * Math.cos(startAngle)
+    const y2 = cy + r * Math.sin(startAngle)
+    return {
+      path: `M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${angle > Math.PI ? 1 : 0},1 ${x2},${y2} Z`,
+      cor: getCategoryCor(i),
+      label: d.categoria,
+      pct: d.pct,
+    }
+  })
+  const top = data[0]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%' }}>
+      <div style={{ position: 'relative' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+          {slices.map((s, i) => (
+            <path key={i} d={s.path} fill={s.cor}>
+              <title>{s.label}: {s.pct}%</title>
+            </path>
+          ))}
+          <circle cx={cx} cy={cy} r={rInner} fill="var(--color-bg-default)" />
+          <text x={cx} y={cy - 5} textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--color-text-primary)">{top?.pct}%</text>
+          <text x={cx} y={cy + 9} textAnchor="middle" fontSize="9" fill="var(--color-text-tertiary)">{top?.categoria?.slice(0, 8)}</text>
+        </svg>
+      </div>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: s.cor, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-primary)' }}>{s.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AlertaCard({ alerta, index }) {
+  const isUrgente = alerta.urgencia === 'urgente'
+  const isAtencao = alerta.urgencia === 'atencao'
+  const config = isUrgente ? {
+    bg: 'var(--color-danger-50)', border: 'var(--color-danger-200)',
+    iconBg: 'var(--color-danger-600)', textCor: 'var(--color-danger-600)',
+    icon: AlertTriangle, label: 'URGENTE',
+  } : isAtencao ? {
+    bg: 'var(--color-warning-bg)', border: 'var(--color-warning-border)',
+    iconBg: 'var(--color-warning-600)', textCor: 'var(--color-warning-600)',
+    icon: Clock, label: 'ATENÇÃO',
+  } : {
+    bg: 'var(--color-bg-subtle)', border: 'var(--color-border-muted)',
+    iconBg: 'var(--color-text-tertiary)', textCor: 'var(--color-text-secondary)',
+    icon: AlertTriangle, label: 'INFO',
+  }
+  const Icon = config.icon
+  return (
+    <div style={{ background: config.bg, border: `1px solid ${config.border}`, borderRadius: 'var(--radius-md)', padding: '8px 10px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <div style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: config.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon size={14} color="var(--color-text-inverse)" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: config.textCor, textTransform: 'uppercase', marginBottom: 2 }}>{config.label}</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-primary)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{alerta.texto}</div>
+      </div>
+    </div>
+  )
+}
+
 function ExportMenu({ kpis, movData, rupturas, curvaAbc, periodo }) {
   const [open, setOpen] = useState(false)
   const [exporting, setExporting] = useState(null)
@@ -853,6 +951,7 @@ export default function Dashboard() {
   const [topPeriodo, setTopPeriodo] = useState('mes')
   const [rupturas, setRupturas] = useState([])
   const [curvaAbc, setCurvaAbc] = useState(null)
+  const [distCategoria, setDistCategoria] = useState({ data: [], total: 0 })
   const [periodo, setPeriodo] = useState('hoje')
   const [tooltip, setTooltip] = useState(null)
   const [chartPeriod, setChartPeriod] = useState(30)
@@ -874,7 +973,7 @@ export default function Dashboard() {
   async function load() {
     setLoading(true)
     try {
-      const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, saudeData, recentesData, rupturasData, abcData] = await Promise.all([
+      const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, saudeData, recentesData, rupturasData, abcData, distCatData] = await Promise.all([
         safeGet(() => api.get(`/dashboard/kpis?periodo=${periodo}`), null),
         safeGet(() => api.get(`/dashboard/movimentacoes?periodo=${periodo}`), []),
         safeGet(() => api.get('/dashboard/alertas'), { total: 0, alertas: [] }),
@@ -885,6 +984,7 @@ export default function Dashboard() {
         safeGet(() => api.get('/movimentacoes', { params: { limit: 8, order: 'desc' } }), { data: [] }),
         safeGet(() => api.get('/dashboard/rupturas'), []),
         safeGet(() => api.get('/dashboard/curva-abc'), null),
+        safeGet(() => api.get(`/dashboard/distribuicao-categoria?periodo=${periodo}`), { data: [], total: 0 }),
       ])
       setKpis(kpisData)
       setMovData((movRows || []).map(d => ({
@@ -903,6 +1003,7 @@ export default function Dashboard() {
       setRecentes(recentesData?.data || [])
       setRupturas(rupturasData || [])
       setCurvaAbc(abcData || null)
+      setDistCategoria(distCatData || { data: [], total: 0 })
       if (!kpisData) toast.error('Erro ao carregar KPIs do dashboard.')
     } finally {
       setLoading(false)
@@ -974,6 +1075,23 @@ export default function Dashboard() {
   const maxTop = Math.max(...topProdutos.map(p => Number(p.total_movimentado || 0)), 1)
   const allSmartAlerts = [...(alertasBase.alertas || []), ...(alertasPendentes.itens || [])]
 
+  const secaoAlertas = [
+    ...rupturas.filter(r => r.dias_para_ruptura <= 7).map(r => ({
+      urgencia: r.dias_para_ruptura <= 3 ? 'urgente' : 'atencao',
+      texto: `${r.nome_produto} fica indisponivel em ${Math.ceil(r.dias_para_ruptura)} dias`,
+    })),
+    ...(alertasPendentes.itens || []).map(a => ({
+      urgencia: a.tipo === 'urgente' ? 'urgente'
+                : (a.tipo === 'atencao' || a.tipo === 'estoque' || a.tipo === 'vencimento') ? 'atencao'
+                : 'info',
+      texto: a.tipo === 'estoque'
+        ? `${a.produto} abaixo do estoque minimo`
+        : a.tipo === 'bloqueado'
+        ? `Lote ${a.lote} bloqueado ha ${Number(a.dias_bloqueado || 0)} dias`
+        : `Lote ${a.lote || '-'} vence em ${Number(a.dias || 0)} dias`,
+    })),
+  ]
+
   return (
     <Layout breadcrumb={['Dashboard']}>
       <div className="page-header">
@@ -984,7 +1102,6 @@ export default function Dashboard() {
             <span>StockFlow - Unidade Central</span>
           </div>
         </div>
-        {movData.length > 0 && <PizzaMini dados={dadosPizza} size={56} />}
         <div className="page-header-actions">
           <div style={{ display: 'inline-flex', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginRight: 8 }}>
             {[{ key: 'hoje', label: 'Hoje', title: 'Atalho: H' }, { key: 'semana', label: '7 dias', title: 'Atalho: S' }, { key: 'mes', label: '30 dias', title: 'Atalho: M' }].map(({ key, label, title }, idx, arr) => (
@@ -1099,9 +1216,40 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '60% 1fr 1fr', gap: 12, marginBottom: 16 }}>
         {loading ? <SkeletonGrafico /> : <AreaMovementChart data={movData} period={chartPeriod} onPeriodChange={setChartPeriod} tooltip={tooltip} setTooltip={setTooltip} />}
-        {loading ? <SkeletonCard height={330} /> : <SmartAlerts alertas={allSmartAlerts} rupturas={rupturas} />}
+        <div className="sf-card" style={{ padding: '16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 12 }}>
+            Por Categoria
+          </div>
+          {loading ? <SkeletonCard height={200} /> : <PizzaCategoria data={distCategoria.data} size={130} />}
+        </div>
+        <div className="sf-card" style={{ padding: '16px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Alertas</span>
+            {secaoAlertas.length > 0 && (
+              <span style={{ background: 'var(--color-danger-600)', color: 'var(--color-text-inverse)', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '2px 7px' }}>
+                {secaoAlertas.length}
+              </span>
+            )}
+          </div>
+          {loading ? <SkeletonCard height={200} /> : (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: 340 }}>
+                {secaoAlertas.length === 0 ? (
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '20px 0' }}>Nenhum alerta crítico</div>
+                ) : secaoAlertas.slice(0, 6).map((a, i) => (
+                  <AlertaCard key={i} alerta={a} index={i} />
+                ))}
+              </div>
+              {secaoAlertas.length > 6 && (
+                <a href="/alertas" style={{ display: 'block', marginTop: 10, fontSize: 12, color: 'var(--color-brand-600)', textDecoration: 'none', fontWeight: 500 }}>
+                  Ver todos ({secaoAlertas.length}) →
+                </a>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
