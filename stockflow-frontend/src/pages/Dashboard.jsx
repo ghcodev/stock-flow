@@ -254,42 +254,6 @@ function MiniBadge({ children, tone = 'neutral' }) {
   )
 }
 
-function KpiCard({ item }) {
-  const Icon = item.icon
-  return (
-    <div className="sf-card" style={{ minHeight: 100, overflow: 'hidden' }}>
-      <div className="sf-card-accent" style={{ background: item.accentColor || 'var(--color-brand-500)' }} />
-      <div style={{ padding: '14px 16px', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', paddingRight: 8 }}>
-            {item.label}
-          </div>
-          <span className="sf-live-badge" style={{ flexShrink: 0 }}><span className="sf-live-dot" />Ao vivo</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: item.color || 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
-              {item.animatedValue ?? item.value}
-            </div>
-            <div style={{ fontSize: 11, color: item.trendColor || 'var(--color-text-tertiary)', marginTop: 7, fontWeight: item.trendColor ? 700 : 500 }}>
-              {item.trend}
-            </div>
-          </div>
-          <div style={{ color: 'var(--color-bg-muted)' }}>
-            <Icon size={22} />
-          </div>
-        </div>
-        {item.detail && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 11, color: item.detailColor || 'var(--color-text-tertiary)', fontWeight: item.detailColor ? 700 : 500 }}>
-            {item.pulse && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-danger-500)', animation: 'pulseDot 1s ease-in-out infinite' }} />}
-            {item.detail}
-          </div>
-        )}
-        {item.secondary && <div style={{ marginTop: 4, fontSize: 11, color: item.secondaryColor || 'var(--color-text-tertiary)', fontWeight: 700 }}>{item.secondary}</div>}
-      </div>
-    </div>
-  )
-}
 
 function TrendBadge({ direction, pct }) {
   if (direction === 'stable') return <MiniBadge>estavel</MiniBadge>
@@ -973,54 +937,9 @@ export default function Dashboard() {
 
   const labelPeriodo = { hoje: 'HOJE', semana: 'ÚLTIMOS 7 DIAS', mes: 'ÚLTIMOS 30 DIAS' }[periodo]
 
-  const movHojeAnimado   = useCountUp(kpis?.movimentacoes_hoje)
-  const totalProdAnimado = useCountUp(kpis?.total_produtos)
-  const entradasAnimado  = useCountUp(kpis?.tendencias?.entradas_hoje)
-  const saidasAnimado    = useCountUp(kpis?.tendencias?.saidas_hoje)
-
-  const movTrend = kpis ? trendPercent(kpis.movimentacoes_hoje, kpis.movimentacoes_ontem) : 0
-  const kpiItems = kpis ? [
-    {
-      label: 'Movimentacoes Hoje',
-      value: kpis.movimentacoes_hoje ?? '-',
-      animatedValue: movHojeAnimado,
-      accentColor: 'var(--color-brand-500)',
-      icon: Activity,
-      trend: `${movTrend >= 0 ? '↑' : '↓'} ${Math.abs(movTrend)}% vs ontem`,
-      trendColor: movTrend >= 0 ? 'var(--color-success-600)' : 'var(--color-danger-600)',
-    },
-    {
-      label: 'Total Produtos',
-      value: kpis.total_produtos ?? '-',
-      animatedValue: totalProdAnimado,
-      accentColor: 'var(--color-brand-600)',
-      icon: Package,
-      trend: `${Number(kpis.lotes_abaixo_minimo || 0)} abaixo do minimo`,
-      trendColor: Number(kpis.lotes_abaixo_minimo || 0) > 0 ? 'var(--color-danger-600)' : 'var(--color-text-tertiary)',
-      detail: Number(kpis.lotes_abaixo_minimo || 0) > 0 ? 'Requer reposicao de estoque' : 'Estoque dentro dos limites',
-      detailColor: Number(kpis.lotes_abaixo_minimo || 0) > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)',
-      pulse: Number(kpis.lotes_abaixo_minimo || 0) > 0,
-    },
-    {
-      label: 'Lotes Vencendo',
-      value: kpis.lotes_vencendo ?? '-',
-      accentColor: 'var(--color-warning-600)',
-      icon: Layers,
-      color: 'var(--color-warning-600)',
-      trend: `${Number(kpis.vencem_semana || 0)} vencem esta semana`,
-      trendColor: 'var(--color-danger-600)',
-      secondary: `${Number(kpis.vencem_mes || 0)} vencem este mes`,
-      secondaryColor: 'var(--color-warning-600)',
-    },
-    {
-      label: 'Lotes Bloqueados',
-      value: kpis.lotes_bloqueados ?? '-',
-      accentColor: 'var(--color-danger-600)',
-      icon: AlertTriangle,
-      color: 'var(--color-danger-600)',
-      trend: kpis.ultimo_bloqueio_dias != null ? `Ultimo bloqueio: ha ${Number(kpis.ultimo_bloqueio_dias)} dias` : 'Sem bloqueios recentes',
-    },
-  ] : []
+  const movHojeAnimado  = useCountUp(kpis?.movimentacoes_hoje)
+  const entradasAnimado = useCountUp(kpis?.tendencias?.entradas_hoje)
+  const saidasAnimado   = useCountUp(kpis?.tendencias?.saidas_hoje)
 
   const pieData = [
     { name: 'Entradas', value: movData.reduce((acc, d) => acc + d.entradas, 0), color: MOV_COLORS.entradas },
@@ -1094,15 +1013,14 @@ export default function Dashboard() {
         {loading ? (
           <>
             <SkeletonSaude />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
-              <SkeletonMiniCard /><SkeletonMiniCard />
-              <SkeletonMiniCard /><SkeletonMiniCard />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+              <SkeletonMiniCard /><SkeletonMiniCard /><SkeletonMiniCard />
             </div>
           </>
         ) : (
           <>
             <SaudeOperacional kpis={kpis} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
               <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
                 <div className="sf-card-accent" style={{ background: 'var(--color-success-600)' }} />
                 <div style={{ padding: '14px 16px' }}>
@@ -1126,17 +1044,6 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
-                <div className="sf-card-accent" style={{ background: 'var(--color-brand-600)' }} />
-                <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Capital em Estoque</span>
-                    <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
-                  </div>
-                  <div className="sf-number" style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{money(kpis?.capital?.capital_imobilizado)}</div>
-                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
-                </div>
-              </div>
-              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
                 <div className="sf-card-accent" style={{ background: 'var(--color-brand-500)' }} />
                 <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -1153,12 +1060,10 @@ export default function Dashboard() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-600)', borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Capital em Estoque</span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-            {kpis?.capital?.capital_imobilizado
-              ? `R$ ${Number(kpis.capital.capital_imobilizado).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
-              : <span style={{ color: 'var(--color-text-tertiary)', fontSize: 13, fontWeight: 500 }}>Sem custo cadastrado</span>}
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Vencendo</span>
+          <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
+            {kpis?.lotes_vencendo ?? '–'}
           </span>
         </div>
         <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1186,10 +1091,6 @@ export default function Dashboard() {
             {kpis?.total_lotes_ativos ?? kpis?.total_produtos ?? '–'}
           </span>
         </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
-        {loading ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />) : kpiItems.map(item => <KpiCard key={item.label} item={item} />)}
       </div>
 
       <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 16, marginBottom: 24 }}>
