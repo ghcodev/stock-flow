@@ -24,6 +24,43 @@ const CORREDORES = {
   'ES-02': 'Estoque Seco 02',
 }
 
+function useCountUp(target, duration = 1200) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!target || target === 0) { setValue(0); return }
+    const start = performance.now()
+    function step(now) {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
+      setValue(Math.round(target * ease))
+      if (progress < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [target])
+  return value
+}
+
+function getStatusCard(tipo, valor) {
+  const map = {
+    saude: valor >= 90
+      ? { grad: 'linear-gradient(135deg, var(--color-success-600) 0%, transparent 60%)', accent: 'var(--color-success-600)', badge: 'success' }
+      : valor >= 70
+      ? { grad: 'linear-gradient(135deg, var(--color-info-600) 0%, transparent 60%)', accent: 'var(--color-info-600)', badge: 'info' }
+      : valor >= 50
+      ? { grad: 'linear-gradient(135deg, var(--color-warning-500) 0%, transparent 60%)', accent: 'var(--color-warning-500)', badge: 'warning' }
+      : { grad: 'linear-gradient(135deg, var(--color-danger-600) 0%, transparent 60%)', accent: 'var(--color-danger-600)', badge: 'danger' },
+    entradas:  { accent: 'var(--color-success-600)' },
+    saidas:    { accent: 'var(--color-danger-600)' },
+    capital:   { accent: 'var(--color-brand-600)' },
+    mov:       { accent: 'var(--color-brand-500)' },
+    produtos:  { accent: 'var(--color-brand-600)' },
+    vencendo:  { accent: 'var(--color-warning-600)' },
+    bloqueado: { accent: 'var(--color-danger-600)' },
+  }
+  return map[tipo] || map.mov
+}
+
 function smoothPath(points) {
   if (points.length < 2) return ''
   let d = `M ${points[0].x},${points[0].y}`
@@ -128,30 +165,36 @@ function MiniBadge({ children, tone = 'neutral' }) {
 function KpiCard({ item }) {
   const Icon = item.icon
   return (
-    <div className="card" style={{ padding: '14px 16px', position: 'relative', minHeight: 100, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: 14, right: 14, color: 'var(--color-bg-muted)' }}>
-        <Icon size={22} />
-      </div>
-      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
-        {item.label}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: item.color || 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
-            {item.value}
+    <div className="sf-card" style={{ minHeight: 100, overflow: 'hidden' }}>
+      <div className="sf-card-accent" style={{ background: item.accentColor || 'var(--color-brand-500)' }} />
+      <div style={{ padding: '14px 16px', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', paddingRight: 8 }}>
+            {item.label}
           </div>
-          <div style={{ fontSize: 11, color: item.trendColor || 'var(--color-text-tertiary)', marginTop: 7, fontWeight: item.trendColor ? 700 : 500 }}>
-            {item.trend}
+          <span className="sf-live-badge" style={{ flexShrink: 0 }}><span className="sf-live-dot" />Ao vivo</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: item.color || 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+              {item.animatedValue ?? item.value}
+            </div>
+            <div style={{ fontSize: 11, color: item.trendColor || 'var(--color-text-tertiary)', marginTop: 7, fontWeight: item.trendColor ? 700 : 500 }}>
+              {item.trend}
+            </div>
+          </div>
+          <div style={{ color: 'var(--color-bg-muted)' }}>
+            <Icon size={22} />
           </div>
         </div>
+        {item.detail && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 11, color: item.detailColor || 'var(--color-text-tertiary)', fontWeight: item.detailColor ? 700 : 500 }}>
+            {item.pulse && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-danger-500)', animation: 'pulseDot 1s ease-in-out infinite' }} />}
+            {item.detail}
+          </div>
+        )}
+        {item.secondary && <div style={{ marginTop: 4, fontSize: 11, color: item.secondaryColor || 'var(--color-text-tertiary)', fontWeight: 700 }}>{item.secondary}</div>}
       </div>
-      {item.detail && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 11, color: item.detailColor || 'var(--color-text-tertiary)', fontWeight: item.detailColor ? 700 : 500 }}>
-          {item.pulse && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-danger-500)', animation: 'pulseDot 1s ease-in-out infinite' }} />}
-          {item.detail}
-        </div>
-      )}
-      {item.secondary && <div style={{ marginTop: 4, fontSize: 11, color: item.secondaryColor || 'var(--color-text-tertiary)', fontWeight: 700 }}>{item.secondary}</div>}
     </div>
   )
 }
@@ -196,12 +239,14 @@ function GaugeSVG({ score, cor }) {
         strokeLinecap="round"
       />
       <path
+        className="sf-gauge-path"
         d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
         fill="none"
         stroke={stroke}
         strokeWidth="10"
         strokeLinecap="round"
         strokeDasharray={`${filled} ${circum}`}
+        strokeDashoffset="0"
       />
     </svg>
   )
@@ -209,38 +254,59 @@ function GaugeSVG({ score, cor }) {
 
 function SaudeOperacional({ kpis }) {
   const saude = kpis?.saude_operacional || {}
-  const tone = saude.cor || 'info'
-  const scoreColor = toneColor(tone, 600)
   const fatores = saude.fatores || {}
-  const rows = [
-    [AlertTriangle, 'Rupturas', fatores.rupturas ?? kpis?.lotes_abaixo_minimo ?? 0],
-    [Clock, 'Vencimentos', fatores.vencimentos ?? kpis?.vencem_semana ?? 0],
-    [Lock, 'Bloqueios', fatores.bloqueios ?? kpis?.lotes_bloqueados ?? 0],
-    [TrendingUp, 'Giro', fatores.giro ?? kpis?.movimentacoes_hoje ?? 0],
+  const scoreNum = Number(saude.score || 0)
+  const scoreAnimado = useCountUp(scoreNum, 1600)
+  const isCritico = scoreNum < 50
+  const st = getStatusCard('saude', scoreNum)
+  const fatoresList = [
+    { icon: AlertTriangle, label: 'Rupturas',
+      val: fatores.rupturas ?? kpis?.lotes_abaixo_minimo ?? 0,
+      cor: (fatores.rupturas ?? kpis?.lotes_abaixo_minimo ?? 0) > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' },
+    { icon: Clock, label: 'Vencimentos',
+      val: fatores.vencimentos ?? kpis?.vencem_semana ?? 0,
+      cor: (fatores.vencimentos ?? kpis?.vencem_semana ?? 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' },
+    { icon: Lock, label: 'Bloqueios',
+      val: fatores.bloqueios ?? kpis?.lotes_bloqueados ?? 0,
+      cor: (fatores.bloqueios ?? kpis?.lotes_bloqueados ?? 0) > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' },
+    { icon: TrendingUp, label: 'Giro hoje',
+      val: fatores.giro ?? kpis?.movimentacoes_hoje ?? 0,
+      cor: 'var(--color-brand-600)' },
   ]
 
   return (
-    <div className="card" style={{ padding: '18px 20px', minHeight: 252 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 10 }}>SAUDE OPERACIONAL</div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: -4, marginBottom: 2 }}>
-        <GaugeSVG score={saude.score} cor={tone} />
-      </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 8 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, color: scoreColor, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{Number(saude.score || 0)}</div>
-        <div style={{ fontSize: 18, color: 'var(--color-text-tertiary)', fontWeight: 700, paddingBottom: 6 }}>/100</div>
-      </div>
-      <div style={{ marginTop: 10, textAlign: 'center' }}>
-        <MiniBadge tone={tone}>{saude.label || 'SEM DADOS'}</MiniBadge>
-      </div>
-      <div style={{ height: 1, background: 'var(--color-border-muted)', margin: '16px 0 10px' }} />
-      <div style={{ display: 'grid', gap: 9 }}>
-        {rows.map(([Icon, label, value]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-            <Icon size={14} color="var(--color-text-tertiary)" />
-            <span style={{ color: 'var(--color-text-secondary)', flex: 1 }}>{label}</span>
-            <span style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Number(value || 0)}</span>
+    <div className={`sf-card${isCritico ? ' sf-card-critical' : ''}`} style={{ padding: 0 }}>
+      <div className="sf-card-accent" style={{ background: st.accent }} />
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+            Saude Operacional
+          </span>
+          <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <GaugeSVG score={scoreAnimado} cor={saude.cor || 'danger'} />
+          <div>
+            <div className="sf-number" style={{ fontSize: 48, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: st.accent, lineHeight: 1 }}>
+              {scoreAnimado}
+              <span style={{ fontSize: 18, color: 'var(--color-text-tertiary)', fontWeight: 400 }}>/100</span>
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <MiniBadge tone={st.badge || 'neutral'}>{saude.label || 'SEM DADOS'}</MiniBadge>
+            </div>
           </div>
-        ))}
+        </div>
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--color-border-muted)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fatoresList.map(({ icon: Icon, label, val, cor }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon size={13} color="var(--color-text-tertiary)" />
+                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</span>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: cor }}>{Number(val || 0)}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -690,11 +756,18 @@ export default function Dashboard() {
     scrollRef.current.scrollLeft = scrollLeft - (e.clientX - startX)
   }
 
+  const movHojeAnimado   = useCountUp(kpis?.movimentacoes_hoje)
+  const totalProdAnimado = useCountUp(kpis?.total_produtos)
+  const entradasAnimado  = useCountUp(kpis?.tendencias?.entradas_hoje)
+  const saidasAnimado    = useCountUp(kpis?.tendencias?.saidas_hoje)
+
   const movTrend = kpis ? trendPercent(kpis.movimentacoes_hoje, kpis.movimentacoes_ontem) : 0
   const kpiItems = kpis ? [
     {
       label: 'Movimentacoes Hoje',
       value: kpis.movimentacoes_hoje ?? '-',
+      animatedValue: movHojeAnimado,
+      accentColor: 'var(--color-brand-500)',
       icon: Activity,
       trend: `${movTrend >= 0 ? '↑' : '↓'} ${Math.abs(movTrend)}% vs ontem`,
       trendColor: movTrend >= 0 ? 'var(--color-success-600)' : 'var(--color-danger-600)',
@@ -702,6 +775,8 @@ export default function Dashboard() {
     {
       label: 'Total Produtos',
       value: kpis.total_produtos ?? '-',
+      animatedValue: totalProdAnimado,
+      accentColor: 'var(--color-brand-600)',
       icon: Package,
       trend: `${Number(kpis.lotes_abaixo_minimo || 0)} abaixo do minimo`,
       trendColor: Number(kpis.lotes_abaixo_minimo || 0) > 0 ? 'var(--color-danger-600)' : 'var(--color-text-tertiary)',
@@ -712,6 +787,7 @@ export default function Dashboard() {
     {
       label: 'Lotes Vencendo',
       value: kpis.lotes_vencendo ?? '-',
+      accentColor: 'var(--color-warning-600)',
       icon: Layers,
       color: 'var(--color-warning-600)',
       trend: `${Number(kpis.vencem_semana || 0)} vencem esta semana`,
@@ -722,6 +798,7 @@ export default function Dashboard() {
     {
       label: 'Lotes Bloqueados',
       value: kpis.lotes_bloqueados ?? '-',
+      accentColor: 'var(--color-danger-600)',
       icon: AlertTriangle,
       color: 'var(--color-danger-600)',
       trend: kpis.ultimo_bloqueio_dias != null ? `Ultimo bloqueio: ha ${Number(kpis.ultimo_bloqueio_dias)} dias` : 'Sem bloqueios recentes',
@@ -782,30 +859,50 @@ export default function Dashboard() {
           <>
             <SaudeOperacional kpis={kpis} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
-              <MiniMetric
-                label="ENTRADAS HOJE"
-                value={Number(kpis?.tendencias?.entradas_hoje || 0)}
-              >
-                <TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} />
-              </MiniMetric>
-              <MiniMetric
-                label="SAIDAS HOJE"
-                value={Number(kpis?.tendencias?.saidas_hoje || 0)}
-              >
-                <TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} />
-              </MiniMetric>
-              <MiniMetric
-                label="CAPITAL EM ESTOQUE"
-                value={money(kpis?.capital?.capital_imobilizado)}
-              >
-                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
-              </MiniMetric>
-              <MiniMetric
-                label="MOVIMENTACOES HOJE"
-                value={Number(kpis?.movimentacoes_hoje || 0)}
-              >
-                <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
-              </MiniMetric>
+              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+                <div className="sf-card-accent" style={{ background: 'var(--color-success-600)' }} />
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Entradas Hoje</span>
+                    <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
+                  </div>
+                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{entradasAnimado}</div>
+                  <div style={{ marginTop: 10 }}><TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} /></div>
+                </div>
+              </div>
+              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+                <div className="sf-card-accent" style={{ background: 'var(--color-danger-600)' }} />
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Saidas Hoje</span>
+                    <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
+                  </div>
+                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{saidasAnimado}</div>
+                  <div style={{ marginTop: 10 }}><TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} /></div>
+                </div>
+              </div>
+              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+                <div className="sf-card-accent" style={{ background: 'var(--color-brand-600)' }} />
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Capital em Estoque</span>
+                    <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
+                  </div>
+                  <div className="sf-number" style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{money(kpis?.capital?.capital_imobilizado)}</div>
+                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-tertiary)' }}>Capital parado: {money(kpis?.capital?.capital_parado)}</div>
+                </div>
+              </div>
+              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+                <div className="sf-card-accent" style={{ background: 'var(--color-brand-500)' }} />
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Movimentacoes Hoje</span>
+                    <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
+                  </div>
+                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{movHojeAnimado}</div>
+                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -1147,6 +1244,51 @@ export default function Dashboard() {
         @keyframes fadeArea {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        .sf-card {
+          background: var(--color-bg-default);
+          border: 1px solid var(--color-border-muted);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
+          transition: box-shadow 0.2s ease, transform 0.2s ease;
+          overflow: hidden;
+          position: relative;
+        }
+        .sf-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .sf-card-accent { height: 4px; width: 100%; }
+        .sf-live-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: var(--color-success-600);
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .sf-live-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--color-success-600);
+          animation: livePulse 1.8s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.4); }
+        }
+        .sf-gauge-path { transition: stroke-dasharray 1.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .sf-number { animation: numberAppear 0.4s ease forwards; }
+        @keyframes numberAppear {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .sf-card-critical { animation: borderPulse 2.5s ease-in-out infinite; }
+        @keyframes borderPulse {
+          0%, 100% { border-color: var(--color-border-muted); }
+          50% { border-color: var(--color-danger-600); }
         }
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
