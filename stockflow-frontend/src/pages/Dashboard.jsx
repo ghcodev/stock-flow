@@ -94,6 +94,98 @@ function calcPoints(data, key, w, h, pad, maxValue) {
   }))
 }
 
+function SkeletonPulse({ w = '100%', h = 16, radius = 6 }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: radius,
+      background: 'var(--color-bg-canvas)',
+      backgroundImage: 'linear-gradient(90deg, var(--color-bg-canvas) 0px, var(--color-bg-subtle) 40px, var(--color-bg-canvas) 80px)',
+      backgroundSize: '600px',
+      animation: 'shimmerWave 1.4s infinite linear',
+      flexShrink: 0,
+    }} />
+  )
+}
+
+function SkeletonSaude() {
+  return (
+    <div className="sf-card" style={{ padding: '16px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <SkeletonPulse w={120} h={11} />
+        <SkeletonPulse w={50} h={11} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+        <SkeletonPulse w={140} h={80} radius={70} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+        <SkeletonPulse w={80} h={48} radius={8} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        <SkeletonPulse w={80} h={22} radius={11} />
+      </div>
+      <div style={{ borderTop: '1px solid var(--color-border-muted)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <SkeletonPulse w={100} h={12} />
+            <SkeletonPulse w={24} h={12} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SkeletonMiniCard() {
+  return (
+    <div className="sf-card" style={{ padding: '14px 16px', minHeight: 112 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+        <SkeletonPulse w={100} h={11} />
+        <SkeletonPulse w={40} h={11} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <SkeletonPulse w={60} h={36} radius={6} />
+      </div>
+      <SkeletonPulse w={80} h={20} radius={10} />
+    </div>
+  )
+}
+
+function SkeletonGrafico() {
+  return (
+    <div className="sf-card" style={{ padding: '16px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <SkeletonPulse w={180} h={16} />
+        <SkeletonPulse w={80} h={28} radius={6} />
+      </div>
+      <SkeletonPulse w="100%" h={200} radius={8} />
+      <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+        <SkeletonPulse w={80} h={12} />
+        <SkeletonPulse w={80} h={12} />
+        <SkeletonPulse w={100} h={12} />
+      </div>
+    </div>
+  )
+}
+
+function SkeletonCard3() {
+  return (
+    <div className="sf-card" style={{ padding: '16px 20px' }}>
+      <div style={{ marginBottom: 16 }}>
+        <SkeletonPulse w={140} h={14} />
+      </div>
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <SkeletonPulse w={120} h={13} />
+            <SkeletonPulse w={60} h={13} />
+          </div>
+          <SkeletonPulse w="100%" h={6} radius={3} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function SkeletonCard({ height = 110 }) {
   return (
     <div className="card" style={{ padding: '18px 20px', minHeight: height }}>
@@ -853,6 +945,20 @@ export default function Dashboard() {
 
   useEffect(() => { load() }, [periodo, topPeriodo])
 
+  useEffect(() => {
+    function handleKey(e) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return
+      switch (e.key.toLowerCase()) {
+        case 'r': load(); toast.info('Dashboard atualizado'); break
+        case 'h': setPeriodo('hoje'); break
+        case 's': setPeriodo('semana'); break
+        case 'm': setPeriodo('mes'); break
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [periodo])
+
   function onDragStart(e) {
     if (!scrollRef.current) return
     setIsDragging(true)
@@ -956,10 +1062,11 @@ export default function Dashboard() {
         </div>
         <div className="page-header-actions">
           <div style={{ display: 'inline-flex', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginRight: 8 }}>
-            {[{ key: 'hoje', label: 'Hoje' }, { key: 'semana', label: '7 dias' }, { key: 'mes', label: '30 dias' }].map(({ key, label }, idx, arr) => (
+            {[{ key: 'hoje', label: 'Hoje', title: 'Atalho: H' }, { key: 'semana', label: '7 dias', title: 'Atalho: S' }, { key: 'mes', label: '30 dias', title: 'Atalho: M' }].map(({ key, label, title }, idx, arr) => (
               <button
                 key={key}
                 type="button"
+                title={title}
                 onClick={() => setPeriodo(key)}
                 style={{
                   padding: '6px 14px',
@@ -978,7 +1085,7 @@ export default function Dashboard() {
             ))}
           </div>
           <ExportMenu kpis={kpis} movData={movData} rupturas={rupturas} curvaAbc={curvaAbc} periodo={periodo} />
-          <button className="btn btn-outline btn-sm" onClick={load}><RefreshCw size={14} /> Atualizar</button>
+          <button className="btn btn-outline btn-sm" onClick={load} title="Atualizar (R)"><RefreshCw size={14} /> Atualizar</button>
         </div>
       </div>
 
@@ -986,8 +1093,11 @@ export default function Dashboard() {
       <div className="dashboard-health-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginBottom: 24 }}>
         {loading ? (
           <>
-            <SkeletonCard height={252} />
-            <SkeletonCard height={252} />
+            <SkeletonSaude />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16 }}>
+              <SkeletonMiniCard /><SkeletonMiniCard />
+              <SkeletonMiniCard /><SkeletonMiniCard />
+            </div>
           </>
         ) : (
           <>
@@ -1092,13 +1202,13 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 16, marginBottom: 24 }}>
-        {loading ? <SkeletonCard height={330} /> : <AreaMovementChart data={movData} period={chartPeriod} onPeriodChange={setChartPeriod} tooltip={tooltip} setTooltip={setTooltip} />}
+        {loading ? <SkeletonGrafico /> : <AreaMovementChart data={movData} period={chartPeriod} onPeriodChange={setChartPeriod} tooltip={tooltip} setTooltip={setTooltip} />}
         {loading ? <SkeletonCard height={330} /> : <SmartAlerts alertas={allSmartAlerts} rupturas={rupturas} />}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} height={240} />)
+          <><SkeletonCard3 /><SkeletonCard3 /><SkeletonCard3 /></>
         ) : (
           <>
             <TopOperadoresCard operadores={kpis?.top_operadores || []} />
@@ -1426,6 +1536,10 @@ export default function Dashboard() {
           50% { border-color: var(--color-danger-600); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmerWave {
+          0%   { background-position: -600px 0; }
+          100% { background-position:  600px 0; }
+        }
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           [style*="repeat(3,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }
