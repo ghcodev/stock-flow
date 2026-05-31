@@ -220,6 +220,43 @@ async function kpis(req, res) {
   }
   const [topOperadoresRows] = topData;
 
+  const [comparativoRows] = await pool.execute(
+    `SELECT
+       tipo,
+       SUM(CASE WHEN DATE(data_movimentacao) = CURDATE() THEN 1 ELSE 0 END) AS hoje,
+       SUM(CASE WHEN DATE(data_movimentacao) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS ontem,
+       SUM(CASE WHEN data_movimentacao >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS semana
+     FROM movimentacao
+     WHERE data_movimentacao >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+     GROUP BY tipo`
+  );
+
+  const comparativoBase = {
+    entradas: { hoje: 0, ontem: 0, semana: 0 },
+    saidas: { hoje: 0, ontem: 0, semana: 0 },
+    movimentacoes: { hoje: 0, ontem: 0, semana: 0 },
+  };
+
+  comparativoRows.forEach(row => {
+    const item = {
+      hoje: toNumber(row.hoje),
+      ontem: toNumber(row.ontem),
+      semana: toNumber(row.semana),
+    };
+
+    if (row.tipo === 'entrada') {
+      comparativoBase.entradas = item;
+    }
+
+    if (row.tipo === 'saida') {
+      comparativoBase.saidas = item;
+    }
+
+    comparativoBase.movimentacoes.hoje += item.hoje;
+    comparativoBase.movimentacoes.ontem += item.ontem;
+    comparativoBase.movimentacoes.semana += item.semana;
+  });
+
   return res.json({
     total_produtos,
     lotes_abaixo_minimo: abaixo[0].lotes_abaixo_minimo,
@@ -253,6 +290,7 @@ async function kpis(req, res) {
       direcao_saidas: trendDirection(saidasPct),
     },
     capital,
+    comparativo: comparativoBase,
     top_operadores: topOperadoresRows.map((row, index) => ({
       posicao: index + 1,
       nome: row.nome,
@@ -546,6 +584,7 @@ async function distribuicaoCategoria(req, res) {
       pct: total > 0 ? Math.round((r.total_movimentacoes / total) * 100) : 0,
     })),
     total,
+    sem_dados: total === 0,
   })
 }
 

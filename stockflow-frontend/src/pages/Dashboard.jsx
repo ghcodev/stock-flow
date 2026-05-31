@@ -5,7 +5,7 @@ import api from '../api/axios.js'
 import {
   Package, Layers, AlertTriangle, RefreshCw, Download, ArrowDownLeft,
   ArrowUpRight, ArrowRight, Activity, Clock, TrendingDown, Lock, ShieldCheck,
-  Circle, TrendingUp, Users, BarChart2, CheckCircle, FileText, FileSpreadsheet,
+  Circle, TrendingUp, BarChart2, CheckCircle, FileText, FileSpreadsheet,
   Shuffle, Sliders,
 } from 'lucide-react'
 
@@ -262,12 +262,36 @@ function TrendBadge({ direction, pct }) {
   return <MiniBadge tone={up ? 'success' : 'danger'}>{up ? '↑' : '↓'} {up ? '+' : ''}{Number(pct || 0).toFixed(1)}%</MiniBadge>
 }
 
-function MiniMetric({ label, value, children }) {
+function MiniComparativo({ hoje, ontem, semana, cor }) {
+  const max = Math.max(hoje, ontem, semana, 1)
+  const bars = [
+    { label: 'Hoje', val: hoje, w: (hoje / max) * 100 },
+    { label: 'Ontem', val: ontem, w: (ontem / max) * 100 },
+    { label: '7d', val: semana, w: (semana / max) * 100 },
+  ]
+
   return (
-    <div className="card" style={{ padding: '16px 18px', minHeight: 112, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
-      <div style={{ marginTop: 10 }}>{children}</div>
+    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {bars.map(b => (
+        <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', width: 28, textAlign: 'right', flexShrink: 0 }}>
+            {b.label}
+          </span>
+          <div style={{ flex: 1, height: 5, background: 'var(--color-bg-canvas)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${b.w}%`,
+              background: cor,
+              borderRadius: 'var(--radius-full)',
+              transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              opacity: b.label === 'Hoje' ? 1 : 0.45,
+            }} />
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-text-secondary)', width: 24, textAlign: 'right', flexShrink: 0 }}>
+            {b.val}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -573,23 +597,181 @@ function SmartAlerts({ alertas, rupturas }) {
 }
 
 function TopOperadoresCard({ operadores }) {
-  const rows = operadores || []
+  const ops = operadores || []
+  const primeiro = ops[0]
+  const segundo = ops[1]
+  const terceiro = ops[2]
+  const maxMov = primeiro?.total_movimentacoes || 1
+
+  function Avatar({ nome, pos }) {
+    const iniciais = nome?.split(' ')
+      .slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
+    const cores = {
+      1: { bg: 'var(--color-warning-500)', ring: 'var(--color-warning-600)' },
+      2: { bg: 'var(--color-text-tertiary)', ring: 'var(--color-border-strong)' },
+      3: { bg: 'var(--color-warning-600)', ring: 'var(--color-warning-600)' },
+    }
+    const c = cores[pos] || cores[3]
+
+    return (
+      <div style={{
+        width: pos === 1 ? 52 : 42,
+        height: pos === 1 ? 52 : 42,
+        borderRadius: '50%',
+        background: c.bg,
+        border: `3px solid ${c.ring}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: pos === 1 ? 18 : 14,
+        fontWeight: 800,
+        color: 'var(--color-text-inverse)',
+        margin: '0 auto 6px',
+        boxShadow: 'var(--shadow-md)',
+      }}>
+        {iniciais}
+      </div>
+    )
+  }
+
+  function PodioItem({ op, pos, altura }) {
+    if (!op) {
+      return (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{
+            width: 42,
+            height: 42,
+            borderRadius: '50%',
+            background: 'var(--color-bg-canvas)',
+            border: '2px dashed var(--color-border-default)',
+            margin: '0 auto 6px',
+          }} />
+          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>-</div>
+          <div style={{
+            height: altura,
+            background: 'var(--color-bg-canvas)',
+            width: '100%',
+            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+            marginTop: 8,
+            border: '1px solid var(--color-border-muted)',
+          }} />
+        </div>
+      )
+    }
+
+    const pct = Math.round((op.total_movimentacoes / maxMov) * 100)
+    const nomeBreve = op.nome?.split(' ')[0] || op.nome
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--color-text-tertiary)', marginBottom: 4 }}>{pos}º</div>
+        <Avatar nome={op.nome} pos={pos} />
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', lineHeight: 1.2 }}>
+          {nomeBreve}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 6 }}>
+          {op.total_movimentacoes} mov
+        </div>
+        <div style={{
+          height: altura,
+          width: '100%',
+          background: pos === 1
+            ? 'linear-gradient(180deg, var(--color-warning-500), var(--color-warning-600))'
+            : 'var(--color-bg-subtle)',
+          borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+          border: '1px solid var(--color-border-default)',
+          borderBottom: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}>
+          <span style={{
+            fontSize: 13,
+            fontWeight: 800,
+            color: pos === 1 ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+          }}>
+            {pct}%
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="card">
-      <div className="card-header">
-        <span className="card-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Users size={15} /> TOP OPERADORES HOJE</span>
+    <div className="sf-card" style={{ padding: '16px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+          Top Operadores Hoje
+        </span>
+        <span className="sf-live-badge">
+          <span className="sf-live-dot" />
+          Ao vivo
+        </span>
       </div>
-      <div style={{ padding: '12px 20px 18px' }}>
-        {rows.length === 0 ? (
-          <div style={{ height: 160, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13, textAlign: 'center' }}>Nenhuma movimentacao hoje</div>
-        ) : rows.slice(0, 3).map((op, index) => (
-          <div key={`${op.nome}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: index < Math.min(rows.length, 3) - 1 ? '1px solid var(--color-border-muted)' : 'none' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center', background: index === 0 ? 'var(--color-brand-100)' : 'var(--color-bg-subtle)', color: index === 0 ? 'var(--color-brand-700)' : 'var(--color-text-secondary)', fontWeight: 800, fontSize: 12 }}>{index + 1}</div>
-            <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.nome}</div>
-            <MiniBadge tone={index === 0 ? 'brand' : 'neutral'}>{Number(op.total_movimentacoes || 0)}</MiniBadge>
+
+      {ops.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
+          Nenhuma movimentação hoje
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 0, height: 180 }}>
+            <PodioItem op={segundo} pos={2} altura={90} />
+            <PodioItem op={primeiro} pos={1} altura={130} />
+            <PodioItem op={terceiro} pos={3} altura={70} />
           </div>
-        ))}
-      </div>
+
+          <div style={{
+            height: 3,
+            borderRadius: 'var(--radius-full)',
+            background: 'linear-gradient(90deg, var(--color-border-muted), var(--color-border-default), var(--color-border-muted))',
+            marginBottom: 12,
+          }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {ops.map((op, i) => (
+              <div key={`${op.nome}-${i}`} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm)',
+                background: i === 0 ? 'var(--color-bg-subtle)' : 'transparent',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 800, width: 22 }}>
+                    {i + 1}º
+                  </span>
+                  <span style={{
+                    fontSize: 12,
+                    color: 'var(--color-text-primary)',
+                    fontWeight: i === 0 ? 600 : 400,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {op.nome?.split(' ').slice(0, 2).join(' ')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <div style={{ width: 60, height: 4, background: 'var(--color-bg-canvas)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.round((op.total_movimentacoes / maxMov) * 100)}%`,
+                      background: i === 0 ? 'var(--color-warning-500)' : 'var(--color-brand-500)',
+                      borderRadius: 'var(--radius-full)',
+                    }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', width: 20, textAlign: 'right' }}>
+                    {op.total_movimentacoes}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -1153,6 +1335,12 @@ export default function Dashboard() {
                   </div>
                   <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{entradasAnimado}</div>
                   <div style={{ marginTop: 8 }}><TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} /></div>
+                  <MiniComparativo
+                    hoje={kpis?.comparativo?.entradas?.hoje ?? 0}
+                    ontem={kpis?.comparativo?.entradas?.ontem ?? 0}
+                    semana={kpis?.comparativo?.entradas?.semana ?? 0}
+                    cor="var(--color-success-600)"
+                  />
                 </div>
               </div>
               <div className="sf-card" style={{ padding: 0 }}>
@@ -1164,6 +1352,12 @@ export default function Dashboard() {
                   </div>
                   <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{saidasAnimado}</div>
                   <div style={{ marginTop: 8 }}><TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} /></div>
+                  <MiniComparativo
+                    hoje={kpis?.comparativo?.saidas?.hoje ?? 0}
+                    ontem={kpis?.comparativo?.saidas?.ontem ?? 0}
+                    semana={kpis?.comparativo?.saidas?.semana ?? 0}
+                    cor="var(--color-danger-600)"
+                  />
                 </div>
               </div>
               <div className="sf-card" style={{ padding: 0 }}>
@@ -1175,6 +1369,12 @@ export default function Dashboard() {
                   </div>
                   <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{movHojeAnimado}</div>
                   <div style={{ marginTop: 8, fontSize: 11, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
+                  <MiniComparativo
+                    hoje={kpis?.comparativo?.movimentacoes?.hoje ?? 0}
+                    ontem={kpis?.comparativo?.movimentacoes?.ontem ?? 0}
+                    semana={kpis?.comparativo?.movimentacoes?.semana ?? 0}
+                    cor="var(--color-brand-500)"
+                  />
                 </div>
               </div>
             </div>

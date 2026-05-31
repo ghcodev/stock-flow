@@ -70,6 +70,7 @@ function AppRoutes() {
       <Route path="/historico"    element={<PrivateRoute><Historico /></PrivateRoute>} />
       <Route path="/rastreabilidade" element={<PrivateRoute><Rastreabilidade /></PrivateRoute>} />
       <Route path="/alertas"      element={<PrivateRoute><AlertasVencimento /></PrivateRoute>} />
+      <Route path="/alertas-vencimento" element={<PrivateRoute><AlertasVencimento /></PrivateRoute>} />
       <Route path="/relatorios"   element={<PrivateRoute><Relatorios /></PrivateRoute>} />
       <Route path="/inventario"   element={<PrivateRoute><Inventario /></PrivateRoute>} />
       <Route path="/perfil"       element={<PrivateRoute><Perfil /></PrivateRoute>} />
