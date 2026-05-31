@@ -1152,49 +1152,40 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div style={{
-        display: 'flex',
-        gap: 24,
-        padding: '10px 16px',
-        background: 'var(--color-bg-subtle)',
-        border: '1px solid var(--color-border-muted)',
-        borderRadius: 'var(--radius-md)',
-        marginBottom: 16,
-        fontSize: 12,
-        color: 'var(--color-text-secondary)',
-        flexWrap: 'wrap',
-      }}>
-        <span>
-          <strong style={{ color: 'var(--color-text-primary)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-600)', borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Capital em Estoque</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
             {kpis?.capital?.capital_imobilizado
-              ? `R$ ${Number(kpis.capital.capital_imobilizado).toLocaleString('pt-BR')}`
-              : '-'}
-          </strong>
-          {' '}em estoque
-        </span>
-        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
-        <span>
-          Cobertura media:{' '}
-          <strong style={{ color: 'var(--color-text-primary)' }}>
+              ? `R$ ${Number(kpis.capital.capital_imobilizado).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
+              : <span style={{ color: 'var(--color-text-tertiary)', fontSize: 13, fontWeight: 500 }}>Sem custo cadastrado</span>}
+          </span>
+        </div>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Cobertura Média</span>
+          <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
             {rupturas.length > 0
               ? `${Math.round(rupturas.reduce((a, r) => a + r.dias_para_ruptura, 0) / rupturas.length)} dias`
-              : '-'}
-          </strong>
-        </span>
-        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
-        <span>
-          Produtos em risco:{' '}
-          <strong style={{ color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
-            {rupturas.length}
-          </strong>
-        </span>
-        <span style={{ color: 'var(--color-border-strong)' }}>|</span>
-        <span>
-          Lotes ativos:{' '}
-          <strong style={{ color: 'var(--color-text-primary)' }}>
-            {kpis?.total_lotes_ativos ?? '-'}
-          </strong>
-        </span>
+              : '–'}
+          </span>
+        </div>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Produtos em Risco</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
+              {rupturas.length}
+            </span>
+            {rupturas.length === 0 && (
+              <span style={{ fontSize: 11, color: 'var(--color-success-600)' }}>✓ Estoque saudável</span>
+            )}
+          </div>
+        </div>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-500)', borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Ativos</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+            {kpis?.total_lotes_ativos ?? kpis?.total_produtos ?? '–'}
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
@@ -1500,7 +1491,7 @@ export default function Dashboard() {
           position: relative;
         }
         .sf-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .sf-card-accent { height: 4px; width: 100%; }
+        .sf-card-accent { height: 3px; width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; opacity: 0.85; }
         .sf-live-badge {
           display: inline-flex;
           align-items: center;
