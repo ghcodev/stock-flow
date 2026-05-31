@@ -24,15 +24,33 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('stockflow_token')
-    const stored = localStorage.getItem('stockflow_user')
-    if (token && stored) {
-      try { setUser(JSON.parse(stored)) } catch {
+    let active = true
+
+    async function restoreSession() {
+      const token = localStorage.getItem('stockflow_token')
+      const stored = localStorage.getItem('stockflow_user')
+
+      if (!token || !stored) {
+        if (active) setLoading(false)
+        return
+      }
+
+      try {
+        const { data } = await api.get('/auth/perfil')
+        const appUser = buildAppUser(data.usuario)
+        localStorage.setItem('stockflow_user', JSON.stringify(appUser))
+        if (active) setUser(appUser)
+      } catch {
         localStorage.removeItem('stockflow_token')
         localStorage.removeItem('stockflow_user')
+        if (active) setUser(null)
+      } finally {
+        if (active) setLoading(false)
       }
     }
-    setLoading(false)
+
+    restoreSession()
+    return () => { active = false }
   }, [])
 
   async function login(identifier, senha) {

@@ -55,3 +55,21 @@
 - Dados de auditoria são imutáveis — nunca alterar tabelas de log
 - Gráficos usam SVG puro — nunca substituir por bibliotecas externas
 - Alertas e notificações não podem ser desativados silenciosamente
+
+# Fluxo obrigatorio para UI
+
+Sempre que a tarefa envolver criacao, refatoracao ou melhoria de telas, componentes visuais, layouts, tabelas, dashboards, formularios, cards, filtros ou navegacao:
+
+1. Ler e aplicar `.claude/skills/frontend-design/SKILL.md`
+2. Analisar a tela atual
+3. Identificar problemas visuais, UX e operacionais
+4. Propor solucao
+5. Mostrar diff planejado
+6. Aguardar aprovacao explicita
+7. Implementar alteracoes cirurgicas
+8. Executar `.claude/skills/frontend-audit/SKILL.md`
+9. Corrigir problemas obrigatorios apontados pela auditoria
+10. Validar build, console e comportamento
+11. Listar arquivos alterados
+
+Nunca implementar alteracoes visuais diretamente sem passar pelo fluxo frontend-design -> frontend-audit.

@@ -44,5 +44,9 @@ temp/
 
 # Outros arquivos internos
 .thumbnail
+.agents/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 prisma.config.ts
 prisma/
