@@ -38,6 +38,16 @@ async function loteHasColumn(columnName) {
 }
 
 async function kpis(req, res) {
+  const VALID_PERIODS = ['hoje', 'semana', 'mes'];
+  const periodo = VALID_PERIODS.includes(req.query.periodo) ? req.query.periodo : 'hoje';
+  const dias = { hoje: 1, semana: 7, mes: 30 }[periodo];
+  const currFilter = periodo === 'hoje'
+    ? "DATE(data_movimentacao) = CURDATE()"
+    : `data_movimentacao >= DATE_SUB(CURDATE(), INTERVAL ${dias} DAY)`;
+  const prevFilter = periodo === 'hoje'
+    ? "DATE(data_movimentacao) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)"
+    : `data_movimentacao >= DATE_SUB(CURDATE(), INTERVAL ${dias * 2} DAY) AND data_movimentacao < DATE_SUB(CURDATE(), INTERVAL ${dias} DAY)`;
+
   const [[{ total_produtos }]] = await pool.execute("SELECT COUNT(*) AS total_produtos FROM produto WHERE ativo = 1");
 
   const [[{ lotes_bloqueados }]] = await pool.execute("SELECT COUNT(*) AS lotes_bloqueados FROM lote WHERE status_lote = 'bloqueado'");
@@ -47,11 +57,11 @@ async function kpis(req, res) {
   );
 
   const [[{ movimentacoes_hoje }]] = await pool.execute(
-    "SELECT COUNT(*) AS movimentacoes_hoje FROM movimentacao WHERE DATE(data_movimentacao) = CURDATE()"
+    `SELECT COUNT(*) AS movimentacoes_hoje FROM movimentacao WHERE ${currFilter}`
   );
 
   const [[{ movimentacoes_ontem }]] = await pool.execute(
-    "SELECT COUNT(*) AS movimentacoes_ontem FROM movimentacao WHERE DATE(data_movimentacao) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)"
+    `SELECT COUNT(*) AS movimentacoes_ontem FROM movimentacao WHERE ${prevFilter}`
   );
 
   const [[{ vencem_semana }]] = await pool.execute(
@@ -114,22 +124,36 @@ async function kpis(req, res) {
   const score = Math.max(0, 100 - rupturasScore * 15 - vencimentosScore * 10 - bloqueiosScore * 8);
   const saude = healthMeta(score);
 
-  const [[trendRows]] = await pool.execute(
-    `WITH ref AS (
-       SELECT COALESCE(MAX(DATE(data_movimentacao)), CURDATE()) AS dia
+  let trendData;
+  if (periodo === 'hoje') {
+    trendData = await pool.execute(
+      `WITH ref AS (
+         SELECT COALESCE(MAX(DATE(data_movimentacao)), CURDATE()) AS dia
+         FROM movimentacao
+         WHERE DATE(data_movimentacao) <= CURDATE()
+       )
+       SELECT
+         COUNT(CASE WHEN m.tipo = 'entrada' AND DATE(m.data_movimentacao) = ref.dia THEN 1 END) AS entradas_hoje,
+         COUNT(CASE WHEN m.tipo = 'saida' AND DATE(m.data_movimentacao) = ref.dia THEN 1 END) AS saidas_hoje,
+         COALESCE(AVG(CASE WHEN DATE(m.data_movimentacao) < ref.dia THEN CASE WHEN m.tipo = 'entrada' THEN 1 ELSE 0 END END), 0) AS entradas_media7d,
+         COALESCE(AVG(CASE WHEN DATE(m.data_movimentacao) < ref.dia THEN CASE WHEN m.tipo = 'saida' THEN 1 ELSE 0 END END), 0) AS saidas_media7d
+       FROM ref
+       LEFT JOIN movimentacao m
+         ON m.data_movimentacao >= DATE_SUB(ref.dia, INTERVAL 7 DAY)
+        AND DATE(m.data_movimentacao) <= ref.dia`
+    );
+  } else {
+    trendData = await pool.execute(
+      `SELECT
+         COUNT(CASE WHEN tipo = 'entrada' AND ${currFilter} THEN 1 END) AS entradas_hoje,
+         COUNT(CASE WHEN tipo = 'saida' AND ${currFilter} THEN 1 END) AS saidas_hoje,
+         COUNT(CASE WHEN tipo = 'entrada' AND ${prevFilter} THEN 1 END) AS entradas_media7d,
+         COUNT(CASE WHEN tipo = 'saida' AND ${prevFilter} THEN 1 END) AS saidas_media7d
        FROM movimentacao
-       WHERE DATE(data_movimentacao) <= CURDATE()
-     )
-     SELECT
-       COUNT(CASE WHEN m.tipo = 'entrada' AND DATE(m.data_movimentacao) = ref.dia THEN 1 END) AS entradas_hoje,
-       COUNT(CASE WHEN m.tipo = 'saida' AND DATE(m.data_movimentacao) = ref.dia THEN 1 END) AS saidas_hoje,
-       COALESCE(AVG(CASE WHEN DATE(m.data_movimentacao) < ref.dia THEN CASE WHEN m.tipo = 'entrada' THEN 1 ELSE 0 END END), 0) AS entradas_media7d,
-       COALESCE(AVG(CASE WHEN DATE(m.data_movimentacao) < ref.dia THEN CASE WHEN m.tipo = 'saida' THEN 1 ELSE 0 END END), 0) AS saidas_media7d
-     FROM ref
-     LEFT JOIN movimentacao m
-       ON m.data_movimentacao >= DATE_SUB(ref.dia, INTERVAL 7 DAY)
-      AND DATE(m.data_movimentacao) <= ref.dia`
-  );
+       WHERE data_movimentacao >= DATE_SUB(CURDATE(), INTERVAL ${dias * 2} DAY)`
+    );
+  }
+  const [[trendRows]] = trendData;
 
   const entradasHoje = toNumber(trendRows.entradas_hoje);
   const entradasMedia7d = roundNumber(trendRows.entradas_media7d, 2);
@@ -167,20 +191,34 @@ async function kpis(req, res) {
     };
   }
 
-  const [topOperadoresRows] = await pool.execute(
-    `WITH ref AS (
-       SELECT COALESCE(MAX(DATE(data_movimentacao)), CURDATE()) AS dia
-       FROM movimentacao
-       WHERE DATE(data_movimentacao) <= CURDATE()
-     )
-     SELECT u.nome, COUNT(m.id) AS total
-     FROM ref
-     JOIN movimentacao m ON DATE(m.data_movimentacao) = ref.dia
-     JOIN usuario u ON m.id_usuario = u.id
-     GROUP BY u.id, u.nome
-     ORDER BY total DESC
-     LIMIT 3`
-  );
+  let topData;
+  if (periodo === 'hoje') {
+    topData = await pool.execute(
+      `WITH ref AS (
+         SELECT COALESCE(MAX(DATE(data_movimentacao)), CURDATE()) AS dia
+         FROM movimentacao
+         WHERE DATE(data_movimentacao) <= CURDATE()
+       )
+       SELECT u.nome, COUNT(m.id) AS total
+       FROM ref
+       JOIN movimentacao m ON DATE(m.data_movimentacao) = ref.dia
+       JOIN usuario u ON m.id_usuario = u.id
+       GROUP BY u.id, u.nome
+       ORDER BY total DESC
+       LIMIT 3`
+    );
+  } else {
+    topData = await pool.execute(
+      `SELECT u.nome, COUNT(m.id) AS total
+       FROM movimentacao m
+       JOIN usuario u ON m.id_usuario = u.id
+       WHERE ${currFilter}
+       GROUP BY u.id, u.nome
+       ORDER BY total DESC
+       LIMIT 3`
+    );
+  }
+  const [topOperadoresRows] = topData;
 
   return res.json({
     total_produtos,
@@ -224,6 +262,10 @@ async function kpis(req, res) {
 }
 
 async function movimentacoes(req, res) {
+  const VALID_PERIODS = ['hoje', 'semana', 'mes'];
+  const periodo = VALID_PERIODS.includes(req.query.periodo) ? req.query.periodo : 'mes';
+  const dias = { hoje: 1, semana: 7, mes: 60 }[periodo];
+
   const [rows] = await pool.execute(
     `SELECT
        DATE(data_movimentacao) AS dia,
@@ -232,7 +274,7 @@ async function movimentacoes(req, res) {
        SUM(CASE WHEN tipo = 'transferencia' THEN quantidade ELSE 0 END) AS transferencias,
        SUM(CASE WHEN tipo = 'ajuste'        THEN quantidade ELSE 0 END) AS ajustes
      FROM movimentacao
-     WHERE data_movimentacao >= DATE_SUB(NOW(), INTERVAL 60 DAY)
+     WHERE data_movimentacao >= DATE_SUB(NOW(), INTERVAL ${dias} DAY)
      GROUP BY DATE(data_movimentacao)
      ORDER BY dia ASC`
   );

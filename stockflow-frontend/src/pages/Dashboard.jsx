@@ -685,6 +685,7 @@ export default function Dashboard() {
   const [topPeriodo, setTopPeriodo] = useState('mes')
   const [rupturas, setRupturas] = useState([])
   const [curvaAbc, setCurvaAbc] = useState(null)
+  const [periodo, setPeriodo] = useState('hoje')
   const [tooltip, setTooltip] = useState(null)
   const [chartPeriod, setChartPeriod] = useState(30)
   const scrollRef = useRef(null)
@@ -706,8 +707,8 @@ export default function Dashboard() {
     setLoading(true)
     try {
       const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, operadoresData, saudeData, recentesData, rupturasData, abcData] = await Promise.all([
-        safeGet(() => api.get('/dashboard/kpis'), null),
-        safeGet(() => api.get('/dashboard/movimentacoes'), []),
+        safeGet(() => api.get(`/dashboard/kpis?periodo=${periodo}`), null),
+        safeGet(() => api.get(`/dashboard/movimentacoes?periodo=${periodo}`), []),
         safeGet(() => api.get('/dashboard/alertas'), { total: 0, alertas: [] }),
         safeGet(() => api.get('/dashboard/alertas-pendentes'), { total: 0, itens: [] }),
         safeGet(() => api.get('/dashboard/ocupacao-corredores'), { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] }),
@@ -742,7 +743,7 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => { load() }, [topPeriodo])
+  useEffect(() => { load() }, [periodo, topPeriodo])
 
   function onDragStart(e) {
     if (!scrollRef.current) return
@@ -755,6 +756,8 @@ export default function Dashboard() {
     if (!isDragging || !scrollRef.current) return
     scrollRef.current.scrollLeft = scrollLeft - (e.clientX - startX)
   }
+
+  const labelPeriodo = { hoje: 'HOJE', semana: 'ÚLTIMOS 7 DIAS', mes: 'ÚLTIMOS 30 DIAS' }[periodo]
 
   const movHojeAnimado   = useCountUp(kpis?.movimentacoes_hoje)
   const totalProdAnimado = useCountUp(kpis?.total_produtos)
@@ -844,6 +847,28 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="page-header-actions">
+          <div style={{ display: 'inline-flex', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginRight: 8 }}>
+            {[{ key: 'hoje', label: 'Hoje' }, { key: 'semana', label: '7 dias' }, { key: 'mes', label: '30 dias' }].map(({ key, label }, idx, arr) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setPeriodo(key)}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  fontWeight: periodo === key ? 600 : 400,
+                  border: 'none',
+                  borderRight: idx < arr.length - 1 ? '1px solid var(--color-border-default)' : 'none',
+                  cursor: 'pointer',
+                  background: periodo === key ? 'var(--color-brand-600)' : 'var(--color-bg-default)',
+                  color: periodo === key ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button className="btn btn-outline btn-sm"><Download size={14} /> Exportar</button>
           <button className="btn btn-outline btn-sm" onClick={load}><RefreshCw size={14} /> Atualizar</button>
         </div>
@@ -863,7 +888,7 @@ export default function Dashboard() {
                 <div className="sf-card-accent" style={{ background: 'var(--color-success-600)' }} />
                 <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Entradas Hoje</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Entradas {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
                   <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{entradasAnimado}</div>
@@ -874,7 +899,7 @@ export default function Dashboard() {
                 <div className="sf-card-accent" style={{ background: 'var(--color-danger-600)' }} />
                 <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Saidas Hoje</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Saidas {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
                   <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{saidasAnimado}</div>
@@ -896,7 +921,7 @@ export default function Dashboard() {
                 <div className="sf-card-accent" style={{ background: 'var(--color-brand-500)' }} />
                 <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Movimentacoes Hoje</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Movimentacoes {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
                   <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{movHojeAnimado}</div>
