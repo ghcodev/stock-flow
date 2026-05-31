@@ -15,5 +15,6 @@ router.get('/operadores-hoje', ctrl.operadoresHoje);
 router.get('/saude-estoque', ctrl.saudeEstoque);
 router.get('/rupturas', ctrl.rupturas);
 router.get('/curva-abc', ctrl.curvaAbc);
+router.get('/distribuicao-categoria', ctrl.distribuicaoCategoria);
 
 module.exports = router;

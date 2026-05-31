@@ -522,6 +522,33 @@ async function curvaAbc(req, res) {
   return res.json({ resumo, top10: classificados.slice(0, 10) });
 }
 
+async function distribuicaoCategoria(req, res) {
+  const VALID = ['hoje', 'semana', 'mes']
+  const periodo = VALID.includes(req.query.periodo) ? req.query.periodo : 'mes'
+  const intervaloMap = { hoje: '1 DAY', semana: '7 DAY', mes: '30 DAY' }
+  const [rows] = await pool.execute(
+    `SELECT COALESCE(p.categoria, 'Outros') AS categoria,
+            COUNT(m.id) AS total_movimentacoes,
+            SUM(m.quantidade) AS total_quantidade
+     FROM movimentacao m
+     JOIN lote l ON m.id_lote = l.id
+     JOIN produto p ON l.id_produto = p.id
+     WHERE m.data_movimentacao >= DATE_SUB(NOW(), INTERVAL ${intervaloMap[periodo]})
+     GROUP BY p.categoria
+     ORDER BY total_movimentacoes DESC`
+  )
+  const total = rows.reduce((s, r) => s + Number(r.total_movimentacoes), 0)
+  return res.json({
+    data: rows.map(r => ({
+      categoria: r.categoria,
+      total_movimentacoes: Number(r.total_movimentacoes),
+      total_quantidade: Number(r.total_quantidade),
+      pct: total > 0 ? Math.round((r.total_movimentacoes / total) * 100) : 0,
+    })),
+    total,
+  })
+}
+
 module.exports = {
   kpis,
   movimentacoes,
@@ -533,4 +560,5 @@ module.exports = {
   saudeEstoque,
   rupturas,
   curvaAbc,
+  distribuicaoCategoria,
 };
