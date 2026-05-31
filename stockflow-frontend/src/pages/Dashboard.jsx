@@ -137,7 +137,7 @@ function SkeletonSaude() {
 
 function SkeletonMiniCard() {
   return (
-    <div className="sf-card" style={{ padding: '14px 16px', minHeight: 112 }}>
+    <div className="sf-card" style={{ padding: '10px 14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <SkeletonPulse w={100} h={11} />
         <SkeletonPulse w={40} h={11} />
@@ -272,9 +272,9 @@ function MiniMetric({ label, value, children }) {
 }
 
 function GaugeSVG({ score, cor }) {
-  const r = 54
-  const cx = 70
-  const cy = 70
+  const r = 38
+  const cx = 50
+  const cy = 50
   const circum = Math.PI * r
   const filled = (Number(score || 0) / 100) * circum
   const colorMap = {
@@ -286,7 +286,7 @@ function GaugeSVG({ score, cor }) {
   const stroke = colorMap[cor] || 'var(--color-text-tertiary)'
 
   return (
-    <svg width="140" height="80" viewBox="0 0 140 80" aria-hidden="true">
+    <svg width="100" height="58" viewBox="0 0 100 58" aria-hidden="true">
       <path
         d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
         fill="none"
@@ -333,33 +333,33 @@ function SaudeOperacional({ kpis }) {
   return (
     <div className={`sf-card${isCritico ? ' sf-card-critical' : ''}`} style={{ padding: 0 }}>
       <div className="sf-card-accent" style={{ background: st.accent }} />
-      <div style={{ padding: '16px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ padding: '12px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
             Saude Operacional
           </span>
           <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <GaugeSVG score={scoreAnimado} cor={saude.cor || 'danger'} />
           <div>
-            <div className="sf-number" style={{ fontSize: 48, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: st.accent, lineHeight: 1 }}>
+            <div className="sf-number" style={{ fontSize: 36, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: st.accent, lineHeight: 1 }}>
               {scoreAnimado}
-              <span style={{ fontSize: 18, color: 'var(--color-text-tertiary)', fontWeight: 400 }}>/100</span>
+              <span style={{ fontSize: 14, color: 'var(--color-text-tertiary)', fontWeight: 400 }}>/100</span>
             </div>
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 4 }}>
               <MiniBadge tone={st.badge || 'neutral'}>{saude.label || 'SEM DADOS'}</MiniBadge>
             </div>
           </div>
         </div>
-        <div style={{ marginTop: 16, borderTop: '1px solid var(--color-border-muted)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ marginTop: 10, borderTop: '1px solid var(--color-border-muted)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {fatoresList.map(({ icon: Icon, label, val, cor }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={13} color="var(--color-text-tertiary)" />
-                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</span>
+                <Icon size={12} color="var(--color-text-tertiary)" />
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{label}</span>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: cor }}>{Number(val || 0)}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: cor }}>{Number(val || 0)}</span>
             </div>
           ))}
         </div>
@@ -1009,7 +1009,7 @@ export default function Dashboard() {
       </div>
 
       <div id="dashboard-content">
-      <div className="dashboard-health-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginBottom: 24 }}>
+      <div className="dashboard-health-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 12, marginBottom: 12 }}>
         {loading ? (
           <>
             <SkeletonSaude />
@@ -1020,38 +1020,38 @@ export default function Dashboard() {
         ) : (
           <>
             <SaudeOperacional kpis={kpis} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+              <div className="sf-card" style={{ padding: 0 }}>
                 <div className="sf-card-accent" style={{ background: 'var(--color-success-600)' }} />
-                <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Entradas {labelPeriodo}</span>
+                <div style={{ padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Entradas {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
-                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{entradasAnimado}</div>
-                  <div style={{ marginTop: 10 }}><TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} /></div>
+                  <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{entradasAnimado}</div>
+                  <div style={{ marginTop: 8 }}><TrendBadge direction={kpis?.tendencias?.direcao_entradas} pct={kpis?.tendencias?.entradas_pct} /></div>
                 </div>
               </div>
-              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+              <div className="sf-card" style={{ padding: 0 }}>
                 <div className="sf-card-accent" style={{ background: 'var(--color-danger-600)' }} />
-                <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Saidas {labelPeriodo}</span>
+                <div style={{ padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Saidas {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
-                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{saidasAnimado}</div>
-                  <div style={{ marginTop: 10 }}><TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} /></div>
+                  <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{saidasAnimado}</div>
+                  <div style={{ marginTop: 8 }}><TrendBadge direction={kpis?.tendencias?.direcao_saidas} pct={kpis?.tendencias?.saidas_pct} /></div>
                 </div>
               </div>
-              <div className="sf-card" style={{ padding: 0, minHeight: 112 }}>
+              <div className="sf-card" style={{ padding: 0 }}>
                 <div className="sf-card-accent" style={{ background: 'var(--color-brand-500)' }} />
-                <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Movimentacoes {labelPeriodo}</span>
+                <div style={{ padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Movimentacoes {labelPeriodo}</span>
                     <span className="sf-live-badge"><span className="sf-live-dot" />Ao vivo</span>
                   </div>
-                  <div className="sf-number" style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{movHojeAnimado}</div>
-                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
+                  <div className="sf-number" style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{movHojeAnimado}</div>
+                  <div style={{ marginTop: 8, fontSize: 11, color: 'var(--color-text-tertiary)' }}>Ontem: {Number(kpis?.movimentacoes_ontem || 0)}</div>
                 </div>
               </div>
             </div>
@@ -1059,25 +1059,25 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 12 }}>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Vencendo</span>
-          <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
             {kpis?.lotes_vencendo ?? '–'}
           </span>
         </div>
-        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Cobertura Média</span>
-          <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
             {rupturas.length > 0
               ? `${Math.round(rupturas.reduce((a, r) => a + r.dias_para_ruptura, 0) / rupturas.length)} dias`
               : '–'}
           </span>
         </div>
-        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Produtos em Risco</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
               {rupturas.length}
             </span>
             {rupturas.length === 0 && (
@@ -1085,9 +1085,9 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-500)', borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-500)', borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Ativos</span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
             {kpis?.total_lotes_ativos ?? kpis?.total_produtos ?? '–'}
           </span>
         </div>
@@ -1392,7 +1392,7 @@ export default function Dashboard() {
           position: relative;
         }
         .sf-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .sf-card-accent { height: 3px; width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; opacity: 0.85; }
+        .sf-card-accent { height: 2px; width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; opacity: 0.85; }
         .sf-live-badge {
           display: inline-flex;
           align-items: center;
