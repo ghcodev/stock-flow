@@ -6,6 +6,7 @@ import {
   Package, Layers, AlertTriangle, RefreshCw, Download, ArrowDownLeft,
   ArrowUpRight, ArrowRight, Activity, Clock, TrendingDown, Lock, ShieldCheck,
   Circle, TrendingUp, Users, BarChart2, CheckCircle, FileText, FileSpreadsheet,
+  Shuffle, Sliders,
 } from 'lucide-react'
 
 const MOV_COLORS = {
@@ -686,39 +687,44 @@ function Gauge({ value }) {
   )
 }
 
-function DonutChart({ data, total }) {
-  const size = 190
-  const radius = 62
-  const circumference = 2 * Math.PI * radius
-  let offset = 0
+
+function PizzaMini({ dados, size = 56 }) {
+  if (!dados?.length) return null
+  const total = dados.reduce((s, d) => s + (d.valor || 0), 0)
+  if (total === 0) return null
+  const cx = size / 2, cy = size / 2, r = size / 2 - 4
+  let startAngle = -Math.PI / 2
+  const slices = dados.map(d => {
+    const angle = (d.valor / total) * 2 * Math.PI
+    const x1 = cx + r * Math.cos(startAngle)
+    const y1 = cy + r * Math.sin(startAngle)
+    startAngle += angle
+    const x2 = cx + r * Math.cos(startAngle)
+    const y2 = cy + r * Math.sin(startAngle)
+    return {
+      path: `M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${angle > Math.PI ? 1 : 0},1 ${x2},${y2} Z`,
+      cor: d.cor,
+      label: d.label,
+      pct: Math.round((d.valor / total) * 100),
+    }
+  })
   return (
-    <div style={{ position: 'relative', height: 218, display: 'grid', placeItems: 'center' }}>
-      <svg viewBox={`0 0 ${size} ${size}`} width="190" height="190">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-bg-muted)" strokeWidth="22" />
-        {data.map(item => {
-          const length = total ? (item.value / total) * circumference : 0
-          const dash = `${length} ${circumference - length}`
-          const dashOffset = -offset
-          offset += length
-          return (
-            <circle
-              key={item.name}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={item.color}
-              strokeWidth="22"
-              strokeDasharray={dash}
-              strokeDashoffset={dashOffset}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            />
-          )
-        })}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        {slices.map((s, i) => (
+          <path key={i} d={s.path} fill={s.cor} opacity={0.9}>
+            <title>{s.label}: {s.pct}%</title>
+          </path>
+        ))}
+        <circle cx={cx} cy={cy} r={r * 0.52} fill="var(--color-bg-canvas)" />
       </svg>
-      <div style={{ position: 'absolute', textAlign: 'center', pointerEvents: 'none' }}>
-        <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4 }}>movimentacoes</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--color-text-secondary)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: s.cor, flexShrink: 0 }} />
+            {s.label} {s.pct}%
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -840,11 +846,9 @@ export default function Dashboard() {
   const [alertasPendentes, setAlertasPendentes] = useState({ total: 0, itens: [] })
   const [ocupacao, setOcupacao] = useState({ total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] })
   const [topProdutos, setTopProdutos] = useState([])
-  const [operadores, setOperadores] = useState([])
   const [saudeEstoque, setSaudeEstoque] = useState(null)
   const [recentes, setRecentes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activePie, setActivePie] = useState(null)
   const [alertTab, setAlertTab] = useState('todos')
   const [topPeriodo, setTopPeriodo] = useState('mes')
   const [rupturas, setRupturas] = useState([])
@@ -870,14 +874,13 @@ export default function Dashboard() {
   async function load() {
     setLoading(true)
     try {
-      const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, operadoresData, saudeData, recentesData, rupturasData, abcData] = await Promise.all([
+      const [kpisData, movRows, alertasData, alertasPendData, ocupacaoData, topProdData, saudeData, recentesData, rupturasData, abcData] = await Promise.all([
         safeGet(() => api.get(`/dashboard/kpis?periodo=${periodo}`), null),
         safeGet(() => api.get(`/dashboard/movimentacoes?periodo=${periodo}`), []),
         safeGet(() => api.get('/dashboard/alertas'), { total: 0, alertas: [] }),
         safeGet(() => api.get('/dashboard/alertas-pendentes'), { total: 0, itens: [] }),
         safeGet(() => api.get('/dashboard/ocupacao-corredores'), { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] }),
         safeGet(() => api.get('/dashboard/top-produtos', { params: { periodo: topPeriodo === 'semana' ? 'semana' : 'mes' } }), []),
-        safeGet(() => api.get('/dashboard/operadores-hoje'), []),
         safeGet(() => api.get('/dashboard/saude-estoque'), null),
         safeGet(() => api.get('/movimentacoes', { params: { limit: 8, order: 'desc' } }), { data: [] }),
         safeGet(() => api.get('/dashboard/rupturas'), []),
@@ -896,7 +899,6 @@ export default function Dashboard() {
       setAlertasPendentes(alertasPendData || { total: 0, itens: [] })
       setOcupacao(ocupacaoData || { total_posicoes: 0, ocupadas: 0, percentual: 0, corredores: [] })
       setTopProdutos(topProdData || [])
-      setOperadores(operadoresData || [])
       setSaudeEstoque(saudeData || null)
       setRecentes(recentesData?.data || [])
       setRupturas(rupturasData || [])
@@ -937,17 +939,20 @@ export default function Dashboard() {
 
   const labelPeriodo = { hoje: 'HOJE', semana: 'ÚLTIMOS 7 DIAS', mes: 'ÚLTIMOS 30 DIAS' }[periodo]
 
+  const dadosPizza = [
+    { label: 'Entradas',  valor: movData.reduce((s, d) => s + (d.entradas || 0), 0),      cor: 'var(--color-success-600)' },
+    { label: 'Saídas',    valor: movData.reduce((s, d) => s + (d.saidas || 0), 0),         cor: 'var(--color-danger-600)' },
+    { label: 'Transfer.', valor: movData.reduce((s, d) => s + (d.transferencias || 0), 0), cor: 'var(--color-brand-500)' },
+    { label: 'Ajustes',   valor: movData.reduce((s, d) => s + (d.ajustes || 0), 0),        cor: 'var(--color-warning-500)' },
+  ]
+  const distLabels = ['Entradas', 'Saídas', 'Transferências', 'Ajustes']
+  const distIcons  = [ArrowDownLeft, ArrowUpRight, Shuffle, Sliders]
+  const distItems  = dadosPizza.map((d, i) => ({ ...d, label: distLabels[i], icon: distIcons[i] }))
+  const distTotal  = dadosPizza.reduce((s, d) => s + d.valor, 0)
+
   const movHojeAnimado  = useCountUp(kpis?.movimentacoes_hoje)
   const entradasAnimado = useCountUp(kpis?.tendencias?.entradas_hoje)
   const saidasAnimado   = useCountUp(kpis?.tendencias?.saidas_hoje)
-
-  const pieData = [
-    { name: 'Entradas', value: movData.reduce((acc, d) => acc + d.entradas, 0), color: MOV_COLORS.entradas },
-    { name: 'Saidas', value: movData.reduce((acc, d) => acc + d.saidas, 0), color: MOV_COLORS.saidas },
-    { name: 'Transferencias', value: movData.reduce((acc, d) => acc + d.transferencias, 0), color: MOV_COLORS.transferencias },
-    { name: 'Ajustes', value: movData.reduce((acc, d) => acc + d.ajustes, 0), color: MOV_COLORS.ajustes },
-  ].filter(d => d.value > 0)
-  const pieTotal = pieData.reduce((acc, d) => acc + d.value, 0)
 
   const filteredAlertas = (alertasPendentes.itens || []).filter(item => {
     if (alertTab === 'todos') return true
@@ -979,6 +984,7 @@ export default function Dashboard() {
             <span>StockFlow - Unidade Central</span>
           </div>
         </div>
+        {movData.length > 0 && <PizzaMini dados={dadosPizza} size={56} />}
         <div className="page-header-actions">
           <div style={{ display: 'inline-flex', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginRight: 8 }}>
             {[{ key: 'hoje', label: 'Hoje', title: 'Atalho: H' }, { key: 'semana', label: '7 dias', title: 'Atalho: S' }, { key: 'mes', label: '30 dias', title: 'Atalho: M' }].map(({ key, label, title }, idx, arr) => (
@@ -1117,28 +1123,27 @@ export default function Dashboard() {
           </div>
           <div style={{ padding: '8px 20px 18px' }}>
             {loading ? (
-              <div style={{ height: 240, background: 'var(--color-bg-subtle)', borderRadius: 8, animation: 'shimmer 1.2s ease-in-out infinite' }} />
-            ) : pieTotal === 0 ? (
-              <div style={{ height: 240, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
+              <div style={{ height: 100, background: 'var(--color-bg-subtle)', borderRadius: 8, animation: 'shimmer 1.2s ease-in-out infinite' }} />
+            ) : distTotal === 0 ? (
+              <div style={{ height: 80, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
             ) : (
-              <>
-                <div onMouseLeave={() => setActivePie(null)}>
-                  <DonutChart data={pieData} total={pieTotal} />
-                </div>
-                <div style={{ display: 'grid', gap: 8, marginTop: 2 }}>
-                  {pieData.map((item, index) => {
-                    const pct = pieTotal ? Math.round((item.value / pieTotal) * 100) : 0
-                    return (
-                      <div key={item.name} onMouseEnter={() => setActivePie(index)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 12, opacity: activePie == null || activePie === index ? 1 : 0.45 }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--color-text-secondary)' }}>
-                          <Circle size={8} fill={item.color} color={item.color} />{item.name}
-                        </span>
-                        <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{pct}% <span style={{ fontWeight: 500, color: 'var(--color-text-tertiary)' }}>({item.value} un)</span></span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, padding: '4px 0' }}>
+                {distItems.map(({ label, valor, cor, icon: Icon }) => (
+                  <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 16px', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${cor}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Icon size={13} color={cor} />
+                      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{label}</span>
+                    </div>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {valor.toLocaleString('pt-BR')}
+                      <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>un</span>
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                      {distTotal > 0 ? `${Math.round((valor / distTotal) * 100)}% do total` : '–'}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -1216,8 +1221,8 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div>
-                  {corredores.map((row, index) => (
-                    <div key={row.zona} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: index < corredores.length - 1 ? '1px solid var(--color-border-muted)' : 'none' }}>
+                  {corredores.filter(row => row.percentual > 0).map((row, index, arr) => (
+                    <div key={row.zona} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: index < arr.length - 1 ? '1px solid var(--color-border-muted)' : 'none' }}>
                       <div style={{ width: 58, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, fontWeight: 700 }}>{row.zona}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1270,31 +1275,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 16, marginBottom: 24 }}>
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Equipe Hoje</span>
-          </div>
-          <div style={{ padding: '0 20px 18px' }}>
-            {loading ? <SkeletonCard height={250} /> : operadores.filter(op => Number(op.total_hoje || 0) > 0).length === 0 ? (
-              <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Nenhuma movimentacao registrada hoje.</div>
-            ) : operadores.filter(op => Number(op.total_hoje || 0) > 0).slice(0, 5).map(op => {
-              const initials = (op.nome || '?').split(' ').slice(0, 2).map(part => part[0]).join('').toUpperCase()
-              return (
-                <div key={op.nome} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderBottom: '1px solid var(--color-border-muted)' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', background: 'var(--color-brand-100)', color: 'var(--color-brand-700)', fontSize: 12, fontWeight: 800 }}>{initials}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.nome}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{Number(op.total_hoje || 0)} movimentacoes hoje - Ultima atividade: {fmtTime(op.ultima_atividade)}</div>
-                  </div>
-                  <MiniBadge tone={op.perfil === 'administrador' ? 'info' : 'neutral'}>{op.perfil === 'administrador' ? 'Administrador' : 'Operador'}</MiniBadge>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="card">
+      <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-header">
             <span className="card-title">Saude do Estoque</span>
           </div>
@@ -1317,7 +1298,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </div>
 
       <div className="card">
         <div className="card-header">
