@@ -397,7 +397,7 @@ export default function IntegracaoSAP() {
           </div>
           {MOCK_HISTORY.length === 0 ? (
             <div className="empty-state" style={{ padding: '32px 0' }}>
-              <div className="empty-icon"><History size={24} /></div>
+              <div className="empty-icon empty-icon-animated"><History size={24} /></div>
               <div className="empty-title">Nenhuma importação registrada</div>
             </div>
           ) : (
@@ -453,3 +453,4 @@ export default function IntegracaoSAP() {
     </Layout>
   )
 }
+

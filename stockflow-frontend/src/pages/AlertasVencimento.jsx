@@ -44,7 +44,7 @@ function SkeletonRow() {
     <tr>
       {Array.from({ length: 8 }).map((_, i) => (
         <td key={i}>
-          <div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'alv-shimmer 1.2s ease-in-out infinite' }} />
+          <div className="skeleton" style={{ height: 13 }} />
         </td>
       ))}
     </tr>
@@ -207,7 +207,7 @@ export default function AlertasVencimento() {
       {!loading && enriched.length === 0 && (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-icon"><Clock size={24} /></div>
+            <div className="empty-icon empty-icon-animated"><Clock size={24} /></div>
             <div className="empty-title">Nenhum alerta de vencimento</div>
             <div className="empty-sub">Todos os lotes estão dentro do prazo de validade.</div>
           </div>
@@ -260,7 +260,7 @@ export default function AlertasVencimento() {
                     ? (
                       <tr><td colSpan={8}>
                         <div className="empty-state">
-                          <div className="empty-icon"><AlertTriangle size={24} /></div>
+                          <div className="empty-icon empty-icon-animated"><AlertTriangle size={24} /></div>
                           <div className="empty-title">Nenhum lote neste filtro</div>
                           <div className="empty-sub">Tente outro filtro.</div>
                         </div>
@@ -286,10 +286,20 @@ export default function AlertasVencimento() {
                           </td>
                           <td style={{ fontWeight: 600 }}>{a.produto_nome || '—'}</td>
                           <td style={{ textAlign: 'center' }}>
-                            <span style={{ fontWeight: 800, fontSize: 16, color: cfg.color, fontVariantNumeric: 'tabular-nums' }}>
-                              {a.dias_para_vencer}
-                            </span>
-                            <span style={{ fontSize: 11, color: cfg.color, marginLeft: 4 }}>dias</span>
+                            {isCritical5 ? (
+                              <span className="badge-ping">
+                                <span className="badge badge-danger">
+                                  {a.dias_para_vencer} dias
+                                </span>
+                              </span>
+                            ) : (
+                              <>
+                                <span style={{ fontWeight: 800, fontSize: 16, color: cfg.color, fontVariantNumeric: 'tabular-nums' }}>
+                                  {a.dias_para_vencer}
+                                </span>
+                                <span style={{ fontSize: 11, color: cfg.color, marginLeft: 4 }}>dias</span>
+                              </>
+                            )}
                           </td>
                           <td><UrgencyBar dias={a.dias_para_vencer} /></td>
                           <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, color: cfg.color, fontWeight: 600 }}>
@@ -453,7 +463,6 @@ export default function AlertasVencimento() {
       })()}
 
       <style>{`
-        @keyframes alv-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes alv-drawer-in { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
 
         /* Filter strip */
@@ -494,3 +503,4 @@ export default function AlertasVencimento() {
     </Layout>
   )
 }
+

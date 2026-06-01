@@ -25,20 +25,21 @@ const CORREDORES = {
   'ES-02': 'Estoque Seco 02',
 }
 
-function useCountUp(target, duration = 1200) {
+function useCountUp(target, duration = 800) {
   const [value, setValue] = useState(0)
   useEffect(() => {
     if (!target || target === 0) { setValue(0); return }
     const start = performance.now()
-    function step(now) {
+    const from = 0
+    function tick(now) {
       const elapsed = now - start
       const progress = Math.min(elapsed / duration, 1)
-      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
-      setValue(Math.round(target * ease))
-      if (progress < 1) requestAnimationFrame(step)
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setValue(Math.round(from + (target - from) * ease))
+      if (progress < 1) requestAnimationFrame(tick)
     }
-    requestAnimationFrame(step)
-  }, [target])
+    requestAnimationFrame(tick)
+  }, [target, duration])
   return value
 }
 
@@ -97,14 +98,7 @@ function calcPoints(data, key, w, h, pad, maxValue) {
 
 function SkeletonPulse({ w = '100%', h = 16, radius = 6 }) {
   return (
-    <div style={{
-      width: w, height: h, borderRadius: radius,
-      background: 'var(--color-bg-canvas)',
-      backgroundImage: 'linear-gradient(90deg, var(--color-bg-canvas) 0px, var(--color-bg-subtle) 40px, var(--color-bg-canvas) 80px)',
-      backgroundSize: '600px',
-      animation: 'shimmerWave 1.4s infinite linear',
-      flexShrink: 0,
-    }} />
+    <div className="skeleton" style={{ width: w, height: h, borderRadius: radius, flexShrink: 0 }} />
   )
 }
 
@@ -190,8 +184,8 @@ function SkeletonCard3() {
 function SkeletonCard({ height = 110 }) {
   return (
     <div className="card" style={{ padding: '18px 20px', minHeight: height }}>
-      <div style={{ height: 11, width: 120, background: 'var(--color-bg-muted)', borderRadius: 4, marginBottom: 16, animation: 'shimmer 1.2s ease-in-out infinite' }} />
-      <div style={{ height: 28, width: 80, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'shimmer 1.2s ease-in-out infinite' }} />
+      <div className="skeleton" style={{ height: 11, width: 120, marginBottom: 16 }} />
+      <div className="skeleton" style={{ height: 28, width: 80 }} />
     </div>
   )
 }
@@ -500,10 +494,11 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                 <path d={saidaArea} fill="url(#saidasGradient)" style={{ animation: 'fadeArea 0.8s var(--ease-default) 0.4s forwards', opacity: 0 }} />
                 {prevEntradaPoints.length > 1 && <path d={smoothPath(prevEntradaPoints)} fill="none" stroke="var(--color-success-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
                 {prevSaidaPoints.length > 1 && <path d={smoothPath(prevSaidaPoints)} fill="none" stroke="var(--color-danger-600)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
-                <path d={entradaPath} fill="none" stroke="var(--color-success-600)" strokeWidth="2" style={{ animation: 'drawLine 1.2s var(--ease-default) forwards' }} />
-                <path d={saidaPath} fill="none" stroke="var(--color-danger-600)" strokeWidth="2" style={{ animation: 'drawLine 1.2s var(--ease-default) forwards' }} />
+                <path className="chart-line-animated" pathLength={1000} d={entradaPath} fill="none" stroke="var(--color-success-600)" strokeWidth="2" style={{ animationDelay: '100ms' }} />
+                <path className="chart-line-animated" pathLength={1000} d={saidaPath} fill="none" stroke="var(--color-danger-600)" strokeWidth="2" style={{ animationDelay: '300ms' }} />
                 {tooltip && entradaPoints[tooltip.idx] && (
                   <circle
+                    className="chart-dot-animated"
                     cx={entradaPoints[tooltip.idx].x}
                     cy={entradaPoints[tooltip.idx].y}
                     r="4"
@@ -511,10 +506,12 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                     stroke="var(--color-bg-default)"
                     strokeWidth="2"
                     pointerEvents="none"
+                    style={{ animationDelay: `${tooltip.idx * 30}ms` }}
                   />
                 )}
                 {tooltip && saidaPoints[tooltip.idx] && (
                   <circle
+                    className="chart-dot-animated"
                     cx={saidaPoints[tooltip.idx].x}
                     cy={saidaPoints[tooltip.idx].y}
                     r="4"
@@ -522,6 +519,7 @@ function AreaMovementChart({ data, period, onPeriodChange, tooltip, setTooltip }
                     stroke="var(--color-bg-default)"
                     strokeWidth="2"
                     pointerEvents="none"
+                    style={{ animationDelay: `${tooltip.idx * 30}ms` }}
                   />
                 )}
               </svg>
@@ -699,7 +697,7 @@ function TopOperadoresCard({ operadores }) {
   }
 
   return (
-    <div className="sf-card" style={{ padding: '16px 20px' }}>
+    <div className="sf-card" style={{ padding: '16px 20px', overflow: 'visible', minHeight: 320 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
           Top Operadores Hoje
@@ -716,7 +714,7 @@ function TopOperadoresCard({ operadores }) {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 0, height: 180 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 0, paddingTop: 48 }}>
             <PodioItem op={segundo} pos={2} altura={90} />
             <PodioItem op={primeiro} pos={1} altura={130} />
             <PodioItem op={terceiro} pos={3} altura={70} />
@@ -1233,9 +1231,13 @@ export default function Dashboard() {
   const distItems  = dadosPizza.map((d, i) => ({ ...d, label: distLabels[i], icon: distIcons[i] }))
   const distTotal  = dadosPizza.reduce((s, d) => s + d.valor, 0)
 
-  const movHojeAnimado  = useCountUp(kpis?.movimentacoes_hoje)
-  const entradasAnimado = useCountUp(kpis?.tendencias?.entradas_hoje)
-  const saidasAnimado   = useCountUp(kpis?.tendencias?.saidas_hoje)
+  const movHojeAnimado      = useCountUp(kpis?.movimentacoes_hoje)
+  const entradasAnimado     = useCountUp(kpis?.tendencias?.entradas_hoje)
+  const saidasAnimado       = useCountUp(kpis?.tendencias?.saidas_hoje)
+  const lotesVencendoAnim   = useCountUp(kpis?.lotes_vencendo ?? 0)
+  const produtosRiscoAnim   = useCountUp(rupturas.length ?? 0)
+  const lotesAtivosAnim     = useCountUp(kpis?.total_lotes_ativos ?? kpis?.total_produtos ?? 0)
+  const coberturaMediaAnim  = useCountUp(rupturas.length > 0 ? Math.round(rupturas.reduce((a, r) => a + r.dias_para_ruptura, 0) / rupturas.length) : 0)
 
   const filteredAlertas = (alertasPendentes.itens || []).filter(item => {
     if (alertTab === 'todos') return true
@@ -1386,22 +1388,20 @@ export default function Dashboard() {
         <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Vencendo</span>
           <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: Number(kpis?.lotes_vencendo || 0) > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
-            {kpis?.lotes_vencendo ?? '–'}
+            {kpis ? lotesVencendoAnim.toLocaleString('pt-BR') : '–'}
           </span>
         </div>
         <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Cobertura Média</span>
           <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-warning-600)' : 'var(--color-success-600)' }}>
-            {rupturas.length > 0
-              ? `${Math.round(rupturas.reduce((a, r) => a + r.dias_para_ruptura, 0) / rupturas.length)} dias`
-              : '–'}
+            {rupturas.length > 0 ? `${coberturaMediaAnim} dias` : '–'}
           </span>
         </div>
         <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: `3px solid ${rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)'}`, borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Produtos em Risco</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: rupturas.length > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}>
-              {rupturas.length}
+              {produtosRiscoAnim}
             </span>
             {rupturas.length === 0 && (
               <span style={{ fontSize: 11, color: 'var(--color-success-600)' }}>✓ Estoque saudável</span>
@@ -1411,7 +1411,7 @@ export default function Dashboard() {
         <div style={{ background: 'var(--color-bg-default)', border: '1px solid var(--color-border-muted)', borderLeft: '3px solid var(--color-brand-500)', borderRadius: 'var(--radius-md)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Lotes Ativos</span>
           <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-            {kpis?.total_lotes_ativos ?? kpis?.total_produtos ?? '–'}
+            {kpis ? lotesAtivosAnim.toLocaleString('pt-BR') : '–'}
           </span>
         </div>
       </div>
@@ -1469,9 +1469,9 @@ export default function Dashboard() {
           <div className="card-header">
             <span className="card-title">Distribuicao por Tipo</span>
           </div>
-          <div style={{ padding: '8px 20px 18px' }}>
+          <div style={{ padding: '20px' }}>
             {loading ? (
-              <div style={{ height: 100, background: 'var(--color-bg-subtle)', borderRadius: 8, animation: 'shimmer 1.2s ease-in-out infinite' }} />
+              <div className="skeleton" style={{ height: 100, borderRadius: 8 }} />
             ) : distTotal === 0 ? (
               <div style={{ height: 80, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
             ) : (
@@ -1662,10 +1662,10 @@ export default function Dashboard() {
           {loading ? (
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--color-border-muted)' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--color-bg-muted)', flexShrink: 0, animation: 'shimmer 1.2s ease-in-out infinite' }} />
+                <div className="skeleton" style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ height: 13, width: '60%', background: 'var(--color-bg-muted)', borderRadius: 4, marginBottom: 6, animation: 'shimmer 1.2s ease-in-out infinite' }} />
-                  <div style={{ height: 11, width: '40%', background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'shimmer 1.2s ease-in-out infinite' }} />
+                  <div className="skeleton" style={{ height: 13, width: '60%', marginBottom: 6 }} />
+                  <div className="skeleton" style={{ height: 11, width: '40%' }} />
                 </div>
               </div>
             ))
@@ -1700,7 +1700,6 @@ export default function Dashboard() {
 
       </div>
       <style>{`
-        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes pulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.5} }
         @keyframes drawLine {
           from { stroke-dashoffset: 2000; stroke-dasharray: 2000; }
@@ -1756,10 +1755,6 @@ export default function Dashboard() {
           50% { border-color: var(--color-danger-600); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes shimmerWave {
-          0%   { background-position: -600px 0; }
-          100% { background-position:  600px 0; }
-        }
         @media (max-width: 1180px) {
           [style*="repeat(4,minmax(0,1fr))"] { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
           [style*="repeat(3,minmax(0,1fr))"] { grid-template-columns: 1fr !important; }

@@ -66,7 +66,7 @@ function SkeletonRow() {
     <tr>
       {Array.from({ length: 10 }).map((_, i) => (
         <td key={i}>
-          <div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'his-shimmer 1.2s ease-in-out infinite' }} />
+          <div className="skeleton" style={{ height: 13 }} />
         </td>
       ))}
     </tr>
@@ -247,7 +247,7 @@ export default function Historico() {
                   ? (
                     <tr><td colSpan={10}>
                       <div className="empty-state">
-                        <div className="empty-icon"><Activity size={24} /></div>
+                        <div className="empty-icon empty-icon-animated"><Activity size={24} /></div>
                         <div className="empty-title">Nenhuma movimentação encontrada</div>
                       </div>
                     </td></tr>
@@ -418,7 +418,6 @@ export default function Historico() {
       )}
 
       <style>{`
-        @keyframes his-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes his-drawer-in { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
 
         /* KPI Strip */
@@ -461,3 +460,4 @@ export default function Historico() {
     </Layout>
   )
 }
+

@@ -89,14 +89,14 @@ function CardSkeleton() {
   return (
     <div className="card" style={{ padding: 20 }}>
       {[75, 55, 35].map((w, i) => (
-        <div key={i} style={{ height: i === 0 ? 20 : 13, width: `${w}%`, background: 'var(--color-bg-muted)', borderRadius: 4, marginBottom: i === 0 ? 12 : 8, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
+        <div key={i} className="skeleton" style={{ height: i === 0 ? 20 : 13, width: `${w}%`, marginBottom: i === 0 ? 12 : 8 }} />
       ))}
-      <div style={{ height: 22, width: 72, background: 'var(--color-bg-muted)', borderRadius: 999, marginBottom: 18, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
+      <div className="skeleton" style={{ height: 22, width: 72, borderRadius: 999, marginBottom: 18 }} />
       <div style={{ borderTop: '1px solid var(--color-border-muted)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--color-border-muted)' }}>
-            <div style={{ height: 11, width: '35%', background: 'var(--color-bg-muted)', borderRadius: 3, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
-            <div style={{ height: 11, width: '30%', background: 'var(--color-bg-muted)', borderRadius: 3, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
+            <div className="skeleton" style={{ height: 11, width: '35%', borderRadius: 3 }} />
+            <div className="skeleton" style={{ height: 11, width: '30%', borderRadius: 3 }} />
           </div>
         ))}
       </div>
@@ -110,12 +110,12 @@ function TimelineSkeleton({ count = 4 }) {
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} style={{ display: 'flex', gap: 14 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-bg-muted)', flexShrink: 0, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
+            <div className="skeleton" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
             {i < count - 1 && <div style={{ width: 2, flex: 1, minHeight: 24, background: 'var(--color-bg-muted)', margin: '4px 0' }} />}
           </div>
           <div style={{ flex: 1, paddingBottom: 24, paddingTop: 6 }}>
-            <div style={{ height: 13, width: '55%', background: 'var(--color-bg-muted)', borderRadius: 4, marginBottom: 8, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
-            <div style={{ height: 11, width: '38%', background: 'var(--color-bg-muted)', borderRadius: 3, animation: 'rst-shimmer 1.2s ease-in-out infinite' }} />
+            <div className="skeleton" style={{ height: 13, width: '55%', marginBottom: 8 }} />
+            <div className="skeleton" style={{ height: 11, width: '38%', borderRadius: 3 }} />
           </div>
         </div>
       ))}
@@ -357,7 +357,7 @@ export default function Rastreabilidade() {
       {/* ═══ NOT FOUND ═══ */}
       {showNotFound && (
         <div className="empty-state" style={{ paddingTop: 64, paddingBottom: 64 }}>
-          <div className="empty-icon"><Search size={24} /></div>
+          <div className="empty-icon empty-icon-animated"><Search size={24} /></div>
           <div className="empty-title">Nenhum resultado encontrado</div>
           <div className="empty-sub">Verifique o código do lote, RFID ou nome do produto</div>
           <button type="button" className="btn btn-outline btn-sm" style={{ marginTop: 8 }} onClick={clearSearch}>
@@ -424,7 +424,7 @@ export default function Rastreabilidade() {
             <div style={{ padding: '12px 24px 24px' }}>
               {timeline.length === 0 ? (
                 <div className="empty-state" style={{ padding: '40px 0' }}>
-                  <div className="empty-icon"><Activity size={24} /></div>
+                  <div className="empty-icon empty-icon-animated"><Activity size={24} /></div>
                   <div className="empty-title">Nenhuma movimentação registrada para este lote</div>
                 </div>
               ) : (
@@ -487,7 +487,7 @@ export default function Rastreabilidade() {
       )}
 
       <style>{`
-        @keyframes rst-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
 
         /* KPI Strip */
         .rst-kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px }
@@ -517,3 +517,4 @@ export default function Rastreabilidade() {
     </Layout>
   )
 }
+

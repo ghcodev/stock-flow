@@ -91,7 +91,7 @@ function SkeletonRow() {
   return (
     <tr>
       {Array.from({ length: 6 }).map((_, i) => (
-        <td key={i}><div style={{ height: 14, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'usr-shimmer 1.2s ease-in-out infinite' }} /></td>
+        <td key={i}><div className="skeleton" style={{ height: 14 }} /></td>
       ))}
     </tr>
   )
@@ -146,6 +146,7 @@ export default function Usuarios() {
   const [quickFilter,  setQuickFilter]  = useState('todos')
   const [openMenuId,   setOpenMenuId]   = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [newUserId,    setNewUserId]    = useState(null)
 
   /* ── Effects ─────────────────────────────────────────────── */
   useEffect(() => { load() }, [])
@@ -182,7 +183,12 @@ export default function Usuarios() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await api.post('/usuarios', form)
+      const { data } = await api.post('/usuarios', form)
+      const createdId = data?.data?.id || data?.id
+      if (createdId) {
+        setNewUserId(createdId)
+        setTimeout(() => setNewUserId(null), 2000)
+      }
       toast.success('Usuário criado com sucesso!')
       setShowForm(false)
       setForm({ nome: '', email: '', perfil: 'operador', senha: 'Admin@1234' })
@@ -359,7 +365,7 @@ export default function Usuarios() {
                   ? (
                     <tr><td colSpan={6}>
                       <div className="empty-state">
-                        <div className="empty-icon"><Users size={24} /></div>
+                        <div className="empty-icon empty-icon-animated"><Users size={24} /></div>
                         <div className="empty-title">Nenhum usuário encontrado</div>
                         <div className="empty-sub">{quickFilter !== 'todos' ? 'Tente outro filtro.' : 'Nenhum usuário cadastrado.'}</div>
                       </div>
@@ -371,7 +377,7 @@ export default function Usuarios() {
                     return (
                       <tr
                         key={u.id}
-                        className="usr-row"
+                        className={`usr-row${u.id === newUserId ? ' row-new' : ''}`}
                         onClick={() => { setSelectedUser(u); setOpenMenuId(null) }}
                       >
                         <td>
@@ -555,17 +561,17 @@ export default function Usuarios() {
             <form onSubmit={handleCreate}>
               <div className="modal-body">
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Nome completo *</label><input className="input" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required /></div>
-                  <div className="form-group"><label className="form-label">Email corporativo *</label><input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required /></div>
+                  <div className="form-group input-float"><input className="input" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder=" " required /><label>Nome completo *</label></div>
+                  <div className="form-group input-float"><input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder=" " required /><label>Email corporativo *</label></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Perfil *</label><select className="select" value={form.perfil} onChange={e => setForm(f => ({ ...f, perfil: e.target.value }))}><option value="administrador">Administrador</option><option value="operador">Operador</option></select></div>
-                  <div className="form-group"><label className="form-label">Senha inicial *</label><input className="input" type="password" value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} required /></div>
+                  <div className="form-group input-float"><select className="select" value={form.perfil} onChange={e => setForm(f => ({ ...f, perfil: e.target.value }))}><option value="administrador">Administrador</option><option value="operador">Operador</option></select><label>Perfil *</label></div>
+                  <div className="form-group input-float"><input className="input" type="password" value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} placeholder=" " required /><label>Senha inicial *</label></div>
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                <button type="submit" className={`btn btn-primary ${submitting ? 'btn-loading' : ''}`} disabled={submitting}>
                   {submitting ? 'Criando...' : <><CheckCircle size={14} /> Criar usuário</>}
                 </button>
               </div>
@@ -614,7 +620,6 @@ export default function Usuarios() {
       )}
 
       <style>{`
-        @keyframes usr-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes usr-drawer-in { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
 
         /* KPI Strip */
@@ -659,3 +664,4 @@ export default function Usuarios() {
     </Layout>
   )
 }
+

@@ -24,7 +24,7 @@ function SkeletonRow() {
   return (
     <tr>
       {Array.from({ length: 10 }).map((_, i) => (
-        <td key={i}><div style={{ height: 14, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'shimmer 1.2s ease-in-out infinite' }} /></td>
+        <td key={i}><div className="skeleton" style={{ height: 14 }} /></td>
       ))}
     </tr>
   )
@@ -320,7 +320,7 @@ export default function Lotes() {
                   <tr>
                     <td colSpan={10}>
                       <div className="empty-state">
-                        <div className="empty-icon"><Layers size={24} /></div>
+                        <div className="empty-icon empty-icon-animated"><Layers size={24} /></div>
                         <div className="empty-title">Nenhum lote encontrado</div>
                         <div className="empty-sub">{search ? 'Tente outro termo de busca.' : 'Nenhum lote cadastrado.'}</div>
                       </div>
@@ -436,7 +436,6 @@ export default function Lotes() {
         </div>
       )}
       <style>{`
-        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes drawerIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
         .lotes-kpi-grid {
           display: grid;
@@ -785,3 +784,4 @@ export default function Lotes() {
     </Layout>
   )
 }
+

@@ -13,7 +13,7 @@ function SkeletonRow() {
     <tr>
       {Array.from({ length: 10 }).map((_, i) => (
         <td key={i}>
-          <div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 'var(--radius-xs)', animation: 'shimmer 1.2s ease-in-out infinite' }} />
+          <div className="skeleton" style={{ height: 13, borderRadius: 'var(--radius-xs)' }} />
         </td>
       ))}
     </tr>
@@ -431,7 +431,7 @@ export default function Transferencia() {
                   ? (
                     <tr><td colSpan={10}>
                       <div className="empty-state">
-                        <div className="empty-icon"><Shuffle size={24} /></div>
+                        <div className="empty-icon empty-icon-animated"><Shuffle size={24} /></div>
                         <div className="empty-title">Nenhuma transferência encontrada</div>
                         <div className="empty-sub">{search ? 'Tente outro termo de busca.' : 'Registre a primeira transferência de lote.'}</div>
                       </div>
@@ -628,7 +628,6 @@ export default function Transferencia() {
       )}
 
       <style>{`
-        @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.5}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes drawerIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
 
@@ -722,3 +721,4 @@ export default function Transferencia() {
     </Layout>
   )
 }
+

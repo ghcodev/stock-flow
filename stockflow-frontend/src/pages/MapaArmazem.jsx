@@ -434,7 +434,27 @@ function shouldDrawSlotLabel(slot, hovered, selected, highlighted, scale) {
   return false
 }
 
-function drawCube(ctx, slot, progress, hovered, selected, highlighted, dimmed, scale = 1) {
+function drawCellPulse(ctx, topPoly, danger, scale = 1) {
+  const duration = danger ? 1500 : 2500
+  const phase = (performance.now() % duration) / duration
+  const pulse = Math.sin(phase * Math.PI)
+  const safeScale = Math.max(scale, 0.01)
+
+  ctx.save()
+  pathFace(ctx, topPoly)
+  ctx.strokeStyle = danger
+    ? `rgba(220, 38, 38, ${0.36 * (1 - pulse)})`
+    : `rgba(46, 117, 182, ${0.34 * (1 - pulse)})`
+  ctx.lineWidth = (1 + pulse * 5) / safeScale
+  ctx.shadowColor = danger
+    ? `rgba(220, 38, 38, ${0.32 * (1 - pulse)})`
+    : `rgba(46, 117, 182, ${0.28 * (1 - pulse)})`
+  ctx.shadowBlur = (4 + pulse * 12) / safeScale
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawCube(ctx, slot, progress, hovered, selected, highlighted, dimmed, scale = 1, highOccupancy = false) {
   const h = (slot.level === 0 ? RACK_H : 20) * progress
   const base = isoProject(slot.col, slot.row, slot.level)
   const lift = hovered ? 5 / Math.max(scale, 0.01) : 0
@@ -448,6 +468,7 @@ function drawCube(ctx, slot, progress, hovered, selected, highlighted, dimmed, s
   const left = [topPoly[3], topPoly[2], { x: topPoly[2].x, y: topPoly[2].y + h }, { x: topPoly[3].x, y: topPoly[3].y + h }]
   const right = [topPoly[1], topPoly[2], { x: topPoly[2].x, y: topPoly[2].y + h }, { x: topPoly[1].x, y: topPoly[1].y + h }]
   const colors = STATUS_META[slot.status] || STATUS_META.livre
+  const dangerPulse = slot.status === 'bloqueado' || slot.status === 'vencendo'
 
   ctx.save()
   if (dimmed) ctx.globalAlpha *= 0.28
@@ -464,6 +485,10 @@ function drawCube(ctx, slot, progress, hovered, selected, highlighted, dimmed, s
     ctx.shadowBlur = highlighted ? 22 : 18
     drawPolygon(ctx, topPoly, colors.top, highlighted ? 'rgba(250,204,21,0.95)' : 'rgba(255,255,255,0.55)', 1)
     ctx.restore()
+  }
+
+  if (!dimmed && (dangerPulse || (highOccupancy && slot.status !== 'livre'))) {
+    drawCellPulse(ctx, topPoly, dangerPulse, scale)
   }
 
   drawPolygon(ctx, right, colors.right)
@@ -786,6 +811,7 @@ export default function MapaArmazem() {
       ZONES.forEach(zone => {
         const zoneProgress = progressForZone(zone.id, animationStartRef.current)
         if (zoneProgress <= 0) return
+        const zoneLoad = zoneSummary.find(item => item.id === zone.id)?.percent || 0
         ctx.save()
         ctx.translate(0, (1 - zoneProgress) * 18)
         ctx.globalAlpha *= zoneProgress
@@ -798,7 +824,7 @@ export default function MapaArmazem() {
             if (progress <= 0) return
             const dimmed = selectedZone !== 'todos' && slot.zoneId !== selectedZone
             const highlighted = highlightedSlotId === slot.id
-            drawCube(ctx, slot, progress, hovered?.id === slot.id, selectedSlot?.id === slot.id, highlighted, dimmed, camera.scale)
+            drawCube(ctx, slot, progress, hovered?.id === slot.id, selectedSlot?.id === slot.id, highlighted, dimmed, camera.scale, zoneLoad > 80)
           })
 
         const midCol = (zone.cols[0] + zone.cols[1]) / 2

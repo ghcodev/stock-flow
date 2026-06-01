@@ -189,8 +189,8 @@ export default function AjusteEstoque() {
               {loadingLotes ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-border-muted)' }}>
-                    <div style={{ height: 11, width: '60%', background: 'var(--color-bg-muted)', borderRadius: 4, marginBottom: 6, animation: 'aje-shimmer 1.2s ease-in-out infinite' }} />
-                    <div style={{ height: 13, width: '80%', background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'aje-shimmer 1.2s ease-in-out infinite' }} />
+                    <div className="skeleton" style={{ height: 11, width: '60%', marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 13, width: '80%' }} />
                   </div>
                 ))
               ) : filteredLotes.length === 0 ? (
@@ -359,7 +359,7 @@ export default function AjusteEstoque() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                 <button type="button" className="btn btn-outline" onClick={() => setSelected(null)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
+                <button type="submit" className={`btn btn-primary ${submitting ? 'btn-loading' : ''}`} disabled={!canSubmit}>
                   {submitting
                     ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--color-text-inverse)', borderRadius: '50%', animation: 'aje-spin 0.65s linear infinite', display: 'inline-block' }} /> Aplicando…</>
                     : submitted
@@ -399,7 +399,6 @@ export default function AjusteEstoque() {
       </div>
 
       <style>{`
-        @keyframes aje-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes aje-spin    { to{transform:rotate(360deg)} }
 
         .aje-kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:20px }

@@ -18,7 +18,7 @@ function SkeletonRow() {
   return (
     <tr>
       {Array.from({ length: 9 }).map((_, i) => (
-        <td key={i}><div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'shimmer 1.2s ease-in-out infinite' }} /></td>
+        <td key={i}><div className="skeleton" style={{ height: 13 }} /></td>
       ))}
     </tr>
   )
@@ -377,7 +377,7 @@ export default function Entrada() {
                 ? (
                   <tr><td colSpan={9}>
                     <div className="empty-state">
-                      <div className="empty-icon"><ArrowDownLeft size={24} /></div>
+                      <div className="empty-icon empty-icon-animated"><ArrowDownLeft size={24} /></div>
                       <div className="empty-title">Nenhuma entrada encontrada</div>
                       <div className="empty-sub">Registre a primeira entrada de lote.</div>
                     </div>
@@ -506,7 +506,6 @@ export default function Entrada() {
         </div>
       )}
       <style>{`
-        @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.5}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes drawerIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
         .entrada-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
@@ -566,3 +565,4 @@ export default function Entrada() {
     </Layout>
   )
 }
+

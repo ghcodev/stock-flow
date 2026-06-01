@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import api from '../api/axios.js'
@@ -16,6 +16,7 @@ export default function Login() {
   const [erro, setErro]       = useState('')
   const [loading, setLoading] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
+  const canvasRef = useRef(null)
 
   useEffect(() => {
     if (!codigo || codigo.length === 0) {
@@ -48,19 +49,109 @@ export default function Login() {
     return () => clearTimeout(timer)
   }, [codigo])
 
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return undefined
+    const ctx = canvas.getContext('2d')
+    let frame = 0
+    let width = 0
+    let height = 0
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+    }))
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1
+      width = window.innerWidth
+      height = window.innerHeight
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height)
+      particles.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x <= 0 || p.x >= width) p.vx *= -1
+        if (p.y <= 0 || p.y >= height) p.vy *= -1
+      })
+
+      for (let i = 0; i < particles.length; i += 1) {
+        const a = particles[i]
+        for (let j = i + 1; j < particles.length; j += 1) {
+          const b = particles[j]
+          const dist = Math.hypot(a.x - b.x, a.y - b.y)
+          if (dist < 120) {
+            ctx.strokeStyle = `rgba(46,117,182,${0.16 * (1 - dist / 120)})`
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(a.x, a.y)
+            ctx.lineTo(b.x, b.y)
+            ctx.stroke()
+          }
+        }
+      }
+
+      particles.forEach(p => {
+        ctx.fillStyle = 'rgba(46,117,182,0.4)'
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
+        ctx.fill()
+      })
+      frame = requestAnimationFrame(draw)
+    }
+
+    resize()
+    particles.forEach(p => {
+      p.x *= width
+      p.y *= height
+    })
+    window.addEventListener('resize', resize)
+    frame = requestAnimationFrame(draw)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
   if (user) return <Navigate to="/dashboard" replace />
+
+  function triggerInputError(id) {
+    const el = document.getElementById(id)
+    if (el) {
+      el.classList.add('input-error')
+      setTimeout(() => el.classList.remove('input-error'), 400)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!usuarioEncontrado) { setErro('Digite um código de operador válido'); return }
-    if (!senha) { setErro('Digite sua senha'); return }
+    if (!usuarioEncontrado) {
+      setErro('Digite um codigo de operador valido')
+      triggerInputError('campo-codigo')
+      return
+    }
+    if (!senha) {
+      setErro('Digite sua senha')
+      triggerInputError('campo-senha')
+      return
+    }
     setLoading(true)
     setErro('')
     try {
       await login(codigo, senha)
       navigate('/dashboard')
     } catch (err) {
-      setErro(err.response?.data?.error || 'Código ou senha incorretos')
+      setErro(err.response?.data?.error || 'Codigo ou senha incorretos')
+      triggerInputError('campo-codigo')
+      triggerInputError('campo-senha')
     } finally {
       setLoading(false)
     }
@@ -78,6 +169,16 @@ export default function Login() {
         position: 'relative',
         overflow: 'hidden',
       }}>
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
 
         <style>{`
           @keyframes fadeIn {
@@ -216,13 +317,6 @@ export default function Login() {
 
             {/* Campo Código */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{
-                fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: 'var(--color-text-tertiary)',
-                display: 'block', marginBottom: 6,
-              }}>
-                Código do Operador
-              </label>
 
               {nomeUsuario && (
                 <div style={{
@@ -246,19 +340,20 @@ export default function Login() {
                 </div>
               )}
 
-              <div style={{ position: 'relative' }}>
+              <div className="input-float has-icon">
                 <Hash size={16} style={{
                   position: 'absolute', left: 12, top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--color-text-tertiary)', pointerEvents: 'none',
                 }} />
                 <input
+                  id="campo-codigo"
                   className="sf-code-input"
                   type="number"
                   min="1"
                   value={codigo}
                   onChange={e => { setCodigo(e.target.value); setErro('') }}
-                  placeholder="Digite seu número"
+                  placeholder=" "
                   autoFocus
                   style={{
                     border: `1px solid ${usuarioEncontrado
@@ -274,6 +369,7 @@ export default function Login() {
                     pointerEvents: 'none',
                   }} />
                 )}
+                <label>Código do Operador</label>
               </div>
             </div>
 
@@ -283,14 +379,7 @@ export default function Login() {
               opacity: usuarioEncontrado ? 1 : 0.45,
               transition: 'opacity 0.3s',
             }}>
-              <label style={{
-                fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: 'var(--color-text-tertiary)',
-                display: 'block', marginBottom: 6,
-              }}>
-                Senha
-              </label>
-              <div style={{ position: 'relative' }}>
+              <div className="input-float has-icon has-action">
                 <Lock size={16} style={{
                   position: 'absolute', left: 12, top: '50%',
                   transform: 'translateY(-50%)',
@@ -302,7 +391,7 @@ export default function Login() {
                   type={showSenha ? 'text' : 'password'}
                   value={senha}
                   onChange={e => { setSenha(e.target.value); setErro('') }}
-                  placeholder="••••••••"
+                  placeholder=" "
                   disabled={!usuarioEncontrado}
                   autoComplete="current-password"
                   style={{
@@ -328,6 +417,7 @@ export default function Login() {
                 >
                   {showSenha ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+                <label>Senha</label>
               </div>
             </div>
 
@@ -348,7 +438,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || !usuarioEncontrado}
-              className="sf-submit-btn"
+              className={`sf-submit-btn ${loading ? 'btn-loading' : ''}`}
               style={{
                 background: usuarioEncontrado
                   ? 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))'
@@ -407,3 +497,5 @@ export default function Login() {
     </form>
   )
 }
+
+

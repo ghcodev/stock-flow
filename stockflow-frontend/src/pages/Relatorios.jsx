@@ -72,7 +72,7 @@ function SkeletonTable({ cols }) {
         <tr key={row}>
           {Array.from({ length: cols }).map((_, col) => (
             <td key={col}>
-              <div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'rel-shimmer 1.2s ease-in-out infinite' }} />
+              <div className="skeleton" style={{ height: 13 }} />
             </td>
           ))}
         </tr>
@@ -411,7 +411,7 @@ export default function Relatorios() {
                     ? (
                       <tr><td colSpan={report.colunas.length}>
                         <div className="empty-state">
-                          <div className="empty-icon"><FileText size={24} /></div>
+                          <div className="empty-icon empty-icon-animated"><FileText size={24} /></div>
                           <div className="empty-title">Selecione o tipo e clique em Gerar relatório</div>
                           <div className="empty-sub">Os dados serão exibidos aqui</div>
                         </div>
@@ -443,7 +443,6 @@ export default function Relatorios() {
       </div>
 
       <style>{`
-        @keyframes rel-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes spin { to{transform:rotate(360deg)} }
         .spin { animation:spin 0.75s linear infinite }
 
@@ -479,3 +478,4 @@ export default function Relatorios() {
     </Layout>
   )
 }
+

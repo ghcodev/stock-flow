@@ -130,7 +130,7 @@ function InvSkeletonRow() {
     <tr>
       {Array.from({ length: 13 }).map((_, i) => (
         <td key={i}>
-          <div style={{ height: 13, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'inv-shimmer 1.2s ease-in-out infinite' }} />
+          <div className="skeleton" style={{ height: 13 }} />
         </td>
       ))}
     </tr>
@@ -158,6 +158,8 @@ export default function Inventario() {
   const [quickFilter,  setQuickFilter]  = useState('todas')
   const [drawerInv,    setDrawerInv]    = useState(null)
   const [openMenuId,   setOpenMenuId]   = useState(null)
+  const [actionLoading, setActionLoading] = useState('')
+  const [newItemId,    setNewItemId]    = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -210,20 +212,42 @@ export default function Inventario() {
     return data
   }
 
+  function triggerConfetti() {
+    const colors = ['#2E75B6', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#bfdbfe']
+    for (let i = 0; i < 60; i += 1) {
+      const piece = document.createElement('div')
+      piece.className = 'confetti-piece'
+      piece.style.left = `${Math.random() * 100}vw`
+      piece.style.top = '-10px'
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)]
+      piece.style.animationDuration = `${Math.random() * 2 + 1.5}s`
+      piece.style.animationDelay = `${Math.random() * 0.5}s`
+      piece.style.width = `${Math.random() * 8 + 4}px`
+      piece.style.height = `${Math.random() * 8 + 4}px`
+      document.body.appendChild(piece)
+      setTimeout(() => piece.remove(), 4000)
+    }
+  }
+
   async function startInventory(e) {
     e.preventDefault()
+    setActionLoading('create')
     try {
       const { data } = await api.post('/inventario', {
         corredor:    form.corredor,
         id_usuario:  form.id_usuario ? Number(form.id_usuario) : undefined,
       })
       toast.success('Inventário iniciado.')
+      setNewItemId(data.id)
+      setTimeout(() => setNewItemId(null), 2000)
       setShowCreate(false)
       setSelected(data)
       setMode('contagem')
       load()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao iniciar inventário.')
+    } finally {
+      setActionLoading('')
     }
   }
 
@@ -261,6 +285,7 @@ export default function Inventario() {
   }
 
   async function confirmInventory() {
+    setActionLoading('confirm')
     try {
       const { data } = await api.patch(`/inventario/${selected.id}/confirmar`)
       setSelected(data)
@@ -270,19 +295,25 @@ export default function Inventario() {
       load()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao confirmar inventário.')
+    } finally {
+      setActionLoading('')
     }
   }
 
   async function finalizeInventory() {
+    setActionLoading('finalize')
     try {
       const { data } = await api.patch(`/inventario/${selected.id}/finalizar`)
       setSelected(data)
       setShowFinalize(false)
       setMode('relatorio')
       toast.success('Inventário finalizado e estoque ajustado.')
+      if (Number(data.acuracidade ?? accuracy) >= 100) triggerConfetti()
       load()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao finalizar inventário.')
+    } finally {
+      setActionLoading('')
     }
   }
 
@@ -413,7 +444,7 @@ export default function Inventario() {
                       ? (
                         <tr><td colSpan={13}>
                           <div className="empty-state">
-                            <div className="empty-icon"><ClipboardList size={24} /></div>
+                            <div className="empty-icon empty-icon-animated"><ClipboardList size={24} /></div>
                             <div className="empty-title">Nenhum inventário encontrado</div>
                             <div className="empty-sub">{quickFilter !== 'todas' ? 'Tente outro filtro.' : 'Inicie o primeiro inventário rotativo.'}</div>
                           </div>
@@ -425,7 +456,7 @@ export default function Inventario() {
                         return (
                           <tr
                             key={inv.id}
-                            className="inv-row"
+                            className={`inv-row${inv.id === newItemId ? ' row-new' : ''}`}
                             onClick={() => { setDrawerInv(inv); setOpenMenuId(null) }}
                           >
                             <td style={{ fontFamily: '"IBM Plex Mono",monospace', color: 'var(--color-brand-700)', fontWeight: 600, fontSize: 12 }}>#{inv.id}</td>
@@ -633,17 +664,17 @@ export default function Inventario() {
             </div>
             <form onSubmit={startInventory}>
               <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Corredor *</label>
+                <div className="form-group input-float">
                   <select className="select" value={form.corredor} onChange={e => setForm(f => ({ ...f, corredor: e.target.value }))} required>
                     {corredores.map(c => <option key={c}>{c}</option>)}
                   </select>
+                  <label>Corredor *</label>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Operador *</label>
+                <div className="form-group input-float">
                   <select className="select" value={form.id_usuario} onChange={e => setForm(f => ({ ...f, id_usuario: e.target.value }))} required>
                     {usuarios.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
                   </select>
+                  <label>Operador *</label>
                 </div>
                 <div style={{ background: 'var(--color-info-50)', border: '1px solid var(--color-info-100)', borderRadius: 8, padding: 12, fontSize: 12, color: 'var(--color-info-700)' }}>
                   Serão incluídos todos os lotes ativos do corredor {form.corredor || '-'}.
@@ -652,7 +683,7 @@ export default function Inventario() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Iniciar Inventário</button>
+                <button type="submit" className={`btn btn-primary ${actionLoading === 'create' ? 'btn-loading' : ''}`} disabled={actionLoading === 'create'}>Iniciar Inventario</button>
               </div>
             </form>
           </div>
@@ -666,6 +697,7 @@ export default function Inventario() {
           onCancel={() => setShowConfirm(false)}
           onConfirm={confirmInventory}
           confirmLabel="Confirmar"
+          loading={actionLoading === 'confirm'}
         />
       )}
 
@@ -676,13 +708,13 @@ export default function Inventario() {
           items={divergences}
           onCancel={() => setShowFinalize(false)}
           onConfirm={finalizeInventory}
+          loading={actionLoading === 'finalize'}
           confirmLabel="Finalizar Inventário"
         />
       )}
 
       {/* ═══════════════ STYLES ═══════════════ */}
       <style>{`
-        @keyframes inv-shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes inv-drawer-in { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
 
         /* KPI Strip */
@@ -782,7 +814,7 @@ function Summary({ counted, total, divergences, accuracy }) {
   )
 }
 
-function DivergenceModal({ title, items, onCancel, onConfirm, confirmLabel, danger }) {
+function DivergenceModal({ title, items, onCancel, onConfirm, confirmLabel, danger, loading }) {
   return (
     <div className="modal-backdrop">
       <div className="modal" style={{ maxWidth: 720 }}>
@@ -816,7 +848,7 @@ function DivergenceModal({ title, items, onCancel, onConfirm, confirmLabel, dang
         </div>
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={onCancel}>Voltar e Corrigir</button>
-          <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm}>{confirmLabel}</button>
+          <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'} ${loading ? 'btn-loading' : ''}`} onClick={onConfirm} disabled={loading}>{confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -868,3 +900,6 @@ function ReportView({ selected, items, counted, divergences, accuracy, onBack, o
     </>
   )
 }
+
+
+

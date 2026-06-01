@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.js'
@@ -61,6 +61,7 @@ export default function Layout({ children, breadcrumb }) {
   const { user, logout } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [ajudaAberta, setAjudaAberta] = useState(false)
@@ -79,6 +80,19 @@ export default function Layout({ children, breadcrumb }) {
 
   const alternarTema = useCallback(() => {
     setDark(d => !d)
+  }, [])
+
+  const handleThemeToggle = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ripple = document.createElement('div')
+    ripple.className = 'theme-ripple'
+    ripple.style.left = `${rect.left + rect.width / 2 - 20}px`
+    ripple.style.top = `${rect.top + rect.height / 2 - 20}px`
+    document.body.appendChild(ripple)
+    setTimeout(() => {
+      setDark(d => !d)
+      ripple.remove()
+    }, 300)
   }, [])
 
   const alternarAjuda = useCallback(() => {
@@ -172,9 +186,17 @@ export default function Layout({ children, breadcrumb }) {
                       <item.icon size={16} />
                       {sidebarOpen && <span>{item.label}</span>}
                       {sidebarOpen && item.badge && (
-                        <span className={`nav-badge${item.badgeKind ? ` ${item.badgeKind}` : ''}`}>
-                          {item.badge}
-                        </span>
+                        item.label === 'Vencimentos' && Number(item.badge) > 0 ? (
+                          <span className="badge-ping">
+                            <span className={`nav-badge${item.badgeKind ? ` ${item.badgeKind}` : ''}`}>
+                              {item.badge}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className={`nav-badge${item.badgeKind ? ` ${item.badgeKind}` : ''}`}>
+                            {item.badge}
+                          </span>
+                        )
                       )}
                     </NavLink>
                   ))}
@@ -192,7 +214,7 @@ export default function Layout({ children, breadcrumb }) {
               </div>
             )}
             {sidebarOpen && (
-              <button className="sidebar-logout" aria-label="Sair" onClick={handleLogout}>
+              <button className="sidebar-logout tooltip-wrap" data-tooltip="Sair" aria-label="Sair" onClick={handleLogout}>
                 <LogOut size={14} />
               </button>
             )}
@@ -203,7 +225,8 @@ export default function Layout({ children, breadcrumb }) {
         <main className="main">
           <header className="topbar">
             <button
-              className="topbar-toggle"
+              className="topbar-toggle tooltip-wrap"
+              data-tooltip={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
               aria-label={sidebarOpen ? 'Colapsar menu' : 'Expandir menu'}
               onClick={() => setSidebarOpen(o => !o)}
             >
@@ -251,14 +274,15 @@ export default function Layout({ children, breadcrumb }) {
               </button>
 
               <button
-                className="icon-btn"
+                className="icon-btn tooltip-wrap"
+                data-tooltip="Atalhos de teclado"
                 aria-label="Ajuda"
                 onClick={() => setAjudaAberta(true)}
               >
                 <HelpCircle size={16} />
               </button>
 
-              <button className="icon-btn" onClick={() => setDark(d => !d)} aria-label="Tema">
+              <button className="icon-btn tooltip-wrap" data-tooltip="Alternar tema" onClick={handleThemeToggle} aria-label="Tema">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
 
@@ -268,7 +292,7 @@ export default function Layout({ children, breadcrumb }) {
           </header>
 
           <div className="page">
-            <div className="page-inner">
+            <div className="page-inner" key={location.pathname}>
               {children}
             </div>
           </div>

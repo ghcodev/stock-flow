@@ -110,7 +110,7 @@ function SkeletonRow() {
   return (
     <tr>
       {Array.from({ length: 13 }).map((_, i) => (
-        <td key={i}><div style={{ height: 14, background: 'var(--color-bg-muted)', borderRadius: 4, animation: 'shimmer 1.2s ease-in-out infinite' }} /></td>
+        <td key={i}><div className="skeleton" style={{ height: 14 }} /></td>
       ))}
     </tr>
   )
@@ -154,6 +154,7 @@ export default function Produtos() {
   const [sort, setSort] = useState({ key: 'nome', dir: 'asc' })
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
+  const [newProductId, setNewProductId] = useState(null)
   const [form, setForm] = useState({ nome: '', categoria: 'Pães', unidade_medida: 'unidade', estoque_minimo: '' })
 
   useEffect(() => { load() }, [])
@@ -241,7 +242,12 @@ export default function Produtos() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await api.post('/produtos', { ...form, estoque_minimo: Number(form.estoque_minimo || 0) })
+      const { data } = await api.post('/produtos', { ...form, estoque_minimo: Number(form.estoque_minimo || 0) })
+      const createdId = data?.data?.id_produto || data?.data?.id || data?.id_produto || data?.id
+      if (createdId) {
+        setNewProductId(createdId)
+        setTimeout(() => setNewProductId(null), 2000)
+      }
       toast.success('Produto cadastrado com sucesso!')
       setShowForm(false)
       setForm({ nome: '', categoria: 'Pães', unidade_medida: 'unidade', estoque_minimo: '' })
@@ -353,30 +359,23 @@ export default function Produtos() {
           </div>
           <form onSubmit={handleSubmit} style={{ padding: '16px 20px 20px' }}>
             <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Nome *</label>
-                <input className="input" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required />
+              <div className="form-group input-float"><input className="input" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder=" " required /><label>Nome *</label>
               </div>
-              <div className="form-group">
-                <label className="form-label">Categoria *</label>
-                <select className="select" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
+              <div className="form-group input-float"><select className="select" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
                   {['Pães', 'Salgados', 'Quitandas', 'Massas'].map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
+                </select><label>Categoria *</label></div>
             </div>
             <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Unidade *</label>
-                <input className="input" value={form.unidade_medida} onChange={e => setForm(f => ({ ...f, unidade_medida: e.target.value }))} required />
+              <div className="form-group input-float"><input className="input" value={form.unidade_medida} onChange={e => setForm(f => ({ ...f, unidade_medida: e.target.value }))} placeholder=" " required /><label>Unidade *</label>
               </div>
-              <div className="form-group">
-                <label className="form-label">Estoque mínimo</label>
-                <input className="input" type="number" min="0" value={form.estoque_minimo} onChange={e => setForm(f => ({ ...f, estoque_minimo: e.target.value }))} />
+              <div className="form-group input-float">
+                <input className="input" type="number" min="0" value={form.estoque_minimo} onChange={e => setForm(f => ({ ...f, estoque_minimo: e.target.value }))} placeholder=" " />
+                <label>Estoque minimo</label>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
+              <button type="submit" className={`btn btn-primary ${submitting ? 'btn-loading' : ''}`} disabled={submitting}>
                 {submitting ? 'Salvando...' : <><CheckCircle size={14} /> Salvar produto</>}
               </button>
             </div>
@@ -434,7 +433,7 @@ export default function Produtos() {
                   <tr>
                     <td colSpan={13}>
                       <div className="empty-state">
-                        <div className="empty-icon"><Package size={24} /></div>
+                        <div className="empty-icon empty-icon-animated"><Package size={24} /></div>
                         <div className="empty-title">Nenhum produto encontrado</div>
                         <div className="empty-sub">{search ? 'Tente outro termo de busca.' : 'Cadastre o primeiro produto.'}</div>
                       </div>
@@ -446,7 +445,7 @@ export default function Produtos() {
                   const critical = isCritical(p)
                   const productId = getProductId(p)
                   return (
-                    <tr key={productId} className={critical ? 'product-row-critical' : ''}>
+                    <tr key={productId} className={`${critical ? 'product-row-critical' : ''}${productId === newProductId ? ' row-new' : ''}`}>
                       <td style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, color: 'var(--color-brand-700)', fontWeight: 500 }}>{p.codigo || productId}</td>
                       <td>
                         <button type="button" className="product-name-button" onClick={() => setSelectedProduct(p)}>{p.nome}</button>
@@ -532,7 +531,6 @@ export default function Produtos() {
         </div>
       )}
       <style>{`
-        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes drawerIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
         .products-kpi-grid {
@@ -812,3 +810,6 @@ export default function Produtos() {
     </Layout>
   )
 }
+
+
+
