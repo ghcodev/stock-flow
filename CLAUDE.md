@@ -1,4 +1,4 @@
-# REGRAS OBRIGATÓRIAS — LER ANTES DE QUALQUER AÇÃO
+# Regras Obrigatórias — StockFlow
 
 ## GIT
 - Antes de qualquer tarefa: git add . && git commit -m "backup: [nome da tarefa]"
@@ -56,7 +56,7 @@
 - Gráficos usam SVG puro — nunca substituir por bibliotecas externas
 - Alertas e notificações não podem ser desativados silenciosamente
 
-# Fluxo obrigatorio para UI
+# Fluxo obrigatório para UI
 
 Sempre que a tarefa envolver criacao, refatoracao ou melhoria de telas, componentes visuais, layouts, tabelas, dashboards, formularios, cards, filtros ou navegacao:
 
@@ -73,3 +73,10 @@ Sempre que a tarefa envolver criacao, refatoracao ou melhoria de telas, componen
 11. Listar arquivos alterados
 
 Nunca implementar alteracoes visuais diretamente sem passar pelo fluxo frontend-design -> frontend-audit.
+
+## Documentação
+- Não criar documentos duplicados.
+- Atualizar documentos existentes antes de criar novos equivalentes.
+- Documentar somente funcionalidades, tabelas, rotas e regras existentes no código ou SQL.
+- Quando houver divergência entre código e banco, registrar a divergência explicitamente.
+- Não fazer commit ou push de documentação sem confirmação do usuário.

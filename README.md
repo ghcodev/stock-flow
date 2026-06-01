@@ -1,139 +1,232 @@
 # StockFlow
 
-Sistema web de controle de estoque com rastreabilidade por lote, gestão de localizações físicas e auditoria completa de operações.
+StockFlow é um sistema web WMS (Warehouse Management System) para gestão de estoque com controle por lote, localizações físicas, movimentações transacionais, rastreabilidade por QR Code/RFID e auditoria operacional.
 
-## Repositório
+O projeto é composto por uma SPA React, uma API Node.js/Express e banco MySQL. A implementação atual usa SQL direto via `mysql2/promise`, autenticação JWT, permissões por perfil/permissão customizada e design system próprio no frontend.
 
-[![GitHub](https://img.shields.io/badge/GitHub-StockFlow-1F3864?style=for-the-badge&logo=github)](https://github.com/ghcodev/stock-flow)
+## Objetivo
 
-**Clone o projeto:**
-```bash
-git clone https://github.com/ghcodev/stock-flow.git
-cd stock-flow
+Centralizar a operação de estoque de uma empresa com produtos rastreáveis, reduzindo dependência de planilhas e oferecendo:
+
+- Visibilidade de estoque por produto, lote e localização.
+- Registro de entradas, saídas, transferências, ajustes e inventário.
+- Alertas de validade, bloqueios e estoque abaixo do mínimo.
+- Rastreabilidade por lote e identificação por QR Code/RFID.
+- Auditoria em aplicação e banco de dados.
+- Interface operacional para rotinas de armazém.
+
+## Principais Funcionalidades
+
+- Dashboard com KPIs, movimentações, alertas, ocupação por corredor, curva ABC, rupturas e saúde do estoque.
+- Cadastro e manutenção de produtos.
+- Cadastro, bloqueio, desbloqueio e acompanhamento de lotes.
+- Entrada, saída, transferência e ajuste de estoque.
+- Inventário rotativo por corredor.
+- Mapa do armazém baseado em localizações cadastradas.
+- Rastreabilidade por lote e timeline de movimentações.
+- Identificação por QR Code ou RFID.
+- Relatórios operacionais com exportação no frontend.
+- Gestão de usuários, perfis e permissões customizadas.
+- Integração SAP para importação de produtos por JSON.
+- Auditoria administrativa.
+
+## Tecnologias
+
+| Camada | Tecnologias |
+|---|---|
+| Frontend | React 18, Vite, React Router, Axios, Tailwind CSS, CSS tokens |
+| Backend | Node.js, Express 4, JWT, Helmet, CORS, express-validator, express-rate-limit |
+| Banco | MySQL 8.4, InnoDB, triggers, constraints, SQL direto |
+| Documentação API | Swagger UI em `/api/docs` |
+| Relatórios/exportação | `xlsx`, `jspdf`, `html2canvas` no frontend |
+
+## Estrutura do Projeto
+
+```text
+STOCK FLOW/
+├── database/
+│   ├── setup.sql
+│   ├── triggers.sql
+│   ├── fix_auditoria.sql
+│   ├── fix_missing_data.sql
+│   ├── seed_artetrigo.sql
+│   └── feature_inventory_sap_permissions.sql
+├── docs/
+│   └── MANUAL_USUARIO.md
+├── stockflow-api/
+│   ├── .env.example
+│   ├── package.json
+│   └── src/
+│       ├── app.js
+│       ├── config/
+│       ├── controllers/
+│       ├── middleware/
+│       ├── middlewares/
+│       └── routes/
+├── stockflow-frontend/
+│   ├── .env.example
+│   ├── package.json
+│   ├── design-reference/
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       ├── context/
+│       ├── hooks/
+│       ├── pages/
+│       └── styles/
+├── ARCHITECTURE.md
+├── API_DOCUMENTATION.md
+├── BUSINESS_RULES.md
+├── DATABASE_DOCUMENTATION.md
+├── DEPLOYMENT_GUIDE.md
+├── MODULES.md
+├── PRODUCT_VISION.md
+├── PROJECT_MEMORY.md
+├── TECH_STACK.md
+└── USER_MANUAL.md
 ```
-
-## Stack
-
-| Camada | Tecnologia |
-|--------|-----------|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| Backend | Node.js + Express 4 |
-| Banco de dados | MySQL 8.4 |
-| Autenticação | JWT (jsonwebtoken) |
-| Queries | mysql2/promise (SQL direto, sem ORM) |
 
 ## Pré-requisitos
 
-- Node.js 18+
-- MySQL 8.4 rodando na porta 3306
+- Node.js 18 ou superior.
+- MySQL 8.4.
+- npm.
+- Banco `stockflow` criado pelo script `database/setup.sql`.
 
 ## Instalação
 
-### 1. Banco de dados
+```bash
+git clone https://github.com/ghcodev/stock-flow.git
+cd stock-flow
+
+npm install
+cd stockflow-api && npm install
+cd ../stockflow-frontend && npm install
+```
+
+## Banco de Dados
+
+Execute o script principal:
 
 ```bash
 mysql -u root -p < database/setup.sql
 ```
 
-O script cria o banco `stockflow`, todas as tabelas, triggers de auditoria e o usuário administrador padrão.
+O script principal cria as tabelas base: `localizacao`, `produto`, `usuario`, `lote`, `movimentacao`, `identificacao` e `auditoria_log`, além de triggers de auditoria e dados de seed.
 
-### 2. API (backend)
+Observação real do projeto: existem rotas e telas de inventário que dependem da tabela `inventario`, mas `database/setup.sql` não cria essa tabela. O arquivo `database/feature_inventory_sap_permissions.sql` altera `inventario`, `usuario` e `produto`, assumindo que a tabela `inventario` já exista. Essa divergência está documentada em `DATABASE_DOCUMENTATION.md`.
+
+## Variáveis de Ambiente
+
+API (`stockflow-api/.env`):
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=stockflow
+DATABASE_URL="mysql://user:pass@localhost:3306/stockflow?charset=utf8mb4"
+JWT_SECRET=troque-por-uma-string-aleatoria-de-64-chars-minimo
+JWT_EXPIRES_IN=8h
+PORT=3000
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+Frontend (`stockflow-frontend/.env`):
+
+```env
+VITE_API_URL=http://localhost:3000/api/v1
+```
+
+## Execução Local
+
+Backend:
 
 ```bash
 cd stockflow-api
-npm install
-cp .env.example .env      # edite com suas credenciais reais
-npm run dev               # inicia na porta 3000
+npm run dev
 ```
 
-### 3. Frontend
+Frontend:
 
 ```bash
 cd stockflow-frontend
-npm install
-npm run dev               # inicia na porta 5173
+npm run dev
 ```
 
-Acesse: **http://localhost:5173**
+Execução conjunta pela raiz:
 
-## Credenciais padrão
-
-| Campo | Valor |
-|-------|-------|
-| Email | `admin@stockflow.com` |
-| Senha | `Admin@1234` |
-
-## Scripts
-
-### Raiz do projeto
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia backend e frontend simultaneamente |
-| `npm start` | Alias para `npm run dev` |
-| `npm run backend` | Inicia apenas a API |
-| `npm run frontend` | Inicia apenas o frontend |
-
-### API (`stockflow-api/`)
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Dev com nodemon (hot reload) |
-| `npm start` | Produção |
-
-### Frontend (`stockflow-frontend/`)
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Dev server na porta 5173 |
-| `npm run build` | Build de produção em `dist/` |
-| `npm run preview` | Preview do build |
-
-## Módulos
-
-| Módulo | Rota | Perfil mínimo |
-|--------|------|---------------|
-| Dashboard | `/dashboard` | Operador |
-| Produtos | `/produtos` | Operador |
-| Lotes | `/lotes` | Operador |
-| Mapa do Armazém | `/mapa` | Operador |
-| Entrada de estoque | `/entrada` | Operador |
-| Saída de estoque | `/saida` | Operador |
-| Transferência | `/transferencia` | Operador |
-| Histórico | `/historico` | Operador |
-| Rastreabilidade | `/rastreabilidade` | Operador |
-| Alertas de vencimento | `/alertas` | Operador |
-| Relatórios | `/relatorios` | Operador |
-| Inventário rotativo | `/inventario` | Operador |
-| Ajuste de estoque | `/ajuste` | Administrador |
-| Auditoria | `/auditoria` | Administrador |
-| Usuários | `/usuarios` | Administrador |
-| Perfil | `/perfil` | Operador |
-
-## Estrutura do projeto
-
-```
-STOCK FLOW/
-├── database/
-│   └── setup.sql                   # Schema + seed + triggers MySQL
-├── stockflow-api/                  # Backend Express
-│   ├── .env.example
-│   ├── src/
-│   │   ├── app.js                  # Entry point
-│   │   ├── config/database.js      # Pool MySQL
-│   │   ├── middleware/             # auth, admin, audit
-│   │   ├── routes/                 # Definição de endpoints
-│   │   └── controllers/            # Lógica de negócio
-│   └── package.json
-└── stockflow-frontend/             # Frontend React + Vite
-    ├── src/
-    │   ├── api/axios.js            # Cliente HTTP + interceptors
-    │   ├── context/                # Auth e Toast
-    │   ├── components/Layout.jsx   # Shell da aplicação
-    │   └── pages/                  # Uma página por módulo
-    └── package.json
+```bash
+npm run dev
 ```
 
-## Variáveis de ambiente (API)
+URLs padrão:
 
-Veja `stockflow-api/.env.example` para a lista completa.
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3000/api/v1`
+- Swagger: `http://localhost:3000/api/docs`
+- Health check: `http://localhost:3000/api/v1/health`
+
+## Build
+
+Frontend:
+
+```bash
+cd stockflow-frontend
+npm run build
+```
+
+Preview:
+
+```bash
+npm run preview
+```
+
+API em modo produção:
+
+```bash
+cd stockflow-api
+npm start
+```
+
+## Telas Principais
+
+- Login.
+- Dashboard.
+- Produtos.
+- Lotes.
+- Mapa do Armazém.
+- Entrada.
+- Saída.
+- Transferência.
+- Histórico.
+- Rastreabilidade.
+- Alertas de vencimento.
+- Relatórios.
+- Inventário.
+- Ajuste de estoque.
+- Auditoria.
+- Usuários.
+- Perfil.
+- Integração SAP.
+
+## Roadmap Resumido
+
+- Corrigir a divergência entre rotas de inventário e schema principal.
+- Adicionar testes automatizados de API e frontend.
+- Revisar dependência `xlsx`, que possui vulnerabilidade alta sem correção disponível no `npm audit`.
+- Persistir blacklist de JWT em armazenamento compartilhado se houver múltiplas instâncias da API.
+- Evoluir deploy com variáveis por ambiente e pipeline de CI.
+
+## Documentação
+
+- `ARCHITECTURE.md`: arquitetura técnica.
+- `API_DOCUMENTATION.md`: rotas reais da API.
+- `DATABASE_DOCUMENTATION.md`: tabelas, relacionamentos e divergências de schema.
+- `BUSINESS_RULES.md`: regras de negócio existentes.
+- `MODULES.md`: módulos e dependências.
+- `DEPLOYMENT_GUIDE.md`: instalação, configuração e troubleshooting.
+- `USER_MANUAL.md`: manual operacional.
+- `DOCUMENTATION_AUDIT_REPORT.md`: relatório da auditoria documental.

@@ -88,6 +88,7 @@ Executar quando aplicavel:
 - Verificacao de console no navegador quando disponivel.
 - Busca por hex hardcoded, `rgb(` e `hsl(` nos arquivos alterados.
 - Revisao do diff.
+- Para documentacao, confirmar que nenhuma tela, rota, dependencia ou API foi inventada.
 
 ## Saida Obrigatoria
 
@@ -115,3 +116,12 @@ Se houver qualquer cor hardcoded, quebra de build, erro de console, componente v
 ```text
 Aprovado para commit? Não
 ```
+
+## Auditoria De Documentacao
+
+Quando a alteracao for documental:
+- Conferir se os nomes das telas batem com `src/pages`.
+- Conferir se rotas batem com `src/App.jsx`.
+- Conferir se endpoints citados existem em `stockflow-api/src/routes`.
+- Conferir se tabelas citadas existem em `database/setup.sql` ou registrar divergencia.
+- Conferir se o build continua valido quando solicitado.

@@ -127,6 +127,7 @@ Obrigatorio:
 - Graficos devem usar SVG puro; proibido adicionar biblioteca de grafico.
 - Preservar performance.
 - Preservar responsividade.
+- Ao documentar telas, refletir as rotas reais de `src/App.jsx` e as chamadas reais feitas via `src/api/axios.js`.
 
 ## Processo Obrigatorio
 
@@ -142,3 +143,12 @@ Depois da implementacao:
 2. Corrigir problemas obrigatorios.
 3. Validar novamente.
 4. Listar arquivos alterados.
+
+## Documentacao De Frontend
+
+Quando a tarefa for documentacao, validar:
+- Rotas reais em `src/App.jsx`.
+- Paginas reais em `src/pages`.
+- Chamadas reais `api.get`, `api.post`, `api.put` e `api.patch`.
+- Dependencias reais do `package.json`.
+- Inconsistencias entre frontend, API e banco devem ser registradas em vez de ocultadas.
