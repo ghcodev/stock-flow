@@ -40,20 +40,19 @@ Arquivo: `stockflow-api/.env`.
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=
+DB_PASS=sua_senha
 DB_NAME=stockflow
-DATABASE_URL="mysql://user:pass@localhost:3306/stockflow?charset=utf8mb4"
 JWT_SECRET=troque-por-uma-string-aleatoria-de-64-chars-minimo
 JWT_EXPIRES_IN=8h
 PORT=3000
-FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173
 NODE_ENV=production
 ```
 
 Campos obrigatórios na inicialização da API:
 
 - `JWT_SECRET`
-- `FRONTEND_URL`
+- `ALLOWED_ORIGINS`
 - configuração de banco por `DB_HOST`/`DB_USER`/`DB_NAME` ou variáveis equivalentes verificadas em `app.js`
 
 ### Frontend
@@ -112,7 +111,7 @@ Checklist:
 
 - Definir `NODE_ENV=production`.
 - Definir `JWT_SECRET` forte.
-- Definir `FRONTEND_URL` igual ao domínio do frontend.
+- Definir `ALLOWED_ORIGINS` com os domínios permitidos do frontend.
 - Definir `VITE_API_URL` antes do build do frontend.
 - Garantir MySQL disponível e com schema aplicado.
 - Servir `dist/` por servidor estático ou CDN.
@@ -128,7 +127,7 @@ Checklist:
 Verifique:
 
 - `JWT_SECRET`.
-- `FRONTEND_URL`.
+- `ALLOWED_ORIGINS`.
 - `DB_HOST`, `DB_USER`, `DB_NAME`.
 - MySQL acessível.
 
@@ -136,7 +135,7 @@ Verifique:
 
 Verifique:
 
-- `FRONTEND_URL` na API.
+- `ALLOWED_ORIGINS` na API.
 - URL real do frontend.
 - Protocolo `http`/`https`.
 

@@ -3,11 +3,12 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.js'
 import { PainelAtalhos } from './PainelAtalhos.jsx'
+import SobreModal from './SobreModal.jsx'
 import api from '../api/axios.js'
 import {
   LayoutDashboard, Package, Layers, Map, ArrowDownLeft, ArrowUpRight,
   Shuffle, Clipboard, History, ScanLine, Clock, Activity, Users, Shield,
-  User, LogOut, Menu, Search, Bell, HelpCircle, Sun, Moon, Box, Sliders,
+  User, LogOut, Menu, Search, Bell, HelpCircle, Info, Sun, Moon, Box, Sliders,
   Link2,
 } from 'lucide-react'
 import { useCallback, useRef, useState, useEffect } from 'react'
@@ -65,6 +66,7 @@ export default function Layout({ children, breadcrumb }) {
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [ajudaAberta, setAjudaAberta] = useState(false)
+  const [showSobre, setShowSobre] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
   const [alertasCount, setAlertasCount] = useState(0)
   const buscaRef = useRef(null)
@@ -132,6 +134,7 @@ export default function Layout({ children, breadcrumb }) {
     onAbrirBusca: abrirBuscaGlobal,
     onAbrirAjuda: alternarAjuda,
     onToggleTema: alternarTema,
+    onAbrirSobre: useCallback(() => setShowSobre(v => !v), []),
   })
 
   function handleLogout() {
@@ -275,6 +278,15 @@ export default function Layout({ children, breadcrumb }) {
 
               <button
                 className="icon-btn tooltip-wrap"
+                data-tooltip="Sobre o sistema"
+                aria-label="Sobre o sistema"
+                onClick={() => setShowSobre(true)}
+              >
+                <Info size={16} />
+              </button>
+
+              <button
+                className="icon-btn tooltip-wrap"
                 data-tooltip="Atalhos de teclado"
                 aria-label="Ajuda"
                 onClick={() => setAjudaAberta(true)}
@@ -300,6 +312,7 @@ export default function Layout({ children, breadcrumb }) {
       </div>
 
       <PainelAtalhos aberto={ajudaAberta} onFechar={() => setAjudaAberta(false)} />
+      {showSobre && <SobreModal onClose={() => setShowSobre(false)} />}
       <div style={{
         position: 'fixed',
         bottom: 8,

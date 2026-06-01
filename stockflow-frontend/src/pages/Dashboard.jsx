@@ -6,7 +6,7 @@ import {
   Package, Layers, AlertTriangle, RefreshCw, Download, ArrowDownLeft,
   ArrowUpRight, ArrowRight, Activity, Clock, TrendingDown, Lock, ShieldCheck,
   Circle, TrendingUp, BarChart2, CheckCircle, FileText, FileSpreadsheet,
-  Shuffle, Sliders,
+  Shuffle, Sliders, Award, ArrowLeftRight,
 } from 'lucide-react'
 
 const MOV_COLORS = {
@@ -1229,7 +1229,11 @@ export default function Dashboard() {
   const distLabels = ['Entradas', 'Saídas', 'Transferências', 'Ajustes']
   const distIcons  = [ArrowDownLeft, ArrowUpRight, Shuffle, Sliders]
   const distItems  = dadosPizza.map((d, i) => ({ ...d, label: distLabels[i], icon: distIcons[i] }))
-  const distTotal  = dadosPizza.reduce((s, d) => s + d.valor, 0)
+  const distTotal    = dadosPizza.reduce((s, d) => s + d.valor, 0)
+  const distDiasRef  = periodo === 'hoje' ? 1 : periodo === 'semana' ? 7 : 30
+  const distMediaDia = Math.round(distTotal / (distDiasRef || 1))
+  const distMaior    = distItems.reduce((best, item) => item.valor > best.valor ? item : best, distItems[0])
+  const distSaldo    = distItems[0].valor - distItems[1].valor
 
   const movHojeAnimado      = useCountUp(kpis?.movimentacoes_hoje)
   const entradasAnimado     = useCountUp(kpis?.tendencias?.entradas_hoje)
@@ -1475,23 +1479,59 @@ export default function Dashboard() {
             ) : distTotal === 0 ? (
               <div style={{ height: 80, display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>Sem movimentacoes no periodo</div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, padding: '4px 0' }}>
-                {distItems.map(({ label, valor, cor, icon: Icon }) => (
-                  <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 16px', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${cor}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Icon size={13} color={cor} />
-                      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{label}</span>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, padding: '4px 0' }}>
+                  {distItems.map(({ label, valor, cor, icon: Icon }) => (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 16px', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${cor}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Icon size={13} color={cor} />
+                        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{label}</span>
+                      </div>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                        {valor.toLocaleString('pt-BR')}
+                        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>un</span>
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                        {distTotal > 0 ? `${Math.round((valor / distTotal) * 100)}% do total` : '–'}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                      {valor.toLocaleString('pt-BR')}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>un</span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 16 }}>
+                  {distItems.map(({ label, valor, cor }) => (
+                    <div key={label} style={{ width: `${(valor / (distTotal || 1) * 100).toFixed(1)}%`, background: cor }} />
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--color-text-secondary)', flexWrap: 'wrap' }}>
+                  {distItems.map(({ label, valor, cor }) => (
+                    <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: cor }}>●</span> {label} {(valor / (distTotal || 1) * 100).toFixed(1)}%
                     </span>
-                    <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-                      {distTotal > 0 ? `${Math.round((valor / distTotal) * 100)}% do total` : '–'}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--color-border-default)', marginTop: 16, marginBottom: 16 }} />
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+                  {[
+                    { icon: BarChart2,      label: 'VOLUME TOTAL',  valor: distTotal.toLocaleString('pt-BR'),                                                                                cor: 'var(--color-text-primary)' },
+                    { icon: TrendingUp,     label: 'MÉDIA DIÁRIA',  valor: distMediaDia.toLocaleString('pt-BR'),                                                                              cor: 'var(--color-text-primary)' },
+                    { icon: Award,          label: 'MAIOR TIPO',    valor: distMaior?.label || '–',                                                                                           cor: distMaior?.cor || 'var(--color-text-primary)' },
+                    { icon: ArrowLeftRight, label: 'SALDO LÍQUIDO', valor: `${distSaldo >= 0 ? '+' : ''}${distSaldo.toLocaleString('pt-BR')}`,                                                cor: distSaldo > 0 ? 'var(--color-success-600)' : distSaldo < 0 ? 'var(--color-danger-600)' : 'var(--color-text-tertiary)' },
+                  ].map(({ icon: Icon, label, valor, cor }) => (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-tertiary)' }}>
+                        <Icon size={10} /> {label}
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: cor }}>
+                        {valor}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

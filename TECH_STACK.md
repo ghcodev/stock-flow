@@ -81,11 +81,11 @@ Modelo esperado:
 - Frontend gerado em `stockflow-frontend/dist`.
 - API Node executando com `.env` configurado.
 - MySQL acessível pela API.
-- `FRONTEND_URL` configurado para CORS.
+- `ALLOWED_ORIGINS` configurado para CORS.
 - `VITE_API_URL` configurado no build do frontend.
 
 ## Observações Técnicas
 
 - A API exige `JWT_SECRET` e configuração de banco ao iniciar.
-- `DATABASE_URL` existe no `.env.example`, mas `src/config/database.js` usa `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` e `DB_NAME`.
+- `src/config/database.js` usa `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` e `DB_NAME`.
 - O schema principal precisa ser revisado para incluir `inventario` se o módulo continuar ativo.

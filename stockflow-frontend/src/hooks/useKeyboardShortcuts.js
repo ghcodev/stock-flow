@@ -19,7 +19,7 @@ const TECLAS_CTRL = {
   t: '/movimentacoes/transferencia',
 }
 
-export function useKeyboardShortcuts({ onAbrirBusca, onAbrirAjuda, onToggleTema }) {
+export function useKeyboardShortcuts({ onAbrirBusca, onAbrirAjuda, onToggleTema, onAbrirSobre }) {
   const navigate = useNavigate()
 
   const handleKeyDown = useCallback((e) => {
@@ -56,8 +56,12 @@ export function useKeyboardShortcuts({ onAbrirBusca, onAbrirAjuda, onToggleTema 
         e.preventDefault()
         onToggleTema?.()
       }
+      if (k === 'i') {
+        e.preventDefault()
+        onAbrirSobre?.()
+      }
     }
-  }, [navigate, onAbrirBusca, onAbrirAjuda, onToggleTema])
+  }, [navigate, onAbrirBusca, onAbrirAjuda, onToggleTema, onAbrirSobre])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

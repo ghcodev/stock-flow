@@ -1,20 +1,51 @@
-# Build
-dist/
-dist-ssr/
-
-# Variáveis de ambiente locais
+# Variaveis de ambiente
 .env
 .env.local
-.env.*.local
+.env.development
+.env.production
+.env.staging
+*.env
 !.env.example
 
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+dist/
+build/
+.vite/
+dist-ssr/
+
 # Logs
+logs/
 *.log
 
-# Sistema operacional
+# Banco de dados
+*.sql.bak
+*.dump
+*.sqlite
+*.db
+
+# Chaves e certificados
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Editores
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
 
-# Editor
-.vscode/
-.idea/
+# Coverage e testes
+coverage/
+.nyc_output/

@@ -76,12 +76,11 @@ STOCK FLOW/
 │       └── styles/
 ├── ARCHITECTURE.md
 ├── API_DOCUMENTATION.md
-├── BUSINESS_RULES.md
-├── DATABASE_DOCUMENTATION.md
+├── AUDIT.md
+├── CLAUDE.md
 ├── DEPLOYMENT_GUIDE.md
-├── MODULES.md
-├── PRODUCT_VISION.md
 ├── PROJECT_MEMORY.md
+├── SECURITY.md
 ├── TECH_STACK.md
 └── USER_MANUAL.md
 ```
@@ -114,7 +113,7 @@ mysql -u root -p < database/setup.sql
 
 O script principal cria as tabelas base: `localizacao`, `produto`, `usuario`, `lote`, `movimentacao`, `identificacao` e `auditoria_log`, além de triggers de auditoria e dados de seed.
 
-Observação real do projeto: existem rotas e telas de inventário que dependem da tabela `inventario`, mas `database/setup.sql` não cria essa tabela. O arquivo `database/feature_inventory_sap_permissions.sql` altera `inventario`, `usuario` e `produto`, assumindo que a tabela `inventario` já exista. Essa divergência está documentada em `DATABASE_DOCUMENTATION.md`.
+Observação real do projeto: existem rotas e telas de inventário que dependem da tabela `inventario`, mas `database/setup.sql` não cria essa tabela. O arquivo `database/feature_inventory_sap_permissions.sql` altera `inventario`, `usuario` e `produto`, assumindo que a tabela `inventario` já exista.
 
 ## Variáveis de Ambiente
 
@@ -124,13 +123,12 @@ API (`stockflow-api/.env`):
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=
+DB_PASS=sua_senha
 DB_NAME=stockflow
-DATABASE_URL="mysql://user:pass@localhost:3306/stockflow?charset=utf8mb4"
 JWT_SECRET=troque-por-uma-string-aleatoria-de-64-chars-minimo
 JWT_EXPIRES_IN=8h
 PORT=3000
-FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173
 NODE_ENV=development
 ```
 
@@ -222,11 +220,11 @@ npm start
 
 ## Documentação
 
-- `ARCHITECTURE.md`: arquitetura técnica.
-- `API_DOCUMENTATION.md`: rotas reais da API.
-- `DATABASE_DOCUMENTATION.md`: tabelas, relacionamentos e divergências de schema.
-- `BUSINESS_RULES.md`: regras de negócio existentes.
-- `MODULES.md`: módulos e dependências.
-- `DEPLOYMENT_GUIDE.md`: instalação, configuração e troubleshooting.
-- `USER_MANUAL.md`: manual operacional.
-- `DOCUMENTATION_AUDIT_REPORT.md`: relatório da auditoria documental.
+- `ARCHITECTURE.md` — Arquitetura técnica do sistema
+- `API_DOCUMENTATION.md` — Endpoints e contratos da API
+- `TECH_STACK.md` — Stack tecnológica utilizada
+- `DEPLOYMENT_GUIDE.md` — Guia de instalação e deploy
+- `USER_MANUAL.md` — Manual do usuário
+- `SECURITY.md` — Política de segurança
+- `AUDIT.md` — Registro de bugs e auditoria
+- `CLAUDE.md` — Instruções para o agente de desenvolvimento

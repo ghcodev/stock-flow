@@ -7,6 +7,9 @@ const { checkPermission } = require('../middleware/permission');
 const { validate } = require('../middlewares/validate');
 
 const router = Router();
+
+router.get('/codigo/:codigo', ctrl.getByCode);
+
 router.use(authMiddleware);
 
 // /perfil não exige admin, deve vir antes de /:id

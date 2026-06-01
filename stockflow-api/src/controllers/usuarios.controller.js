@@ -17,6 +17,21 @@ async function buscarPorId(req, res) {
   return res.json(rows[0]);
 }
 
+async function getByCode(req, res) {
+  const { codigo } = req.params;
+  if (!codigo || !/^\d+$/.test(codigo)) {
+    return res.status(400).json({ error: 'Codigo de operador invalido' });
+  }
+
+  const [rows] = await pool.execute(
+    'SELECT id, nome, perfil FROM usuario WHERE id = ? AND ativo = 1 LIMIT 1',
+    [Number(codigo)]
+  );
+
+  if (!rows.length) return res.status(404).json({ error: 'Operador nao encontrado' });
+  return res.json(rows[0]);
+}
+
 async function perfil(req, res) {
   const [rows] = await pool.execute(
     'SELECT id, nome, email, perfil, ativo, permissoes, criado_em FROM usuario WHERE id = ?',
@@ -81,4 +96,4 @@ async function inativar(req, res) {
   return res.json({ mensagem: 'Usuário inativado' });
 }
 
-module.exports = { listar, buscarPorId, perfil, criar, atualizar, inativar };
+module.exports = { listar, buscarPorId, getByCode, perfil, criar, atualizar, inativar };

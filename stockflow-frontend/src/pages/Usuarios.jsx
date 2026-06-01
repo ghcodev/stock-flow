@@ -141,7 +141,7 @@ export default function Usuarios() {
   const [showForm,     setShowForm]     = useState(false)
   const [editing,      setEditing]      = useState(null)
   const [permissions,  setPermissions]  = useState(structuredClone(DEFAULT_PERMISSIONS))
-  const [form,         setForm]         = useState({ nome: '', email: '', perfil: 'operador', senha: 'Admin@1234' })
+  const [form,         setForm]         = useState({ nome: '', email: '', perfil: 'operador', senha: '' })
   const [submitting,   setSubmitting]   = useState(false)
   const [quickFilter,  setQuickFilter]  = useState('todos')
   const [openMenuId,   setOpenMenuId]   = useState(null)
@@ -191,7 +191,7 @@ export default function Usuarios() {
       }
       toast.success('Usuário criado com sucesso!')
       setShowForm(false)
-      setForm({ nome: '', email: '', perfil: 'operador', senha: 'Admin@1234' })
+      setForm({ nome: '', email: '', perfil: 'operador', senha: '' })
       load()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao criar usuário.')

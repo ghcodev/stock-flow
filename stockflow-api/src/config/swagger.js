@@ -100,7 +100,7 @@ const options = {
           required: ['email', 'senha'],
           properties: {
             email: { type: 'string', example: 'admin@stockflow.com' },
-            senha: { type: 'string', example: 'Admin@1234' },
+            senha: { type: 'string', example: 'senha_forte_exemplo' },
           },
         },
         LoginResponse: {
