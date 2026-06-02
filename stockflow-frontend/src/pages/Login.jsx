@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import api from '../api/axios.js'
@@ -12,7 +12,7 @@ export default function Login() {
   const [nomeUsuario, setNomeUsuario]         = useState('')
   const [buscandoUsuario, setBuscandoUsuario] = useState(false)
   const [usuarioEncontrado, setUsuarioEncontrado] = useState(false)
-  const [senha, setSenha]     = useState('Admin@1234')
+  const [senha, setSenha]     = useState('admin123')
   const [erro, setErro]       = useState('')
   const [loading, setLoading] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
@@ -28,8 +28,8 @@ export default function Login() {
     const timer = setTimeout(async () => {
       setBuscandoUsuario(true)
       try {
-        const res = await api.get(`/auth/usuario-por-codigo/${codigo}`)
-        if (res.data.encontrado) {
+        const res = await api.get(`/usuarios/codigo/${codigo}`)
+        if (res.data?.id) {
           setNomeUsuario(res.data.nome)
           setUsuarioEncontrado(true)
           setErro('')
@@ -37,7 +37,6 @@ export default function Login() {
         } else {
           setNomeUsuario('')
           setUsuarioEncontrado(false)
-          if (codigo.length >= 1) setErro('Código não encontrado')
         }
       } catch {
         setNomeUsuario('')
@@ -45,7 +44,7 @@ export default function Login() {
       } finally {
         setBuscandoUsuario(false)
       }
-    }, 400)
+    }, 600)
     return () => clearTimeout(timer)
   }, [codigo])
 
@@ -209,6 +208,8 @@ export default function Login() {
             border-color: var(--color-border-focus);
             box-shadow: 0 0 0 3px var(--color-focus-ring);
           }
+          .sf-code-input::placeholder { color: transparent; }
+          .sf-code-input:focus::placeholder { color: var(--color-text-tertiary); }
 
           .sf-senha-input {
             width: 100%;
@@ -243,7 +244,7 @@ export default function Login() {
           .sf-submit-btn:not(:disabled):hover { opacity: 0.88; }
         `}</style>
 
-        {/* Padrão de grid SVG */}
+        {/* PadrÃ£o de grid SVG */}
         <svg style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
           opacity: 0.4, pointerEvents: 'none',
@@ -257,7 +258,7 @@ export default function Login() {
           <rect width="100%" height="100%" fill="url(#sf-grid)" />
         </svg>
 
-        {/* Círculos decorativos brand */}
+        {/* CÃ­rculos decorativos brand */}
         <div style={{
           position: 'absolute', top: -120, right: -120,
           width: 400, height: 400, borderRadius: '50%',
@@ -282,14 +283,14 @@ export default function Login() {
           position: 'relative', zIndex: 1,
         }}>
 
-          {/* Header — gradiente brand */}
+          {/* Header â€” gradiente brand */}
           <div style={{
             background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))',
             padding: '28px 32px',
             position: 'relative',
             overflow: 'hidden',
           }}>
-            {/* Detalhe geométrico interno */}
+            {/* Detalhe geomÃ©trico interno */}
             <div style={{
               position: 'absolute', top: -30, right: -30,
               width: 120, height: 120, borderRadius: '50%',
@@ -315,28 +316,27 @@ export default function Login() {
           {/* Body */}
           <div style={{ padding: '28px 32px' }}>
 
-            {/* Campo Código */}
+            {/* Campo CÃ³digo */}
             <div style={{ marginBottom: 20 }}>
 
               {nomeUsuario && (
                 <div style={{
-                  fontSize: 20, fontWeight: 700, letterSpacing: '0.02em',
-                  color: 'var(--color-text-primary)', marginBottom: 8,
-                  textTransform: 'uppercase',
+                  fontSize: 14, fontWeight: 700,
+                  color: 'var(--color-success-700)', marginBottom: 8,
                   animation: 'fadeIn 0.2s ease',
                   lineHeight: 1.2,
                 }}>
-                  {nomeUsuario}
+                  Ola, {nomeUsuario}
                 </div>
               )}
               {!nomeUsuario && codigo && !buscandoUsuario && (
                 <div style={{ fontSize: 13, color: 'var(--color-danger-600)', marginBottom: 8 }}>
-                  Operador não encontrado
+                  Operador nao encontrado
                 </div>
               )}
               {buscandoUsuario && (
                 <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
-                  Buscando…
+                  Buscando...
                 </div>
               )}
 
@@ -349,11 +349,12 @@ export default function Login() {
                 <input
                   id="campo-codigo"
                   className="sf-code-input"
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={codigo}
                   onChange={e => { setCodigo(e.target.value); setErro('') }}
-                  placeholder=" "
+                  placeholder="Digite seu codigo"
                   autoFocus
                   style={{
                     border: `1px solid ${usuarioEncontrado
@@ -369,7 +370,7 @@ export default function Login() {
                     pointerEvents: 'none',
                   }} />
                 )}
-                <label>Código do Operador</label>
+                <label>Codigo do Operador</label>
               </div>
             </div>
 
@@ -434,19 +435,19 @@ export default function Login() {
               </div>
             )}
 
-            {/* Botão */}
+            {/* BotÃ£o */}
             <button
               type="submit"
-              disabled={loading || !usuarioEncontrado}
+              disabled={loading || !usuarioEncontrado || !senha}
               className={`sf-submit-btn ${loading ? 'btn-loading' : ''}`}
               style={{
-                background: usuarioEncontrado
+                background: usuarioEncontrado && senha
                   ? 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800))'
                   : 'var(--color-bg-muted)',
-                color: usuarioEncontrado
+                color: usuarioEncontrado && senha
                   ? 'var(--color-text-inverse)'
                   : 'var(--color-text-tertiary)',
-                cursor: usuarioEncontrado && !loading ? 'pointer' : 'not-allowed',
+                cursor: usuarioEncontrado && senha && !loading ? 'pointer' : 'not-allowed',
               }}
             >
               {loading ? (
@@ -463,7 +464,7 @@ export default function Login() {
 
           </div>
 
-          {/* Rodapé */}
+          {/* RodapÃ© */}
           <div style={{
             padding: '14px 32px',
             borderTop: '1px solid var(--color-border-muted)',

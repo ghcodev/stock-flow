@@ -13,12 +13,17 @@ async function login(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
 
-  const { identifier, senha } = req.body;
+  const codigo = req.body.codigo ?? req.body.id;
+  const { senha } = req.body;
 
-  const isNumerico = /^\d+$/.test(String(identifier || ''));
-  const [rows] = isNumerico
-    ? await pool.execute('SELECT * FROM usuario WHERE id = ? AND ativo = 1 LIMIT 1', [identifier])
-    : await pool.execute('SELECT * FROM usuario WHERE email = ? AND ativo = 1 LIMIT 1', [identifier]);
+  if (!codigo || !/^\d+$/.test(String(codigo))) {
+    return res.status(400).json({ error: 'Codigo do operador obrigatorio', timestamp: new Date().toISOString() });
+  }
+
+  const [rows] = await pool.execute(
+    'SELECT * FROM usuario WHERE id = ? AND ativo = 1 LIMIT 1',
+    [Number(codigo)]
+  );
 
   if (!rows.length) {
     return res.status(401).json({ error: 'Credenciais inválidas', timestamp: new Date().toISOString() });

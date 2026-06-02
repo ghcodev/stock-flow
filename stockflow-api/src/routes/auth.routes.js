@@ -9,7 +9,13 @@ const router = Router();
 router.get('/usuario-por-codigo/:codigo', usuarioPorCodigo);
 
 router.post('/login',
-  body('identifier').notEmpty().withMessage('Código ou e-mail obrigatório'),
+  body().custom(value => {
+    const codigo = value.codigo ?? value.id;
+    if (!codigo || !/^\d+$/.test(String(codigo))) {
+      throw new Error('Codigo do operador obrigatorio');
+    }
+    return true;
+  }),
   body('senha').isLength({ min: 6 }).trim().withMessage('Senha deve ter no mínimo 6 caracteres'),
   validate,
   login

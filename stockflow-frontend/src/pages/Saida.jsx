@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import Layout from '../components/Layout.jsx'
+import RFIDModal from '../components/RFIDModal.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
 import {
@@ -100,6 +101,8 @@ export default function Saida() {
   const [lotes, setLotes] = useState([])
   const [loteMap, setLoteMap] = useState({})
   const [form, setForm] = useState({ id_lote: '', quantidade: '', destino: '', motivo: 'Requisicao medica' })
+  const [rfidModalOpen, setRfidModalOpen] = useState(false)
+  const [rfidOrigem, setRfidOrigem] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [formErr, setFormErr] = useState('')
   const [quickFilter, setQuickFilter] = useState('todas')
@@ -146,6 +149,7 @@ export default function Saida() {
   async function openForm() {
     setShowForm(true)
     setForm({ id_lote: '', quantidade: '', destino: '', motivo: 'Requisicao medica' })
+    setRfidOrigem(null)
     setFormErr('')
     if (lotes.length) return
     try { await load() } catch {}
@@ -162,6 +166,7 @@ export default function Saida() {
         quantidade: Number(form.quantidade),
         destino: form.destino,
         motivo: form.motivo,
+        ...(rfidOrigem ? { observacao: `Origem: Leitura RFID manual | Codigo: ${rfidOrigem.codigo}` } : {}),
       })
       toast.success('Saida registrada com sucesso!')
       setShowForm(false)
@@ -180,6 +185,34 @@ export default function Saida() {
 
   function getLoteForExit(m) {
     return loteMap[String(m.id_lote)] || {}
+  }
+
+  function mergeRFIDLote(lote) {
+    const id = String(lote.id_lote || lote.id)
+    const row = {
+      ...lote,
+      id,
+      codigo: lote.numero_lote || lote.codigo,
+      numero_lote: lote.numero_lote || lote.codigo,
+      produto_nome: lote.produto_nome,
+    }
+    setLotes(prev => prev.some(item => String(item.id) === id) ? prev : [row, ...prev])
+    setLoteMap(prev => ({ ...prev, [id]: row }))
+    return id
+  }
+
+  function handleRFIDConfirm(lote) {
+    const id = mergeRFIDLote(lote)
+    setShowForm(true)
+    setForm(f => ({
+      ...f,
+      id_lote: id,
+      quantidade: f.quantidade || '',
+    }))
+    setFormErr('')
+    setRfidOrigem({ codigo: lote.codigo_rfid || lote.codigo || lote.numero_lote })
+    setRfidModalOpen(false)
+    toast.success(`Lote ${lote.numero_lote || id} carregado via RFID`)
   }
 
   function getExitDestination(m) {
@@ -334,7 +367,7 @@ export default function Saida() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline btn-sm"><ScanLine size={14} /> Ler RFID</button>
+          <button className="btn btn-outline btn-sm" onClick={() => setRfidModalOpen(true)}><ScanLine size={14} /> Ler RFID</button>
           <button className="btn btn-outline btn-sm"><Download size={14} /> Exportar</button>
           <button className="btn btn-primary" onClick={openForm}><Plus size={14} /> Registrar saida</button>
         </div>
@@ -539,7 +572,7 @@ export default function Saida() {
                   <label className="form-label">Destino *</label>
                   <select className="select" value={form.destino} onChange={e => setForm(f => ({ ...f, destino: e.target.value }))} required>
                     <option value="">Selecionar destino...</option>
-                    {['UTI Adulto', 'Centro Cirurgico', 'Pronto Socorro', 'Ambulatorio', 'Oncologia', 'Farmacia'].map(d => (
+                    {['Distribuidor Regional', 'Rede de Supermercados', 'Atacado', 'Cliente Direto', 'Ponto de Venda', 'E-commerce', 'Filial', 'Exportacao', 'Devolucao ao Fornecedor', 'Descarte Sanitario'].map(d => (
                       <option key={d}>{d}</option>
                     ))}
                   </select>
@@ -553,7 +586,7 @@ export default function Saida() {
                   <div className="form-group">
                     <label className="form-label">Motivo</label>
                     <select className="select" value={form.motivo} onChange={e => setForm(f => ({ ...f, motivo: e.target.value }))}>
-                      {['Requisicao medica', 'Reposicao', 'Dispensacao', 'Descarte'].map(m => <option key={m}>{m}</option>)}
+                      {['Venda', 'Distribuicao', 'Reposicao de Estoque', 'Picking para Expedicao', 'Descarte Sanitario', 'Devolucao ao Fornecedor'].map(m => <option key={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
@@ -571,6 +604,12 @@ export default function Saida() {
           </div>
         </div>
       )}
+      <RFIDModal
+        isOpen={rfidModalOpen}
+        onClose={() => setRfidModalOpen(false)}
+        onConfirm={handleRFIDConfirm}
+        mode="saida"
+      />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes drawerIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}

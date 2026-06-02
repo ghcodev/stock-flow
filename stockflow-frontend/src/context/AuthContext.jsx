@@ -53,8 +53,8 @@ export function AuthProvider({ children }) {
     return () => { active = false }
   }, [])
 
-  async function login(identifier, senha) {
-    const { data } = await api.post('/auth/login', { identifier, senha })
+  async function login(codigo, senha) {
+    const { data } = await api.post('/auth/login', { codigo: String(codigo), senha })
     const appUser = buildAppUser(data.usuario)
     localStorage.setItem('stockflow_token', data.token)
     localStorage.setItem('stockflow_user', JSON.stringify(appUser))

@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout.jsx'
+import RFIDModal from '../components/RFIDModal.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
 import {
@@ -93,6 +94,8 @@ export default function Entrada() {
   const [lotes, setLotes] = useState([])
   const [loteMap, setLoteMap] = useState({})
   const [form, setForm] = useState({ id_lote: '', quantidade: '' })
+  const [rfidModalOpen, setRfidModalOpen] = useState(false)
+  const [rfidOrigem, setRfidOrigem] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [quickFilter, setQuickFilter] = useState('todas')
   const [sort, setSort] = useState({ key: 'data', dir: 'desc' })
@@ -138,6 +141,7 @@ export default function Entrada() {
   async function openForm() {
     setShowForm(true)
     setForm({ id_lote: '', quantidade: '' })
+    setRfidOrigem(null)
     if (lotes.length) return
     try { await load() } catch {}
   }
@@ -150,6 +154,7 @@ export default function Entrada() {
       await api.post('/movimentacoes/entrada', {
         id_lote: Number(form.id_lote),
         quantidade: Number(form.quantidade),
+        ...(rfidOrigem ? { observacao: `Origem: Leitura RFID manual | Codigo: ${rfidOrigem.codigo}` } : {}),
       })
       toast.success('Entrada registrada com sucesso!')
       setShowForm(false)
@@ -170,6 +175,33 @@ export default function Entrada() {
 
   function getLoteForEntry(m) {
     return loteMap[String(m.id_lote)] || {}
+  }
+
+  function mergeRFIDLote(lote) {
+    const id = String(lote.id_lote || lote.id)
+    const row = {
+      ...lote,
+      id,
+      codigo: lote.numero_lote || lote.codigo,
+      numero_lote: lote.numero_lote || lote.codigo,
+      produto_nome: lote.produto_nome,
+    }
+    setLotes(prev => prev.some(item => String(item.id) === id) ? prev : [row, ...prev])
+    setLoteMap(prev => ({ ...prev, [id]: row }))
+    return id
+  }
+
+  function handleRFIDConfirm(lote) {
+    const id = mergeRFIDLote(lote)
+    setShowForm(true)
+    setForm(f => ({
+      ...f,
+      id_lote: id,
+      quantidade: f.quantidade || '',
+    }))
+    setRfidOrigem({ codigo: lote.codigo_rfid || lote.codigo || lote.numero_lote })
+    setRfidModalOpen(false)
+    toast.success(`Lote ${lote.numero_lote || id} carregado via RFID`)
   }
 
   function getEntryLocation(m) {
@@ -303,7 +335,7 @@ export default function Entrada() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline btn-sm"><ScanLine size={14} /> Ler RFID</button>
+          <button className="btn btn-outline btn-sm" onClick={() => setRfidModalOpen(true)}><ScanLine size={14} /> Ler RFID</button>
           <button className="btn btn-outline btn-sm"><Download size={14} /> Exportar</button>
           <button className="btn btn-primary" onClick={openForm}><Plus size={14} /> Nova entrada</button>
         </div>
@@ -505,6 +537,12 @@ export default function Entrada() {
           </div>
         </div>
       )}
+      <RFIDModal
+        isOpen={rfidModalOpen}
+        onClose={() => setRfidModalOpen(false)}
+        onConfirm={handleRFIDConfirm}
+        mode="entrada"
+      />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes drawerIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}

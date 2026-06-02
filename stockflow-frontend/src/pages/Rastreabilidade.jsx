@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
+import RFIDModal from '../components/RFIDModal.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
 import {
@@ -138,6 +139,7 @@ export default function Rastreabilidade() {
   const [searched,       setSearched]       = useState(false)
   const [notFound,       setNotFound]       = useState(false)
   const [recentSearches, setRecentSearches] = useState(RECENT_INIT)
+  const [rfidModalOpen,  setRfidModalOpen]  = useState(false)
 
   /* ── API ───────────────────────────────────────────────── */
   async function buscarTermo(termo) {
@@ -185,6 +187,14 @@ export default function Rastreabilidade() {
     setTimeline([])
     setSearched(false)
     setNotFound(false)
+  }
+
+  function handleRFIDConfirm(loteEncontrado) {
+    const termo = loteEncontrado.numero_lote || loteEncontrado.codigo_lote || loteEncontrado.codigo || loteEncontrado.codigo_rfid || ''
+    setRfidModalOpen(false)
+    if (!termo) return
+    setQuery(termo)
+    buscarTermo(termo)
   }
 
   useEffect(() => {
@@ -246,7 +256,7 @@ export default function Rastreabilidade() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline btn-sm" onClick={() => toast.info('Escanear RFID em breve.')}>
+          <button className="btn btn-outline btn-sm" onClick={() => setRfidModalOpen(true)}>
             <ScanLine size={14} /> Escanear RFID
           </button>
         </div>
@@ -485,6 +495,13 @@ export default function Rastreabilidade() {
 
         </div>
       )}
+
+      <RFIDModal
+        isOpen={rfidModalOpen}
+        onClose={() => setRfidModalOpen(false)}
+        onConfirm={handleRFIDConfirm}
+        mode="rastreabilidade"
+      />
 
       <style>{`
 

@@ -626,11 +626,50 @@ function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
               </div>
             ))}
 
-            {dias !== null && dias <= 60 && (
-              <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 'var(--border-radius-md, 8px)', background: dias < 0 ? 'var(--color-danger-50)' : dias <= 30 ? '#FAEEDA' : '#EAF3DE', color: dias < 0 ? 'var(--color-danger-700)' : dias <= 30 ? '#BA7517' : '#3B6D11', fontSize: 12, fontWeight: 500 }}>
-                {dias < 0 ? `Vencido há ${Math.abs(dias)} dias` : dias === 0 ? 'Vence hoje' : `Vence em ${dias} dias`}
-              </div>
-            )}
+            {lote && (() => {
+              const isBloqueado = slot.status === 'bloqueado' || slot.status === 'quarentena'
+              const isVencido    = dias !== null && dias < 0
+              const isCritico    = !isVencido && dias !== null && dias <= 15
+              const isAtencao    = !isVencido && !isCritico && dias !== null && dias <= 30
+
+              const cfg = isBloqueado ? {
+                text: '🔒 BLOQUEADO',
+                bg: 'var(--color-danger-50)', cor: 'var(--color-danger-700)',
+                sugestao: 'Aguardando liberação do administrador',
+              } : isVencido ? {
+                text: `VENCIDO HÁ ${Math.abs(dias)} DIA${Math.abs(dias) !== 1 ? 'S' : ''}`,
+                bg: 'var(--color-danger-50)', cor: 'var(--color-danger-700)',
+                sugestao: 'Lote deve ser bloqueado imediatamente',
+              } : isCritico ? {
+                text: `VENCENDO EM ${dias} DIA${dias !== 1 ? 'S' : ''}`,
+                bg: '#FFF3E0', cor: '#E65100',
+                sugestao: 'Priorizar saída ou registrar descarte',
+              } : isAtencao ? {
+                text: `ATENÇÃO — vence em ${dias} dias`,
+                bg: '#FAEEDA', cor: '#BA7517',
+                sugestao: 'Vencimento próximo — monitorar',
+              } : {
+                text: `ATIVO${dias !== null ? ` · ${dias} dias restantes` : ''}`,
+                bg: 'var(--color-success-50)', cor: 'var(--color-success-700)',
+                sugestao: null,
+              }
+
+              return (
+                <div style={{ marginTop: 14, borderTop: '1px solid var(--color-border-muted)', paddingTop: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
+                    Status do Lote
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: cfg.bg, color: cfg.cor, marginBottom: cfg.sugestao ? 8 : 0 }}>
+                    {cfg.text}
+                  </div>
+                  {cfg.sugestao && (
+                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', background: 'var(--color-bg-subtle)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.5 }}>
+                      {cfg.sugestao}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             <button
               onClick={onVerLote}
@@ -1147,6 +1186,25 @@ export default function MapaArmazem() {
               )}
             </div>
           )}
+
+          <div style={{ position: 'absolute', bottom: 16, left: 16, background: 'rgba(0,0,0,0.7)', borderRadius: 8, padding: 12, backdropFilter: 'blur(4px)', zIndex: 10, pointerEvents: 'none' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>LEGENDA</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { cor: '#86efac', label: 'Vazio' },
+                { cor: '#93c5fd', label: 'Ocupado' },
+                { cor: '#fcd34d', label: 'Vencimento próximo (≤30d)' },
+                { cor: '#fb923c', label: 'Crítico (≤15 dias)' },
+                { cor: '#f87171', label: 'Bloqueado / Vencido' },
+                { cor: '#94a3b8', label: 'Inativo' },
+              ].map(({ cor, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 2, background: cor, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: '#fff', whiteSpace: 'nowrap' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <aside className="warehouse-side">
