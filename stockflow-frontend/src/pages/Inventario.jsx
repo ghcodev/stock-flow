@@ -501,7 +501,7 @@ export default function Inventario() {
                                         {inv.etapa === 'contando' ? 'Continuar Contagem' : 'Iniciar Contagem'}
                                       </button>
                                     )}
-                                    {inv.etapa === 'confirmado' && (
+                                    {inv.etapa === 'confirmado' && user?.isAdmin && (
                                       <button type="button" onClick={() => openInventory(inv, 'confirmado')}>
                                         <CheckCircle size={13} /> Finalizar
                                       </button>
@@ -565,6 +565,7 @@ export default function Inventario() {
           accuracy={accuracy}
           onBack={() => setMode('lista')}
           onFinalize={() => setShowFinalize(true)}
+          canFinalize={Boolean(user?.isAdmin)}
         />
       )}
 
@@ -643,8 +644,9 @@ export default function Inventario() {
                   {drawerInv.etapa === 'contando' ? 'Continuar Contagem' : 'Iniciar Contagem'}
                 </button>
               )}
-              {drawerInv.etapa === 'confirmado' && (
-                <button className="btn btn-primary" onClick={() => openInventory(drawerInv, 'confirmado')}>Finalizar</button>
+              {drawerInv.etapa === 'confirmado' && (user?.isAdmin
+                ? <button className="btn btn-primary" onClick={() => openInventory(drawerInv, 'confirmado')}>Finalizar</button>
+                : <FinalizeHint />
               )}
               {drawerInv.etapa === 'finalizado' && (
                 <button className="btn btn-outline" onClick={() => openInventory(drawerInv, 'relatorio')}>Ver Relatório</button>
@@ -701,7 +703,7 @@ export default function Inventario() {
         />
       )}
 
-      {showFinalize && (
+      {showFinalize && user?.isAdmin && (
         <DivergenceModal
           danger
           title="Finalizar e aplicar ajustes"
@@ -855,7 +857,15 @@ function DivergenceModal({ title, items, onCancel, onConfirm, confirmLabel, dang
   )
 }
 
-function ConfirmedView({ selected, items, divergences, accuracy, onBack, onFinalize }) {
+function FinalizeHint() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+      <ShieldCheck size={14} /> Somente administradores podem finalizar e aplicar ajustes.
+    </span>
+  )
+}
+
+function ConfirmedView({ selected, items, divergences, accuracy, onBack, onFinalize, canFinalize }) {
   return (
     <>
       <div className="page-header">
@@ -865,7 +875,9 @@ function ConfirmedView({ selected, items, divergences, accuracy, onBack, onFinal
           <div className="subtitle">{etapaBadge('confirmado')} <span className="sep" /> {divergences.length} divergências</div>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-danger" onClick={onFinalize}><AlertTriangle size={14} /> Finalizar e Aplicar Ajustes</button>
+          {canFinalize
+            ? <button className="btn btn-danger" onClick={onFinalize}><AlertTriangle size={14} /> Finalizar e Aplicar Ajustes</button>
+            : <FinalizeHint />}
         </div>
       </div>
       <Summary counted={items.length} total={items.length} divergences={divergences.length} accuracy={accuracy} />

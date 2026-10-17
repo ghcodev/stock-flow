@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
 const { normalizarIP } = require('../middleware/audit');
 
 const router = Router();
@@ -164,7 +165,7 @@ router.patch('/:id/confirmar', async (req, res) => {
   return res.json(await getInventario(req.params.id));
 });
 
-router.patch('/:id/finalizar', async (req, res) => {
+router.patch('/:id/finalizar', adminMiddleware, async (req, res) => {
   const inventario = await getInventario(req.params.id);
   if (!inventario) return res.status(404).json({ error: 'Inventário não encontrado' });
   if (inventario.etapa === 'finalizado') return res.status(422).json({ error: 'Inventário já finalizado' });
