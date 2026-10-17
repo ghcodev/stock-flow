@@ -179,10 +179,17 @@ export default function Transferencia() {
   }
 
   const motivoValido = form.motivo_movimentacao.trim().length >= 10
+  const loteSelecionado = lotes.find(l => String(l.id) === String(form.id_lote))
+  const destinos = loteSelecionado ? locs.filter(l => String(l.id) !== String(loteSelecionado.id_localizacao)) : locs
+  const mesmaLocalizacao = Boolean(loteSelecionado && String(loteSelecionado.id_localizacao) === String(form.id_localizacao_destino))
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.id_lote || !form.id_localizacao_destino || !form.quantidade || !motivoValido) return
+    if (mesmaLocalizacao) {
+      setFormErr('Destino igual à localização atual do lote')
+      return
+    }
     setSubmitting(true)
     setFormErr('')
     try {
@@ -589,7 +596,7 @@ export default function Transferencia() {
                   <label className="form-label">Localização destino *</label>
                   <select className="select" value={form.id_localizacao_destino} onChange={e => setForm(f => ({ ...f, id_localizacao_destino: e.target.value }))} required>
                     <option value="">Selecionar localização…</option>
-                    {locs.map(l => <option key={l.id} value={l.id}>{l.codigo || `${l.corredor}-N${l.nivel}-P${l.posicao}`}</option>)}
+                    {destinos.map(l => <option key={l.id} value={l.id}>{l.codigo || `${l.corredor}-N${l.nivel}-P${l.posicao}`}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -615,7 +622,7 @@ export default function Transferencia() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={submitting || !motivoValido}>
+                <button type="submit" className="btn btn-primary" disabled={submitting || !motivoValido || mesmaLocalizacao}>
                   {submitting
                     ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--color-text-inverse)', borderRadius: '50%', animation: 'spin 0.65s linear infinite', display: 'inline-block' }} /> Registrando…</>
                     : <><CheckCircle size={14} /> Confirmar transferência</>

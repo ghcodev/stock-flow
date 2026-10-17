@@ -129,7 +129,13 @@ async function transferencia(req, res) {
   if (!lotes.length) return err(res, 404, 'Lote não encontrado');
   const lote = lotes[0];
 
-  if (lote.status_lote === 'bloqueado') return err(res, 422, 'Lote bloqueado — transferência não permitida', 'RN16');
+  if (lote.status_lote !== 'ativo') return errLoteInativo(res, lote, 'transferência');
+
+  const [destinos] = await pool.execute('SELECT id FROM localizacao WHERE id = ?', [id_localizacao_destino]);
+  if (!destinos.length) return err(res, 404, 'Localização de destino não encontrada');
+  if (Number(id_localizacao_destino) === Number(lote.id_localizacao)) {
+    return err(res, 422, 'Destino igual à localização atual do lote', 'RN06');
+  }
 
   const conn = await pool.getConnection();
   try {
