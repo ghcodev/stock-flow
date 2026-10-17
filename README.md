@@ -113,7 +113,7 @@ mysql -u root -p < database/setup.sql
 
 O script principal cria as tabelas base: `localizacao`, `produto`, `usuario`, `lote`, `movimentacao`, `identificacao` e `auditoria_log`, além de triggers de auditoria e dados de seed.
 
-Observação real do projeto: existem rotas e telas de inventário que dependem da tabela `inventario`, mas `database/setup.sql` não cria essa tabela. O arquivo `database/feature_inventory_sap_permissions.sql` altera `inventario`, `usuario` e `produto`, assumindo que a tabela `inventario` já exista.
+O script `setup.sql` cria o esquema completo. O arquivo `database/feature_inventory_sap_permissions.sql` só é necessário para atualizar bancos criados antes desta versão.
 
 ## Variáveis de Ambiente
 

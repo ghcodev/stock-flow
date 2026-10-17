@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS produto (
   unidade_medida   VARCHAR(20)    NOT NULL,
   estoque_minimo   DECIMAL(10,3)  NOT NULL DEFAULT 0,
   ativo            TINYINT(1)     NOT NULL DEFAULT 1,
+  sku_sap          VARCHAR(40)    NULL,
   criado_em        DATETIME       NOT NULL DEFAULT NOW(),
   atualizado_em    DATETIME       NOT NULL DEFAULT NOW() ON UPDATE NOW(),
   PRIMARY KEY (id)
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS usuario (
   senha_hash  VARCHAR(255) NOT NULL,
   perfil      ENUM('administrador','operador') NOT NULL DEFAULT 'operador',
   ativo       TINYINT(1)   NOT NULL DEFAULT 1,
+  permissoes  JSON         NULL,
   criado_em   DATETIME     NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -124,6 +126,26 @@ CREATE TABLE IF NOT EXISTS auditoria_log (
   ip_usuario       VARCHAR(45)  NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_auditoria_usuario FOREIGN KEY (id_usuario) REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS inventario (
+  id                  INT            NOT NULL AUTO_INCREMENT,
+  corredor            VARCHAR(10)    NOT NULL,
+  id_usuario          INT            NOT NULL,
+  itens               JSON           NULL,
+  total_itens         INT            NOT NULL DEFAULT 0,
+  total_posicoes      INT            NOT NULL DEFAULT 0,
+  total_conferidas    INT            NOT NULL DEFAULT 0,
+  total_divergencias  INT            NOT NULL DEFAULT 0,
+  divergencias        INT            NOT NULL DEFAULT 0,
+  acuracidade         DECIMAL(5,2)   NOT NULL DEFAULT 100.00,
+  status              ENUM('em andamento','concluido') NOT NULL DEFAULT 'em andamento',
+  etapa               ENUM('iniciado','contando','confirmado','finalizado') NOT NULL DEFAULT 'iniciado',
+  observacao          TEXT           NULL,
+  iniciado_em         DATETIME       NOT NULL DEFAULT NOW(),
+  concluido_em        DATETIME       NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_inventario_usuario FOREIGN KEY (id_usuario) REFERENCES usuario (id) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
