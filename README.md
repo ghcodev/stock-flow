@@ -115,6 +115,10 @@ O script principal cria as tabelas base: `localizacao`, `produto`, `usuario`, `l
 
 O script `setup.sql` cria o esquema completo. O arquivo `database/feature_inventory_sap_permissions.sql` só é necessário para atualizar bancos criados antes desta versão.
 
+## Banco PostgreSQL (4º período)
+
+O protótipo usa MySQL 8.4. No 4º período, o projeto valida a migração da camada de dados para PostgreSQL 16, com auditoria em JSONB por triggers e controle de concorrência com `SELECT ... FOR UPDATE`. O ambiente sobe com Docker Compose e os scripts das provas de conceito ficam em `database/postgres/`; as instruções estão em [`database/postgres/README.md`](database/postgres/README.md). Os diagramas UML do projeto estão em `docs/diagramas/`.
+
 ## Variáveis de Ambiente
 
 API (`stockflow-api/.env`):

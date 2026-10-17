@@ -44,6 +44,7 @@
 | Triggers | Auditoria automática |
 | Constraints | Integridade de quantidade, chaves e enums |
 | SQL direto | Controle explícito de consultas e transações |
+| PostgreSQL 16 | Banco das provas de conceito do 4º período (Docker Compose), alvo da migração |
 
 ## Ferramentas
 
