@@ -6,6 +6,11 @@ function err(res, status, msg, codigo = null) {
   return res.status(status).json({ error: msg, ...(codigo && { codigo }), timestamp: new Date().toISOString() });
 }
 
+function errLoteInativo(res, lote, operacao) {
+  const status = lote.status_lote === 'quarentena' ? 'em quarentena' : lote.status_lote;
+  return err(res, 422, `Lote ${status} — ${operacao} não permitida`, 'RN16');
+}
+
 async function listar(req, res) {
   const { tipo = '', lote = '', usuario = '', search = '', page = 1, limit = 20 } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
@@ -91,8 +96,8 @@ async function saida(req, res) {
   if (!lotes.length) return err(res, 404, 'Lote não encontrado');
   const lote = lotes[0];
 
-  if (lote.status_lote === 'bloqueado') return err(res, 422, 'Lote bloqueado — saída não permitida', 'RN16');
-  if (Number(quantidade) > Number(lote.quantidade)) return err(res, 422, `Quantidade insuficiente. Disponível: ${lote.quantidade}`, 'RN11');
+  if (lote.status_lote !== 'ativo') return errLoteInativo(res, lote, 'saída');
+  if (Number(quantidade) > Number(lote.quantidade)) return err(res, 409, `Quantidade insuficiente. Disponível: ${lote.quantidade}`, 'RN11');
 
   const conn = await pool.getConnection();
   try {
