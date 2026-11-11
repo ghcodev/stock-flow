@@ -388,13 +388,13 @@ Resposta: lista de localizações.
 
 ### GET `/localizacoes/sugestao`
 
-Dispon?vel para administradores e operadores autenticados em `/api/v1/localizacoes/sugestao` e `/api/localizacoes/sugestao`.
+Disponível para administradores e operadores autenticados em `/api/v1/localizacoes/sugestao` e `/api/localizacoes/sugestao`.
 
-Informe `id_produto` (inteiro positivo) e `quantidade` (positiva, com at? tr?s casas decimais). `data_validade` ? opcional e usa o formato `AAAA-MM-DD`.
+Informe `id_produto` (inteiro positivo) e `quantidade` (positiva, com até três casas decimais). `data_validade` é opcional e usa o formato `AAAA-MM-DD`.
 
-A resposta cont?m `sugestoes`, com at? tr?s posi??es em ordem decrescente de pontua??o. Cada item cont?m `id`, `corredor`, `nivel`, `posicao`, `pontuacao` (0 a 100), `criterios` (notas de 0 a 1 para `giro`, `validade`, `agrupamento` e `ergonomia`) e `motivos`.
+A resposta contém `sugestoes`, com até três posições em ordem decrescente de pontuação. Cada item contém `id`, `corredor`, `nivel`, `posicao`, `pontuacao` (0 a 100), `criterios` (notas de 0 a 1 para `giro`, `validade`, `agrupamento` e `ergonomia`) e `motivos`.
 
-`descartadas` conta as posi??es que falharam nas regras de zona, ocupa??o, capacidade ou peso. `motivo_vazio` explica a aus?ncia de sugest?es ou vem como `null` quando h? resultados. Par?metros inv?lidos retornam 400 e produto inexistente retorna 404.
+`descartadas` conta as posições que falharam nas regras de zona, ocupação, capacidade ou peso. `motivo_vazio` explica a ausência de sugestões ou vem como `null` quando há resultados. Parâmetros inválidos retornam 400 e produto inexistente retorna 404.
 
 ### GET `/localizacoes/:id/lotes`
 

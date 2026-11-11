@@ -39,7 +39,7 @@ async function sugestao(req, res, next) {
   const { id_produto, quantidade, data_validade } = req.query;
   try {
     const resultado = await sugerirPosicoes(id_produto, { quantidade, data_validade });
-    if (!resultado) return res.status(404).json({ error: 'Produto n?o encontrado' });
+    if (!resultado) return res.status(404).json({ error: 'Produto não encontrado' });
     return res.json(resultado);
   } catch (error) {
     return next(error);

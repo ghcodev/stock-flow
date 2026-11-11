@@ -337,8 +337,8 @@ const options = {
       },
       '/localizacoes/sugestao': {
         get: {
-          tags: ['Localiza??es'],
-          summary: 'Sugerir posi??es para uma entrada',
+          tags: ['Localizações'],
+          summary: 'Sugerir posições para uma entrada',
           security: [{ bearerAuth: [] }],
           servers: [{ url: '/api/v1' }, { url: '/api' }],
           parameters: [
@@ -347,10 +347,10 @@ const options = {
             { name: 'data_validade', in: 'query', schema: { type: 'string', format: 'date' } },
           ],
           responses: {
-            200: { description: 'At? tr?s posi??es em ordem de pontua??o, contagem de descartadas e motivo quando a lista est? vazia' },
-            400: { description: 'Par?metros inv?lidos' },
-            401: { description: 'Autentica??o inv?lida ou ausente' },
-            404: { description: 'Produto n?o encontrado' },
+            200: { description: 'Até três posições em ordem de pontuação, contagem de descartadas e motivo quando a lista está vazia' },
+            400: { description: 'Parâmetros inválidos' },
+            401: { description: 'Autenticação inválida ou ausente' },
+            404: { description: 'Produto não encontrado' },
           },
         },
       },
