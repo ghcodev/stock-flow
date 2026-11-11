@@ -20,6 +20,7 @@ const sugestao = [
     .withMessage('Quantidade deve ser positiva e ter até três casas decimais').toFloat(),
   query('data_validade').optional().isString().withMessage('Validade inválida').bail().matches(/^\d{4}-\d{2}-\d{2}$/).isISO8601({ strict: true })
     .withMessage('Validade inválida, use AAAA-MM-DD'),
+  query('ignorar_localizacao').optional().isInt({ min: 1, max: 2147483647 }).withMessage('Localização a ignorar inválida').toInt(),
   ctrl.sugestao,
 ];
 

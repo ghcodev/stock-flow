@@ -78,3 +78,12 @@ test('retorna até três posições ordenadas com motivos e conta só as descart
   assert.equal(resultado.descartadas, 1);
   assert.equal(resultado.motivo_vazio, null);
 });
+
+test('ignora a localização informada sem contá-la como descartada', () => {
+  const locais = [posicao(1, { ocupantes: [lote] }), posicao(2, { corredor: 'B' }), posicao(3, { corredor: 'B', tipo_zona: 'quimico' })];
+  const resultado = pontuarPosicoes(locais, produto, { ...entrada, ignorar_localizacao: 1 }, contexto);
+  assert.deepEqual(resultado.sugestoes.map(local => local.id), [2]);
+  assert.equal(resultado.descartadas, 1);
+  const semIgnorar = pontuarPosicoes(locais, produto, entrada, contexto);
+  assert.equal(semIgnorar.sugestoes[0].id, 1);
+});

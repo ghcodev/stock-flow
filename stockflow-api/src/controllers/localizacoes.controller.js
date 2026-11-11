@@ -67,9 +67,9 @@ async function sugestao(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
 
-  const { id_produto, quantidade, data_validade } = req.query;
+  const { id_produto, quantidade, data_validade, ignorar_localizacao } = req.query;
   try {
-    const resultado = await sugerirPosicoes(id_produto, { quantidade, data_validade });
+    const resultado = await sugerirPosicoes(id_produto, { quantidade, data_validade, ignorar_localizacao });
     if (!resultado) return res.status(404).json({ error: 'Produto não encontrado' });
     return res.json(resultado);
   } catch (error) {

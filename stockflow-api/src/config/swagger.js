@@ -363,6 +363,7 @@ const options = {
             { name: 'id_produto', in: 'query', required: true, schema: { type: 'integer', minimum: 1 } },
             { name: 'quantidade', in: 'query', required: true, schema: { type: 'number', minimum: 0.001, maximum: 999999999.999, multipleOf: 0.001 } },
             { name: 'data_validade', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'ignorar_localizacao', in: 'query', description: 'Localização excluída das sugestões, como a posição atual do lote em uma transferência', schema: { type: 'integer', minimum: 1 } },
           ],
           responses: {
             200: { description: 'Até três posições em ordem de pontuação, contagem de descartadas e motivo quando a lista está vazia' },

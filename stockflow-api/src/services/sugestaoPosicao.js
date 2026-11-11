@@ -16,9 +16,10 @@ function pontuarPosicoes(candidatas, produto, entrada, contexto) {
   const maiorDistancia = candidatas.reduce((maior, local) => Math.max(maior, local.distancia_expedicao), 0);
   const dias = (Date.parse(entrada.data_validade) - Date.parse(contexto.hoje)) / MILISSEGUNDOS_POR_DIA;
   const urgencia = entrada.data_validade ? Math.max(0, Math.min(1, 1 - dias / 180)) : 0;
+  const avaliadas = candidatas.filter(local => local.id !== entrada.ignorar_localizacao);
   const sugestoes = [];
 
-  for (const local of candidatas) {
+  for (const local of avaliadas) {
     const { id, corredor, nivel, posicao } = local;
     const nivelBaixo = nivel <= 2;
     const ocupacao = local.ocupantes.reduce((total, lote) => total + emMilesimos(lote.quantidade), 0);
@@ -42,7 +43,7 @@ function pontuarPosicoes(candidatas, produto, entrada, contexto) {
     sugestoes.push({ id, corredor, nivel, posicao, pontuacao, criterios, motivos });
   }
 
-  const descartadas = candidatas.length - sugestoes.length;
+  const descartadas = avaliadas.length - sugestoes.length;
   sugestoes.sort((a, b) => b.pontuacao - a.pontuacao || a.id - b.id);
   return {
     sugestoes: sugestoes.slice(0, 3).map(local => ({ ...local, pontuacao: Number(local.pontuacao.toFixed(2)) })),

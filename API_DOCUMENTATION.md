@@ -394,7 +394,7 @@ Resposta: lista de localizações.
 
 Disponível para administradores e operadores autenticados em `/api/v1/localizacoes/sugestao` e `/api/localizacoes/sugestao`.
 
-Informe `id_produto` (inteiro positivo) e `quantidade` (positiva, com até três casas decimais). `data_validade` é opcional e usa o formato `AAAA-MM-DD`.
+Informe `id_produto` (inteiro positivo) e `quantidade` (positiva, com até três casas decimais). `data_validade` é opcional e usa o formato `AAAA-MM-DD`. `ignorar_localizacao` é opcional (inteiro positivo) e tira essa localização das sugestões sem contá-la como descartada; a tela de transferência envia a posição atual do lote.
 
 A resposta contém `sugestoes`, com até três posições em ordem decrescente de pontuação. Cada item contém `id`, `corredor`, `nivel`, `posicao`, `pontuacao` (0 a 100), `criterios` (notas de 0 a 1 para `giro`, `validade`, `agrupamento` e `ergonomia`) e `motivos`.
 
