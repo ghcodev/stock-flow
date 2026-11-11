@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS localizacao (
   corredor     VARCHAR(10)    NOT NULL,
   nivel        INT            NOT NULL,
   posicao      INT            NOT NULL,
+  capacidade   DECIMAL(12,3)  NULL,
+  tipo_zona    ENUM('seco','refrigerado','quimico') NOT NULL DEFAULT 'seco',
+  distancia_expedicao INT     NOT NULL DEFAULT 0,
   descricao    VARCHAR(255)   NULL,
   criado_em    DATETIME       NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id)
@@ -35,6 +38,8 @@ CREATE TABLE IF NOT EXISTS produto (
   estoque_minimo   DECIMAL(10,3)  NOT NULL DEFAULT 0,
   ativo            TINYINT(1)     NOT NULL DEFAULT 1,
   sku_sap          VARCHAR(40)    NULL,
+  tipo_armazenagem  ENUM('seco','refrigerado','quimico') NOT NULL DEFAULT 'seco',
+  peso_unitario_kg  DECIMAL(10,3)  NULL,
   criado_em        DATETIME       NOT NULL DEFAULT NOW(),
   atualizado_em    DATETIME       NOT NULL DEFAULT NOW() ON UPDATE NOW(),
   PRIMARY KEY (id)

@@ -5,12 +5,16 @@ CREATE TYPE perfil_usuario AS ENUM ('administrador','operador');
 CREATE TYPE tipo_identificacao AS ENUM ('qr_code','rfid');
 CREATE TYPE operacao_auditoria AS ENUM ('INSERT','UPDATE','DELETE','LOGIN','AJUSTE','BLOQUEIO');
 
+CREATE TYPE tipo_armazenagem AS ENUM ('seco','refrigerado','quimico');
+
 CREATE TABLE produto (
   id_produto INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nome VARCHAR(120) NOT NULL,
   categoria VARCHAR(60),
   descricao TEXT,
   unidade_medida VARCHAR(10) NOT NULL,
+  tipo_armazenagem tipo_armazenagem NOT NULL DEFAULT 'seco',
+  peso_unitario_kg NUMERIC(10,3),
   estoque_minimo NUMERIC(12,3) NOT NULL DEFAULT 0 CHECK (estoque_minimo >= 0),
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -21,6 +25,9 @@ CREATE TABLE localizacao (
   corredor VARCHAR(10) NOT NULL,
   nivel VARCHAR(10) NOT NULL,
   posicao VARCHAR(10) NOT NULL,
+  capacidade NUMERIC(12,3),
+  tipo_zona tipo_armazenagem NOT NULL DEFAULT 'seco',
+  distancia_expedicao INTEGER NOT NULL DEFAULT 0,
   descricao VARCHAR(120),
   UNIQUE (corredor, nivel, posicao)
 );
