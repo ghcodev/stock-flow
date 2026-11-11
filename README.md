@@ -175,7 +175,11 @@ JWT_EXPIRES_IN=8h
 PORT=3000
 ALLOWED_ORIGINS=http://localhost:5173
 NODE_ENV=development
+ASSISTENTE_URL=http://localhost:11434
+ASSISTENTE_MODELO=qwen3.5:9b
 ```
+
+`ASSISTENTE_URL` e `ASSISTENTE_MODELO` são opcionais e configuram o assistente de estoque, que usa um servidor [Ollama](https://ollama.com) com o modelo informado (`ollama pull qwen3.5:9b`). Sem o Ollama acessível ou sem o modelo baixado, a rota do assistente responde 503 e o botão do assistente não aparece.
 
 A API não sobe sem `JWT_SECRET`, `DB_HOST`, `DB_NAME`, `DB_USER` e `DB_PASS`, e exige `JWT_SECRET` com pelo menos 32 caracteres. Para gerar um segredo: `openssl rand -base64 64`.
 

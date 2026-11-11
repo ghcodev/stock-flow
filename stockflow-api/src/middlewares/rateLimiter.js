@@ -16,4 +16,12 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { apiLimiter, loginLimiter };
+const assistenteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Muitas perguntas ao assistente. Aguarde um minuto.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { apiLimiter, loginLimiter, assistenteLimiter };

@@ -99,6 +99,9 @@ app.use('/api/v1/dashboard',      require('./routes/dashboard.routes'));
 app.use('/api/v1/inventarios',    require('./routes/inventarios.routes'));
 app.use('/api/v1/inventario',     require('./routes/inventario.routes'));
 app.use('/api/v1/sap',            require('./routes/sap.routes'));
+const assistente = require('./routes/assistente.routes');
+app.use('/api/v1/assistente',     assistente);
+app.use('/api/assistente',        apiLimiter, assistente);
 
 // Health check
 app.get('/api/v1/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

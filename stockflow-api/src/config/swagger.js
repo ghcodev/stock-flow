@@ -373,6 +373,26 @@ const options = {
           },
         },
       },
+      '/assistente': {
+        get: {
+          tags: ['Assistente'], summary: 'Verificar se o assistente de estoque está disponível',
+          responses: { 200: { description: 'Assistente disponível' }, 503: { description: 'Assistente indisponível' } },
+        },
+        post: {
+          tags: ['Assistente'], summary: 'Perguntar ao assistente de estoque (somente leitura)',
+          servers: [{ url: '/api/v1' }, { url: '/api' }],
+          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['pergunta'], properties: {
+            pergunta: { type: 'string', minLength: 1, maxLength: 1000, example: 'Quais lotes vencem nesta semana?' },
+            historico: { type: 'array', maxItems: 10, items: { type: 'object', properties: { papel: { type: 'string', enum: ['usuario', 'assistente'] }, texto: { type: 'string', maxLength: 2000 } } } },
+          } } } } },
+          responses: {
+            200: { description: 'Resposta em texto e atalhos para os lotes dos produtos com sugestão de posição' },
+            400: { description: 'Pergunta ou histórico inválidos' },
+            429: { description: 'Limite de perguntas por minuto excedido' },
+            503: { description: 'Assistente indisponível' },
+          },
+        },
+      },
       '/localizacoes/{id}/lotes': {
         get: {
           tags: ['Localizações'], summary: 'Lotes alocados em uma posição',

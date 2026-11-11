@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const pool = require('../config/database');
 const logAudit = require('../middleware/audit');
+const { listarLotesVencendo } = require('../services/lotesVencendo');
 
 async function listar(req, res) {
   const { status = '', produto = '', page = 1, limit = 20 } = req.query;
@@ -69,21 +70,7 @@ async function timeline(req, res) {
 }
 
 async function vencendo(req, res) {
-  const [rows] = await pool.execute(
-    `SELECT l.*,
-            l.numero_lote AS codigo,
-            l.status_lote AS status,
-            p.nome AS produto_nome,
-            loc.corredor, loc.nivel, loc.posicao,
-            DATEDIFF(l.data_validade, NOW()) AS dias_para_vencer
-     FROM lote l
-     JOIN produto p ON p.id = l.id_produto
-     JOIN localizacao loc ON loc.id = l.id_localizacao
-     WHERE l.status_lote = 'ativo' AND l.data_validade IS NOT NULL
-       AND l.data_validade <= DATE_ADD(NOW(), INTERVAL 30 DAY)
-     ORDER BY l.data_validade ASC`
-  );
-  return res.json(rows);
+  return res.json(await listarLotesVencendo(30));
 }
 
 async function abaixoMinimo(req, res) {

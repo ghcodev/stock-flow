@@ -438,6 +438,45 @@ Resposta: 200 com a localização atualizada.
 
 Erros: 400, 403, 404.
 
+## Assistente
+
+Assistente de estoque em linguagem natural, opcional. Usa um servidor Ollama (`ASSISTENTE_URL`, padrão `http://localhost:11434`) com o modelo `ASSISTENTE_MODELO` (padrão `qwen3.5:9b`). O modelo só consulta dados por três ferramentas de leitura: `buscar_produto` (id, nome, unidade e saldo em lotes ativos), `lotes_vencendo` (lotes ativos que vencem em até N dias, de 1 a 365) e `sugerir_posicao` (o mesmo serviço de `GET /localizacoes/sugestao`). Ele não grava nada, faz no máximo 4 rodadas de ferramenta por pergunta e a resposta é limitada a 4000 caracteres. O conteúdo das perguntas não é registrado em log.
+
+### GET `/assistente`
+
+Autenticação: sim.
+
+Resposta: `{ "disponivel": true }` quando o Ollama responde e o modelo está instalado; caso contrário, 503 com `{ "error": "Assistente indisponível" }`.
+
+### POST `/assistente`
+
+Autenticação: sim. Também disponível em `/api/assistente`. Limite de 10 perguntas por minuto.
+
+Request:
+
+```json
+{
+  "pergunta": "Onde guardo 40 sacos de farinha que vencem em março?",
+  "historico": [
+    { "papel": "usuario", "texto": "Pergunta anterior" },
+    { "papel": "assistente", "texto": "Resposta anterior" }
+  ]
+}
+```
+
+`pergunta` tem de 1 a 1000 caracteres. `historico` é opcional, com até 10 itens de até 2000 caracteres.
+
+Resposta:
+
+```json
+{
+  "resposta": "Texto da resposta",
+  "atalhos": [{ "id_produto": 17, "nome": "Farinha de Trigo 25kg" }]
+}
+```
+
+`atalhos` lista os produtos para os quais o assistente consultou uma sugestão de posição com resultado. Erros: 400, 401, 429, 503.
+
 ## Usuários
 
 ### GET `/usuarios/perfil`
