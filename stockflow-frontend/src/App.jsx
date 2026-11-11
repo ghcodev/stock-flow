@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Produtos from './pages/Produtos.jsx'
 import Lotes from './pages/Lotes.jsx'
 import MapaArmazem from './pages/MapaArmazem.jsx'
+import Armazem3D from './pages/Armazem3D.jsx'
 import Entrada from './pages/Entrada.jsx'
 import Saida from './pages/Saida.jsx'
 import Transferencia from './pages/Transferencia.jsx'
@@ -60,6 +61,7 @@ function AppRoutes() {
       <Route path="/lotes"        element={<PrivateRoute><Lotes /></PrivateRoute>} />
       <Route path="/lotes/novo"   element={<PrivateRoute><Lotes /></PrivateRoute>} />
       <Route path="/mapa"         element={<PrivateRoute><MapaArmazem /></PrivateRoute>} />
+      <Route path="/armazem-3d"   element={<PrivateRoute><Armazem3D /></PrivateRoute>} />
       <Route path="/entrada"      element={<PrivateRoute><Entrada /></PrivateRoute>} />
       <Route path="/saida"        element={<PrivateRoute><Saida /></PrivateRoute>} />
       <Route path="/transferencia" element={<PrivateRoute><Transferencia /></PrivateRoute>} />

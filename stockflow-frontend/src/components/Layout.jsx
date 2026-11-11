@@ -21,6 +21,7 @@ const NAV = [
       { label: 'Produtos',        to: '/produtos',        icon: Package },
       { label: 'Lotes',           to: '/lotes',           icon: Layers,  badge: '4', badgeKind: 'warn' },
       { label: 'Mapa do Armazém', to: '/mapa',            icon: Map },
+      { label: 'Armazém 3D',      to: '/armazem-3d',      icon: Box },
     ],
   },
   {
