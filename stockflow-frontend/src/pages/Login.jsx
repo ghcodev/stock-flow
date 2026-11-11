@@ -12,7 +12,7 @@ export default function Login() {
   const [nomeUsuario, setNomeUsuario]         = useState('')
   const [buscandoUsuario, setBuscandoUsuario] = useState(false)
   const [usuarioEncontrado, setUsuarioEncontrado] = useState(false)
-  const [senha, setSenha]     = useState('admin123')
+  const [senha, setSenha]     = useState('')
   const [erro, setErro]       = useState('')
   const [loading, setLoading] = useState(false)
   const [showSenha, setShowSenha] = useState(false)
