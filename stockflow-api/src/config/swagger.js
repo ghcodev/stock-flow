@@ -335,6 +335,25 @@ const options = {
           responses: { 200: { description: 'Array de localizações' } },
         },
       },
+      '/localizacoes/sugestao': {
+        get: {
+          tags: ['Localiza??es'],
+          summary: 'Sugerir posi??es para uma entrada',
+          security: [{ bearerAuth: [] }],
+          servers: [{ url: '/api/v1' }, { url: '/api' }],
+          parameters: [
+            { name: 'id_produto', in: 'query', required: true, schema: { type: 'integer', minimum: 1 } },
+            { name: 'quantidade', in: 'query', required: true, schema: { type: 'number', minimum: 0.001, maximum: 999999999.999, multipleOf: 0.001 } },
+            { name: 'data_validade', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            200: { description: 'At? tr?s posi??es em ordem de pontua??o, contagem de descartadas e motivo quando a lista est? vazia' },
+            400: { description: 'Par?metros inv?lidos' },
+            401: { description: 'Autentica??o inv?lida ou ausente' },
+            404: { description: 'Produto n?o encontrado' },
+          },
+        },
+      },
       '/localizacoes/{id}/lotes': {
         get: {
           tags: ['Localizações'], summary: 'Lotes alocados em uma posição',

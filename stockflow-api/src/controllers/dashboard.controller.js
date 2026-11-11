@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const carregarCurvaAbc = require('../services/curvaAbc');
 
 function toNumber(value) {
   return Number(value || 0);
@@ -489,75 +490,28 @@ async function rupturas(req, res) {
 }
 
 async function curvaAbc(req, res) {
-  const [rows] = await pool.execute(
-    `SELECT
-       p.nome AS nome_produto,
-       COUNT(m.id) AS total_mov
-     FROM movimentacao m
-     JOIN lote l ON l.id = m.id_lote
-     JOIN produto p ON p.id = l.id_produto
-     WHERE m.data_movimentacao >= DATE_SUB(NOW(), INTERVAL 90 DAY)
-     GROUP BY p.id, p.nome
-     ORDER BY total_mov DESC`
-  );
-
-  const totalMovimentacoes = rows.reduce((sum, row) => sum + toNumber(row.total_mov), 0);
-  const resumoBase = {
-    classe_a: { qtd_produtos: 0, pct_movimentacoes: 0 },
-    classe_b: { qtd_produtos: 0, pct_movimentacoes: 0 },
-    classe_c: { qtd_produtos: 0, pct_movimentacoes: 0 },
-  };
-
-  if (!totalMovimentacoes) {
-    return res.json({ resumo: resumoBase, top10: [] });
-  }
-
-  let acumulado = 0;
-  const totaisPorClasse = {
-    A: 0,
-    B: 0,
-    C: 0,
-  };
-
-  const classificados = rows.map(row => {
-    const totalMov = toNumber(row.total_mov);
-    const pctAnterior = (acumulado / totalMovimentacoes) * 100;
-    acumulado += totalMov;
-    const pctAcumulado = (acumulado / totalMovimentacoes) * 100;
-    let classe = 'C';
-
-    if (pctAcumulado <= 80 || pctAnterior < 80) {
-      classe = 'A';
-    } else if (pctAcumulado <= 95 || pctAnterior < 95) {
-      classe = 'B';
-    }
-
-    totaisPorClasse[classe] += totalMov;
-
-    return {
-      classe,
-      nome_produto: row.nome_produto,
-      total_mov: totalMov,
-      pct_acumulado: roundNumber(pctAcumulado, 1),
-    };
-  });
+  const classificados = await carregarCurvaAbc();
+  const totalMovimentacoes = classificados.reduce((sum, item) => sum + item.total_mov, 0);
+  const totaisPorClasse = { A: 0, B: 0, C: 0 };
+  for (const item of classificados) totaisPorClasse[item.classe] += item.total_mov;
+  const percentual = total => totalMovimentacoes ? roundNumber(total / totalMovimentacoes * 100, 1) : 0;
 
   const resumo = {
     classe_a: {
       qtd_produtos: classificados.filter(item => item.classe === 'A').length,
-      pct_movimentacoes: roundNumber((totaisPorClasse.A / totalMovimentacoes) * 100, 1),
+      pct_movimentacoes: percentual(totaisPorClasse.A),
     },
     classe_b: {
       qtd_produtos: classificados.filter(item => item.classe === 'B').length,
-      pct_movimentacoes: roundNumber((totaisPorClasse.B / totalMovimentacoes) * 100, 1),
+      pct_movimentacoes: percentual(totaisPorClasse.B),
     },
     classe_c: {
       qtd_produtos: classificados.filter(item => item.classe === 'C').length,
-      pct_movimentacoes: roundNumber((totaisPorClasse.C / totalMovimentacoes) * 100, 1),
+      pct_movimentacoes: percentual(totaisPorClasse.C),
     },
   };
 
-  return res.json({ resumo, top10: classificados.slice(0, 10) });
+  return res.json({ resumo, top10: classificados.slice(0, 10).map(({ id_produto, ...item }) => item) });
 }
 
 async function distribuicaoCategoria(req, res) {
