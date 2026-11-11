@@ -1,4 +1,5 @@
 const PESOS = { giro: 0.35, validade: 0.25, agrupamento: 0.20, ergonomia: 0.20 };
+const TIPOS_ARMAZENAGEM = ['seco', 'refrigerado', 'quimico'];
 const MILISSEGUNDOS_POR_DIA = 86_400_000;
 const MOTIVOS_GIRO = {
   A: 'Produto de giro alto favorece posições perto da expedição.',
@@ -86,4 +87,4 @@ async function sugerirPosicoes(idProduto, entrada) {
   });
 }
 
-module.exports = { pontuarPosicoes, sugerirPosicoes };
+module.exports = { TIPOS_ARMAZENAGEM, pontuarPosicoes, sugerirPosicoes };

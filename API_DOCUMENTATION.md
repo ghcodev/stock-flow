@@ -160,11 +160,15 @@ Request:
   "categoria": "Categoria",
   "unidade_medida": "unidade",
   "descricao": "Opcional",
-  "estoque_minimo": 10
+  "estoque_minimo": 10,
+  "tipo_armazenagem": "seco",
+  "peso_unitario_kg": 0.05
 }
 ```
 
-Resposta: 201 com `id`, `nome`, `categoria`, `unidade_medida`, `estoque_minimo`.
+`tipo_armazenagem` aceita `seco`, `refrigerado` ou `quimico` e vale `seco` quando omitido. `peso_unitario_kg` é opcional, maior que zero, ou `null`.
+
+Resposta: 201 com `id`, `nome`, `categoria`, `unidade_medida`, `estoque_minimo`, `tipo_armazenagem`, `peso_unitario_kg`.
 
 Erros: 400, 409.
 
@@ -172,7 +176,7 @@ Erros: 400, 409.
 
 Permissão: `produtos.editar`.
 
-Request: campos de produto.
+Request: campos de produto, inclusive `tipo_armazenagem` e `peso_unitario_kg`. Campos omitidos mantêm o valor atual; `peso_unitario_kg: null` limpa o peso.
 
 Resposta:
 
@@ -413,9 +417,26 @@ Request:
   "corredor": "A",
   "nivel": 1,
   "posicao": 1,
-  "descricao": "Opcional"
+  "descricao": "Opcional",
+  "capacidade": 500,
+  "tipo_zona": "seco",
+  "distancia_expedicao": 3
 }
 ```
+
+`capacidade` é opcional, maior que zero, ou `null` para limite não informado. `tipo_zona` aceita `seco`, `refrigerado` ou `quimico` e vale `seco` quando omitido. `distancia_expedicao` é inteiro maior ou igual a zero e vale 0 quando omitido.
+
+Resposta: 201 com `id`, `corredor`, `nivel`, `posicao`, `capacidade`, `tipo_zona`, `distancia_expedicao`.
+
+### PUT `/localizacoes/:id`
+
+Autenticação: admin.
+
+Request: os mesmos campos do cadastro, todos opcionais. Campos omitidos mantêm o valor atual; `capacidade: null` remove o limite.
+
+Resposta: 200 com a localização atualizada.
+
+Erros: 400, 403, 404.
 
 ## Usuários
 

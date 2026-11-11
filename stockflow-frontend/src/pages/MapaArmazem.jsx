@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
+import LocalizacoesModal from '../components/LocalizacoesModal.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import api from '../api/axios.js'
-import { Download, Home, Maximize2, RefreshCw, Search, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, Home, MapPin, Maximize2, RefreshCw, Search, ZoomIn, ZoomOut } from 'lucide-react'
 
 const TILE_W = 72
 const TILE_H = 36
@@ -691,6 +693,8 @@ function PainelDetalheSlot({ slot, detalhe, loading, onFechar, onVerLote }) {
 
 export default function MapaArmazem() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [showLocalizacoes, setShowLocalizacoes] = useState(false)
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const rafRef = useRef(null)
@@ -1044,6 +1048,9 @@ export default function MapaArmazem() {
           </div>
         </div>
         <div className="page-header-actions">
+          {user?.isAdmin && (
+            <button className="btn btn-outline btn-sm" onClick={() => setShowLocalizacoes(true)}><MapPin size={14} /> Localizações</button>
+          )}
           <button className="btn btn-outline btn-sm"><Download size={14} /> Exportar</button>
           <button className="btn btn-outline btn-sm" onClick={load} disabled={loading}>
             <RefreshCw size={14} /> Atualizar
@@ -1633,6 +1640,7 @@ export default function MapaArmazem() {
           .warehouse-side { grid-template-columns: 1fr; }
         }
       `}</style>
+      {showLocalizacoes && <LocalizacoesModal onClose={() => setShowLocalizacoes(false)} onSaved={load} />}
     </Layout>
   )
 }

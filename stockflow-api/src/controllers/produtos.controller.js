@@ -38,18 +38,18 @@ async function criar(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
 
-  const { nome, categoria, descricao, unidade_medida, estoque_minimo = 0 } = req.body;
+  const { nome, categoria, descricao, unidade_medida, estoque_minimo = 0, tipo_armazenagem = 'seco', peso_unitario_kg = null } = req.body;
 
   const [dup] = await pool.execute('SELECT id FROM produto WHERE nome = ?', [nome]);
   if (dup.length) return res.status(409).json({ error: 'Já existe um produto com este nome' });
 
   const [result] = await pool.execute(
-    'INSERT INTO produto (nome, categoria, descricao, unidade_medida, estoque_minimo) VALUES (?,?,?,?,?)',
-    [nome, categoria, descricao || null, unidade_medida, estoque_minimo]
+    'INSERT INTO produto (nome, categoria, descricao, unidade_medida, estoque_minimo, tipo_armazenagem, peso_unitario_kg) VALUES (?,?,?,?,?,?,?)',
+    [nome, categoria, descricao || null, unidade_medida, estoque_minimo, tipo_armazenagem, peso_unitario_kg]
   );
 
-  await logAudit({ tabela: 'produto', operacao: 'INSERT', valorNovo: { nome, categoria, unidade_medida }, idUsuario: req.user.id, ip: req.ip });
-  return res.status(201).json({ id: result.insertId, nome, categoria, unidade_medida, estoque_minimo });
+  await logAudit({ tabela: 'produto', operacao: 'INSERT', valorNovo: { nome, categoria, unidade_medida, tipo_armazenagem, peso_unitario_kg }, idUsuario: req.user.id, ip: req.ip });
+  return res.status(201).json({ id: result.insertId, nome, categoria, unidade_medida, estoque_minimo, tipo_armazenagem, peso_unitario_kg });
 }
 
 async function atualizar(req, res) {
@@ -59,19 +59,21 @@ async function atualizar(req, res) {
   const [rows] = await pool.execute('SELECT * FROM produto WHERE id = ?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'Produto não encontrado' });
 
-  const { nome, categoria, descricao, unidade_medida, estoque_minimo } = req.body;
+  const { nome, categoria, descricao, unidade_medida, estoque_minimo, tipo_armazenagem, peso_unitario_kg } = req.body;
   const anterior = rows[0];
+  const tipoArmazenagem = tipo_armazenagem ?? anterior.tipo_armazenagem;
+  const pesoUnitario = peso_unitario_kg === undefined ? anterior.peso_unitario_kg : peso_unitario_kg;
 
   await pool.execute(
-    'UPDATE produto SET nome=?, categoria=?, descricao=?, unidade_medida=?, estoque_minimo=? WHERE id=?',
+    'UPDATE produto SET nome=?, categoria=?, descricao=?, unidade_medida=?, estoque_minimo=?, tipo_armazenagem=?, peso_unitario_kg=? WHERE id=?',
     [nome ?? anterior.nome, categoria ?? anterior.categoria, descricao ?? anterior.descricao,
-     unidade_medida ?? anterior.unidade_medida, estoque_minimo ?? anterior.estoque_minimo, req.params.id]
+     unidade_medida ?? anterior.unidade_medida, estoque_minimo ?? anterior.estoque_minimo, tipoArmazenagem, pesoUnitario, req.params.id]
   );
 
   await logAudit({
     tabela: 'produto', operacao: 'UPDATE',
-    valorAnterior: { nome: anterior.nome },
-    valorNovo: { nome: nome ?? anterior.nome, categoria: categoria ?? anterior.categoria },
+    valorAnterior: { nome: anterior.nome, tipo_armazenagem: anterior.tipo_armazenagem, peso_unitario_kg: anterior.peso_unitario_kg },
+    valorNovo: { nome: nome ?? anterior.nome, categoria: categoria ?? anterior.categoria, tipo_armazenagem: tipoArmazenagem, peso_unitario_kg: pesoUnitario },
     idUsuario: req.user.id, ip: req.ip,
   });
   return res.json({ mensagem: 'Produto atualizado' });

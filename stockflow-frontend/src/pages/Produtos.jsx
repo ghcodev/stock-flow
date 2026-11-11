@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
+import { TIPOS_ARMAZENAGEM } from '../constants/armazenagem.js'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
 import {
@@ -7,6 +9,9 @@ import {
   AlertTriangle, Boxes, Tags, MoreVertical, Activity, Clock,
   ArrowUp, ArrowDown, ShieldCheck,
 } from 'lucide-react'
+
+const FORM_INICIAL = { nome: '', categoria: 'Pães', unidade_medida: 'unidade', estoque_minimo: '', tipo_armazenagem: 'seco', peso_unitario_kg: '' }
+const CATEGORIAS = ['Pães', 'Salgados', 'Quitandas', 'Massas']
 
 function StatusBadge({ status, estoque, minimo }) {
   if (!status) {
@@ -155,9 +160,35 @@ export default function Produtos() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
   const [newProductId, setNewProductId] = useState(null)
-  const [form, setForm] = useState({ nome: '', categoria: 'Pães', unidade_medida: 'unidade', estoque_minimo: '' })
+  const [form, setForm] = useState(FORM_INICIAL)
+  const [editingId, setEditingId] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const idEdicao = searchParams.get('id')
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (!idEdicao) return
+    const produto = produtos.find(p => String(getProductId(p)) === idEdicao)
+    if (!produto) return
+    setEditingId(getProductId(produto))
+    setForm({
+      nome: produto.nome || '',
+      categoria: produto.categoria || FORM_INICIAL.categoria,
+      unidade_medida: produto.unidade_medida || '',
+      estoque_minimo: produto.estoque_minimo ?? '',
+      tipo_armazenagem: produto.tipo_armazenagem || FORM_INICIAL.tipo_armazenagem,
+      peso_unitario_kg: produto.peso_unitario_kg ?? '',
+    })
+    setShowForm(true)
+  }, [idEdicao, produtos])
+
+  function fecharForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(FORM_INICIAL)
+    if (idEdicao) setSearchParams({}, { replace: true })
+  }
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -242,18 +273,27 @@ export default function Produtos() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const { data } = await api.post('/produtos', { ...form, estoque_minimo: Number(form.estoque_minimo || 0) })
-      const createdId = data?.data?.id_produto || data?.data?.id || data?.id_produto || data?.id
-      if (createdId) {
-        setNewProductId(createdId)
-        setTimeout(() => setNewProductId(null), 2000)
+      const payload = {
+        ...form,
+        estoque_minimo: Number(form.estoque_minimo || 0),
+        peso_unitario_kg: form.peso_unitario_kg === '' ? null : Number(form.peso_unitario_kg),
       }
-      toast.success('Produto cadastrado com sucesso!')
-      setShowForm(false)
-      setForm({ nome: '', categoria: 'Pães', unidade_medida: 'unidade', estoque_minimo: '' })
+      if (editingId) {
+        await api.put(`/produtos/${editingId}`, payload)
+        toast.success('Produto atualizado com sucesso!')
+      } else {
+        const { data } = await api.post('/produtos', payload)
+        const createdId = data?.data?.id_produto || data?.data?.id || data?.id_produto || data?.id
+        if (createdId) {
+          setNewProductId(createdId)
+          setTimeout(() => setNewProductId(null), 2000)
+        }
+        toast.success('Produto cadastrado com sucesso!')
+      }
+      fecharForm()
       load()
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao cadastrar produto.')
+      toast.error(err.response?.data?.error || (editingId ? 'Erro ao atualizar produto.' : 'Erro ao cadastrar produto.'))
     } finally {
       setSubmitting(false)
     }
@@ -340,7 +380,7 @@ export default function Produtos() {
           <input type="file" accept=".csv" hidden ref={fileRef} onChange={handleImportCSV} />
           <button className="btn btn-outline btn-sm" onClick={() => fileRef.current?.click()}><Upload size={14} /> Importar CSV</button>
           <button className="btn btn-outline btn-sm" onClick={exportCSV}><Download size={14} /> Exportar</button>
-          <button className="btn btn-primary" onClick={() => setShowForm(v => !v)}><Plus size={14} /> Novo produto</button>
+          <button className="btn btn-primary" onClick={() => { const abrir = !showForm || editingId; fecharForm(); if (abrir) setShowForm(true) }}><Plus size={14} /> Novo produto</button>
         </div>
       </div>
 
@@ -354,15 +394,15 @@ export default function Produtos() {
       {showForm && (
         <div className="card" style={{ marginBottom: 18, animation: 'slideDown 0.18s ease-out' }}>
           <div className="card-header">
-            <span className="card-title">Novo produto</span>
-            <button className="icon-btn" onClick={() => setShowForm(false)}><X size={15} /></button>
+            <span className="card-title">{editingId ? 'Editar produto' : 'Novo produto'}</span>
+            <button className="icon-btn" aria-label="Fechar" onClick={fecharForm}><X size={15} /></button>
           </div>
           <form onSubmit={handleSubmit} style={{ padding: '16px 20px 20px' }}>
             <div className="form-row">
               <div className="form-group input-float"><input className="input" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder=" " required /><label>Nome *</label>
               </div>
               <div className="form-group input-float"><select className="select" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-                  {['Pães', 'Salgados', 'Quitandas', 'Massas'].map(c => <option key={c}>{c}</option>)}
+                  {[...new Set([...CATEGORIAS, form.categoria])].map(c => <option key={c}>{c}</option>)}
                 </select><label>Categoria *</label></div>
             </div>
             <div className="form-row">
@@ -373,8 +413,17 @@ export default function Produtos() {
                 <label>Estoque minimo</label>
               </div>
             </div>
+            <div className="form-row">
+              <div className="form-group input-float"><select className="select" value={form.tipo_armazenagem} onChange={e => setForm(f => ({ ...f, tipo_armazenagem: e.target.value }))}>
+                  {TIPOS_ARMAZENAGEM.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select><label>Tipo de armazenagem *</label></div>
+              <div className="form-group input-float">
+                <input className="input" type="number" min="0.001" step="0.001" value={form.peso_unitario_kg} onChange={e => setForm(f => ({ ...f, peso_unitario_kg: e.target.value }))} placeholder=" " />
+                <label>Peso por unidade (kg)</label>
+              </div>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancelar</button>
+              <button type="button" className="btn btn-outline" onClick={fecharForm}>Cancelar</button>
               <button type="submit" className={`btn btn-primary ${submitting ? 'btn-loading' : ''}`} disabled={submitting}>
                 {submitting ? 'Salvando...' : <><CheckCircle size={14} /> Salvar produto</>}
               </button>

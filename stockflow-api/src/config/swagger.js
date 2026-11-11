@@ -32,6 +32,8 @@ const options = {
             categoria:      { type: 'string',  example: 'Pães' },
             unidade_medida: { type: 'string',  example: 'unidade' },
             estoque_minimo: { type: 'number',  example: 50 },
+            tipo_armazenagem: { type: 'string', enum: ['seco','refrigerado','quimico'], example: 'seco' },
+            peso_unitario_kg: { type: 'number', nullable: true, example: 0.05 },
             ativo:          { type: 'boolean', example: true },
           },
         },
@@ -68,6 +70,9 @@ const options = {
             nivel:    { type: 'integer', example: 1 },
             posicao:  { type: 'integer', example: 1 },
             descricao:{ type: 'string',  example: 'CF-01 Câmara Fria · Corredor A · Nível 1 · Posição 1' },
+            capacidade: { type: 'number', nullable: true, example: 500 },
+            tipo_zona:  { type: 'string', enum: ['seco','refrigerado','quimico'], example: 'refrigerado' },
+            distancia_expedicao: { type: 'integer', minimum: 0, example: 3 },
           },
         },
         Usuario: {
@@ -333,6 +338,19 @@ const options = {
         get: {
           tags: ['Localizações'], summary: 'Listar posições do armazém',
           responses: { 200: { description: 'Array de localizações' } },
+        },
+        post: {
+          tags: ['Localizações'], summary: 'Cadastrar posição (admin)',
+          requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/Localizacao' } } } },
+          responses: { 201: { description: 'Localização criada' }, 400: { description: 'Dados inválidos' }, 403: { description: 'Acesso restrito a administradores' } },
+        },
+      },
+      '/localizacoes/{id}': {
+        put: {
+          tags: ['Localizações'], summary: 'Editar posição (admin)',
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+          requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/Localizacao' } } } },
+          responses: { 200: { description: 'Localização atualizada' }, 400: { description: 'Dados inválidos' }, 403: { description: 'Acesso restrito a administradores' }, 404: { description: 'Localização não encontrada' } },
         },
       },
       '/localizacoes/sugestao': {

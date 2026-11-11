@@ -1,11 +1,17 @@
 const { Router } = require('express');
-const { body, query } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const ctrl = require('../controllers/localizacoes.controller');
 const { authMiddleware } = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
+const { TIPOS_ARMAZENAGEM } = require('../services/sugestaoPosicao');
 
 const router = Router();
 router.use(authMiddleware);
+const camposArmazenagem = [
+  body('capacidade').optional({ values: 'null' }).isFloat({ gt: 0 }).withMessage('Capacidade deve ser maior que zero'),
+  body('tipo_zona').optional().isIn(TIPOS_ARMAZENAGEM).withMessage('Tipo de zona inválido'),
+  body('distancia_expedicao').optional().isInt({ min: 0 }).withMessage('Distância até a expedição deve ser um inteiro >= 0'),
+];
 
 router.get('/', ctrl.listar);
 const sugestao = [
@@ -25,7 +31,18 @@ router.post('/',
   body('corredor').notEmpty().withMessage('Corredor obrigatório'),
   body('nivel').isInt({ min: 1 }).withMessage('Nível inválido'),
   body('posicao').isInt({ min: 1 }).withMessage('Posição inválida'),
+  ...camposArmazenagem,
   ctrl.criar
+);
+
+router.put('/:id',
+  adminMiddleware,
+  param('id').isInt({ min: 1 }).withMessage('Localização inválida'),
+  body('corredor').optional().notEmpty().withMessage('Corredor obrigatório'),
+  body('nivel').optional().isInt({ min: 1 }).withMessage('Nível inválido'),
+  body('posicao').optional().isInt({ min: 1 }).withMessage('Posição inválida'),
+  ...camposArmazenagem,
+  ctrl.atualizar
 );
 
 module.exports = router;
