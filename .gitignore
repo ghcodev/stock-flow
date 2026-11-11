@@ -65,6 +65,7 @@ temp/
 # Outros arquivos internos
 .thumbnail
 .agents/
+.omc/
 .claude/*
 !.claude/skills/
 !.claude/skills/**
