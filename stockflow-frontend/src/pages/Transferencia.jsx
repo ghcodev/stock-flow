@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import Layout from '../components/Layout.jsx'
+import PosicaoSugerida from '../components/PosicaoSugerida.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import api from '../api/axios.js'
 import {
@@ -604,6 +605,14 @@ export default function Transferencia() {
                   <input className="input" type="number" min="1" placeholder="0"
                     value={form.quantidade} onChange={e => setForm(f => ({ ...f, quantidade: e.target.value }))} required />
                 </div>
+                <PosicaoSugerida
+                  idProduto={loteSelecionado?.id_produto}
+                  quantidade={form.quantidade}
+                  dataValidade={loteSelecionado?.data_validade ? String(loteSelecionado.data_validade).slice(0, 10) : undefined}
+                  ignorarLocalizacao={loteSelecionado?.id_localizacao}
+                  selecionada={form.id_localizacao_destino}
+                  onUsar={id => setForm(f => ({ ...f, id_localizacao_destino: String(id) }))}
+                />
                 <div className="form-group">
                   <label className="form-label">
                     Motivo *

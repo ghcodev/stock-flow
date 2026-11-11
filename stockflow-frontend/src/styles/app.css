@@ -1163,3 +1163,15 @@ textarea:focus {
 @media (max-width: 640px) {
   .localizacoes-form-grid { grid-template-columns: 1fr; }
 }
+
+.posicao-sugerida { border: 1px solid var(--color-border-default); border-radius: var(--radius-lg); background: var(--color-bg-subtle); padding: 10px 12px; margin-bottom: 16px; }
+.posicao-sugerida-titulo { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-tertiary); margin-bottom: 8px; }
+.posicao-sugerida-info { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+.posicao-sugerida-erro { color: var(--color-warning-700); }
+.posicao-sugerida-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.posicao-sugerida-item { background: var(--color-bg-default); border: 1px solid var(--color-border-muted); border-radius: var(--radius-md); padding: 8px 10px; transition: border-color 150ms ease; }
+.posicao-sugerida-item.ativa { border-color: var(--color-brand-500); }
+.posicao-sugerida-cabecalho { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.posicao-sugerida-cabecalho strong { font-size: 13px; color: var(--color-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.posicao-sugerida-cabecalho .btn { margin-left: auto; white-space: nowrap; }
+.posicao-sugerida-motivos { margin: 6px 0 0; padding-left: 16px; font-size: 11px; color: var(--color-text-secondary); line-height: 1.5; }
