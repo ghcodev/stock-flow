@@ -9,6 +9,18 @@ function valido(de: string, ate: string): boolean {
   return periodoValido(inicio, fim);
 }
 
+describe("leitura de instantes", () => {
+  it("aceita de 1 a 3 casas de fração de segundo e recusa 4 ou mais", () => {
+    for (const fracao of [".1", ".12", ".123"]) {
+      assert.ok(lerInstante(`2026-11-15T12:00:00${fracao}Z`), fracao);
+    }
+    for (const fracao of [".1234", ".123456", ".123456789", "."]) {
+      assert.equal(lerInstante(`2026-11-15T12:00:00${fracao}Z`), null, fracao);
+    }
+    assert.equal(lerInstante("2026-11-15T12:00:00.123Z")?.momento.getUTCMilliseconds(), 123);
+  });
+});
+
 describe("validade do intervalo de período", () => {
   it("instante dentro do dia inteiro do fim é válido (de com hora, ate só com dia)", () => {
     assert.equal(valido("2026-11-15T12:00:00Z", "2026-11-15"), true);
