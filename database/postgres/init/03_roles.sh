@@ -7,4 +7,5 @@ GRANT CONNECT ON DATABASE :"dbname" TO stockflow_app;
 GRANT USAGE ON SCHEMA public TO stockflow_app;
 GRANT SELECT, INSERT, UPDATE ON produto, localizacao, usuario, lote, identificacao TO stockflow_app;
 GRANT SELECT, INSERT ON movimentacao, auditoria_log TO stockflow_app;
+GRANT UPDATE (status_movimentacao) ON movimentacao TO stockflow_app;
 EOSQL
