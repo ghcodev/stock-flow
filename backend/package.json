@@ -12,6 +12,7 @@
     "dev": "node --watch --env-file=.env src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
+    "start:local": "node --env-file=.env dist/server.js",
     "test": "node --env-file=.env --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },

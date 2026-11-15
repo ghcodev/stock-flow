@@ -32,9 +32,14 @@ O esquema do banco é definido só em `database/postgres/init`. CHECKs, triggers
 
 ```
 npm run dev
-npm run build && npm start
 npm run typecheck
+npm run build
+npm run start:local
 ```
+
+- `npm run dev`: desenvolvimento, lê o `.env` (`--env-file`) e recarrega ao salvar.
+- `npm run start:local`: roda o build (`dist/`) lendo o `.env`.
+- `npm start`: produção. Não lê `.env`; as variáveis (`DATABASE_URL`, `JWT_SECRET`, `PORT`) vêm do ambiente, em produção do Docker Compose.
 
 ## Testar
 
