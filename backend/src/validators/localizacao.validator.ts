@@ -1,5 +1,5 @@
 import { query } from "express-validator";
-import { decimal, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { campoBusca, decimal, texto, validarId, validarPaginacao } from "./comuns.ts";
 
 export const validarCriarLocalizacao = [
   texto("corredor", "Corredor", 10, true),
@@ -11,13 +11,7 @@ export const validarCriarLocalizacao = [
 
 export const validarListarLocalizacoes = [
   ...validarPaginacao,
-  query("busca")
-    .optional()
-    .isString()
-    .withMessage("Busca inválida")
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("Busca deve ter até 100 caracteres"),
+  campoBusca("busca", "Busca", 100),
 ];
 
 export const validarIdLocalizacao = [validarId];

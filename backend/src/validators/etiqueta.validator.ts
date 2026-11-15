@@ -1,11 +1,11 @@
 import { body } from "express-validator";
-import { validarId } from "./comuns.ts";
+import { soEscalar, validarId } from "./comuns.ts";
 
 export const TIPOS_ETIQUETA = ["qr_code", "rfid"];
 
 export const validarAssociarEtiqueta = [
   validarId,
-  body("tipo").isIn(TIPOS_ETIQUETA).withMessage("Tipo de etiqueta deve ser qr_code ou rfid"),
+  soEscalar(body("tipo"), "Tipo de etiqueta").isIn(TIPOS_ETIQUETA).withMessage("Tipo de etiqueta deve ser qr_code ou rfid"),
   body("codigo")
     .isString()
     .withMessage("Código da etiqueta deve ser texto")

@@ -2,16 +2,23 @@ import type { Request } from "express";
 import { body, matchedData, param, query, type ValidationChain } from "express-validator";
 
 const MAX_ID = 2_147_483_647;
+const ESCALAR = (valor: unknown): boolean =>
+  typeof valor === "string" || typeof valor === "number" || typeof valor === "boolean";
+
+export function soEscalar(cadeia: ValidationChain, rotulo: string): ValidationChain {
+  return cadeia.custom(ESCALAR).withMessage(`${rotulo} inválido`).bail();
+}
+
 const PADRAO_NUMERIC_12_3 = /^\d{1,9}(\.\d{1,3})?$/;
 
-export const validarId = param("id")
+export const validarId = soEscalar(param("id"), "Identificador")
   .isInt({ min: 1, max: MAX_ID })
   .withMessage("Identificador inválido")
   .toInt();
 
 export const validarPaginacao: ValidationChain[] = [
-  query("pagina").optional().isInt({ min: 1, max: 1_000_000 }).withMessage("Página inválida").toInt(),
-  query("limite").optional().isInt({ min: 1, max: 100 }).withMessage("Limite deve estar entre 1 e 100").toInt(),
+  soEscalar(query("pagina").optional(), "Página").isInt({ min: 1, max: 1_000_000 }).withMessage("Página inválida").toInt(),
+  soEscalar(query("limite").optional(), "Limite").isInt({ min: 1, max: 100 }).withMessage("Limite deve estar entre 1 e 100").toInt(),
 ];
 
 export type Paginacao = { pagina?: number; limite?: number };
@@ -51,8 +58,7 @@ export function decimal(campo: string, rotulo: string, obrigatorio: boolean): Va
 }
 
 export function dataIso(campo: string, rotulo: string): ValidationChain {
-  return body(campo)
-    .optional({ values: "null" })
+  return soEscalar(body(campo).optional({ values: "null" }), rotulo)
     .isISO8601({ strict: true, strictSeparator: true })
     .withMessage(`${rotulo} deve ser uma data no formato AAAA-MM-DD`)
     .bail()
@@ -69,4 +75,14 @@ export function algumCampo(campos: string[]): ValidationChain {
 export function dadosValidados<T>(req: Request, locations: ("body" | "params" | "query")[]): T {
   const dados = matchedData<Record<string, unknown>>(req, { locations, includeOptionals: true });
   return Object.fromEntries(Object.entries(dados).filter(([chave, valor]) => chave !== "" && valor !== undefined)) as T;
+}
+
+export function campoBusca(nome: string, rotulo: string, max: number): ValidationChain {
+  return soEscalar(query(nome).optional(), rotulo)
+    .isString()
+    .withMessage(`${rotulo} inválido`)
+    .bail()
+    .trim()
+    .isLength({ max })
+    .withMessage(`${rotulo} deve ter até ${max} caracteres`);
 }

@@ -1,5 +1,5 @@
 import { query } from "express-validator";
-import { algumCampo, decimal, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { algumCampo, campoBusca, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 
 const CAMPOS = ["nome", "categoria", "descricao", "unidade_medida", "estoque_minimo"];
 
@@ -23,8 +23,8 @@ export const validarAtualizarProduto = [
 
 export const validarListarProdutos = [
   ...validarPaginacao,
-  query("busca").optional().isString().withMessage("Busca inválida").trim().isLength({ max: 100 }).withMessage("Busca deve ter até 100 caracteres"),
-  query("ativo").optional().isBoolean().withMessage("Filtro ativo inválido").toBoolean(),
+  campoBusca("busca", "Busca", 100),
+  soEscalar(query("ativo").optional(), "Filtro ativo").isBoolean().withMessage("Filtro ativo inválido").toBoolean(),
 ];
 
 export const validarIdProduto = [validarId];

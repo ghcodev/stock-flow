@@ -1,5 +1,5 @@
 import { body, query } from "express-validator";
-import { algumCampo, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { algumCampo, campoBusca, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 
 const PERFIS = ["administrador", "operador"];
 const MIN_SENHA = 8;
@@ -35,7 +35,7 @@ const senha = (opcional: boolean) => {
 
 const perfil = (opcional: boolean) => {
   const base = body("perfil");
-  return (opcional ? base.optional() : base)
+  return soEscalar(opcional ? base.optional() : base, "Perfil")
     .isIn(PERFIS)
     .withMessage("Perfil deve ser administrador ou operador");
 };
@@ -55,13 +55,7 @@ export const validarIdUsuario = [validarId];
 
 export const validarListarUsuarios = [
   ...validarPaginacao,
-  query("busca")
-    .optional()
-    .isString()
-    .withMessage("Busca inválida")
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("Busca deve ter até 100 caracteres"),
-  query("perfil").optional().isIn(PERFIS).withMessage("Perfil inválido"),
-  query("ativo").optional().isBoolean().withMessage("Filtro ativo inválido").toBoolean(),
+  campoBusca("busca", "Busca", 100),
+  soEscalar(query("perfil").optional(), "Perfil").isIn(PERFIS).withMessage("Perfil inválido"),
+  soEscalar(query("ativo").optional(), "Filtro ativo").isBoolean().withMessage("Filtro ativo inválido").toBoolean(),
 ];
