@@ -5,7 +5,11 @@ import type { status_lote, tipo_identificacao } from "../generated/prisma/enums.
 import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 
-const SELECAO = {
+const SELECAO_PRODUTO = { id_produto: true, nome: true, unidade_medida: true } as const;
+const SELECAO_LOCALIZACAO = { id_localizacao: true, corredor: true, nivel: true, posicao: true } as const;
+const SELECAO_ETIQUETA = { id_identificacao: true, tipo_identificacao: true, codigo: true } as const;
+
+const SELECAO_ESCALAR = {
   id_lote: true,
   numero_lote: true,
   data_fabricacao: true,
@@ -16,9 +20,13 @@ const SELECAO = {
   motivo_bloqueio: true,
   id_produto: true,
   id_localizacao: true,
-  produto: { select: { id_produto: true, nome: true, unidade_medida: true } },
-  localizacao: { select: { id_localizacao: true, corredor: true, nivel: true, posicao: true } },
-  identificacao: { select: { id_identificacao: true, tipo_identificacao: true, codigo: true } },
+} as const;
+
+const SELECAO = {
+  ...SELECAO_ESCALAR,
+  produto: { select: SELECAO_PRODUTO },
+  localizacao: { select: SELECAO_LOCALIZACAO },
+  identificacao: { select: SELECAO_ETIQUETA },
 } as const;
 
 type LoteBanco = Prisma.loteGetPayload<{ select: typeof SELECAO }>;
@@ -54,9 +62,18 @@ function apresentar(lote: LoteBanco): LotePublico {
 }
 
 async function buscarNaTransacao(tx: Tx, id: number): Promise<LotePublico> {
-  const lote = await tx.lote.findUnique({ where: { id_lote: id }, select: SELECAO });
+  const lote = await tx.lote.findUnique({ where: { id_lote: id }, select: SELECAO_ESCALAR });
   if (!lote) throw new HttpError(404, "NAO_ENCONTRADO", "Lote não encontrado");
-  return apresentar(lote);
+  const produto = await tx.produto.findUniqueOrThrow({
+    where: { id_produto: lote.id_produto },
+    select: SELECAO_PRODUTO,
+  });
+  const localizacao = await tx.localizacao.findUniqueOrThrow({
+    where: { id_localizacao: lote.id_localizacao },
+    select: SELECAO_LOCALIZACAO,
+  });
+  const identificacao = await tx.identificacao.findUnique({ where: { id_lote: id }, select: SELECAO_ETIQUETA });
+  return apresentar({ ...lote, produto, localizacao, identificacao });
 }
 
 export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): Promise<LotePublico> {
