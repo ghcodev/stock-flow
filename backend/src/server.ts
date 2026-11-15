@@ -7,7 +7,8 @@ async function iniciar(): Promise<void> {
   const { app } = await import("./app.ts");
   const { prisma } = await import("./db.ts");
 
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, (erro?: Error) => {
+    if (erro) return;
     process.stdout.write(`StockFlow API na porta ${config.port}\n`);
   });
   const encerrar = criarEncerramento(server, {

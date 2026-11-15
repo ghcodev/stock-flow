@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import net from "node:net";
+import type { AddressInfo } from "node:net";
 
 const ENV_VALIDO = {
   DATABASE_URL: "postgresql://u:SENHA-SINTETICA@127.0.0.1:1/d",
@@ -65,6 +67,20 @@ describe("falhas fatais do processo", () => {
       assert.equal(r.stdout, "");
     });
   }
+
+  it("entrypoint: porta ocupada não anuncia a porta e sai com 1", async () => {
+    const ocupante = net.createServer();
+    await new Promise<void>((ok) => ocupante.listen(0, ok));
+    const { port } = ocupante.address() as AddressInfo;
+    try {
+      const r = rodar(["src/server.ts"], { ...ENV_VALIDO, PORT: String(port) });
+      assert.equal(r.status, 1);
+      assert.equal(r.stdout, "");
+      assert.equal(r.stderr, "Erro fatal: falha no servidor HTTP\n");
+    } finally {
+      ocupante.close();
+    }
+  });
 
   it("desconectar pendente sem handles ativos sai com 1 pelo prazo, não com 0", () => {
     const r = rodar(["tests/fixtures/falhas.ts", "desconectar-pendente"], {});
