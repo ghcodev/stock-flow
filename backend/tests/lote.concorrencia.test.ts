@@ -57,10 +57,14 @@ describe("criação de lote concorrente com inativação do produto (K3)", () =>
       { timeout: 20000 },
     );
     await travou.promessa;
-    const criacao = criarLote(idProduto, "a1");
-    assert.equal(await pendente(criacao), "pendente");
-    soltar.liberar();
-    await inativacao;
+    let criacao: Promise<RespostaApi>;
+    try {
+      criacao = criarLote(idProduto, "a1");
+      assert.equal(await pendente(criacao), "pendente");
+    } finally {
+      soltar.liberar();
+      await inativacao;
+    }
     const r = await criacao;
     assert.equal(r.status, 422);
     assert.equal((r.corpo as { erro: { codigo: string } }).erro.codigo, "PRODUTO_INATIVO");
@@ -80,13 +84,17 @@ describe("criação de lote concorrente com inativação do produto (K3)", () =>
       { timeout: 20000 },
     );
     await travou.promessa;
-    const inativar = chamarApi(servidor, "POST", `/produtos/${idProduto}/inativar`, operador);
-    assert.equal(await pendente(inativar), "pendente");
-    const criado = await criarLote(idProduto, "b1");
-    assert.equal(criado.status, 201);
-    assert.equal(await pendente(inativar, 200), "pendente");
-    soltar.liberar();
-    await retencao;
+    let inativar: Promise<RespostaApi>;
+    try {
+      inativar = chamarApi(servidor, "POST", `/produtos/${idProduto}/inativar`, operador);
+      assert.equal(await pendente(inativar), "pendente");
+      const criado = await criarLote(idProduto, "b1");
+      assert.equal(criado.status, 201);
+      assert.equal(await pendente(inativar, 200), "pendente");
+    } finally {
+      soltar.liberar();
+      await retencao;
+    }
     assert.equal((await inativar).status, 200);
     assert.equal((await criarLote(idProduto, "b2")).status, 422);
     assert.equal(await prisma.lote.count({ where: { id_produto: idProduto } }), 1);

@@ -15,7 +15,11 @@ export async function segurarLote(idLote: number): Promise<Retencao> {
     },
     { timeout: 30000 },
   );
-  await pronto;
+  const falhaAntesDeTravar = new Promise<never>((_ok, rejeitar) => {
+    transacao.then(() => rejeitar(new Error("A transação terminou antes de travar o lote")), rejeitar);
+  });
+  falhaAntesDeTravar.catch(() => {});
+  await Promise.race([pronto, falhaAntesDeTravar]);
   return {
     liberar: async () => {
       soltar();

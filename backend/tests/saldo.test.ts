@@ -7,7 +7,7 @@ import { traduzirErroBanco } from "../src/erros-banco.ts";
 import { Prisma } from "../src/generated/prisma/client.ts";
 import { alterarSaldo } from "../src/services/saldo.service.ts";
 import { contextoDe, executarComoUsuario } from "../src/transacao.ts";
-import { chamarApi } from "./api.ts";
+import { chamarApi, type RespostaApi } from "./api.ts";
 import { criarUsuarioTeste, desativarUsuariosTeste, subir, tokenDe, type Servidor, type UsuarioTeste } from "./helpers.ts";
 import { segurarLote } from "./trava.ts";
 
@@ -132,9 +132,14 @@ describe("alterarSaldo (A10)", () => {
     const auditoriaAntes = await auditoriaDe(id);
     const retencao = await segurarLote(id);
     const inicio = Date.now();
-    const r = await chamarApi(servidor, "POST", `/_teste/entrada/${id}`, token, { quantidade: "3" });
-    const duracao = Date.now() - inicio;
-    await retencao.liberar();
+    let r: RespostaApi;
+    let duracao: number;
+    try {
+      r = await chamarApi(servidor, "POST", `/_teste/entrada/${id}`, token, { quantidade: "3" });
+      duracao = Date.now() - inicio;
+    } finally {
+      await retencao.liberar();
+    }
     assert.equal(r.status, 409);
     assert.deepEqual(r.corpo, {
       erro: { codigo: "LOTE_EM_USO", mensagem: "O lote está sendo usado por outra operação. Tente novamente" },
@@ -161,23 +166,28 @@ describe("alterarSaldo (A10)", () => {
     const id = await novoLote("formatos", "1");
     const retencao = await segurarLote(id);
     const contexto = { idUsuario: usuario.id, ip: "" };
-    const bruto = await executarComoUsuario(
-      contexto,
-      (tx) => tx.$queryRaw`SELECT id_lote FROM lote WHERE id_lote = ${id} FOR UPDATE`,
-      { lockTimeoutMs: 300 },
-    ).then(
-      () => null,
-      (e: unknown) => e as { code?: string },
-    );
-    const atualizacao = await executarComoUsuario(
-      contexto,
-      (tx) => tx.lote.update({ where: { id_lote: id }, data: { motivo_bloqueio: "x" } }),
-      { lockTimeoutMs: 300 },
-    ).then(
-      () => null,
-      (e: unknown) => e as { code?: string },
-    );
-    await retencao.liberar();
+    let bruto: { code?: string } | null;
+    let atualizacao: { code?: string } | null;
+    try {
+      bruto = await executarComoUsuario(
+        contexto,
+        (tx) => tx.$queryRaw`SELECT id_lote FROM lote WHERE id_lote = ${id} FOR UPDATE`,
+        { lockTimeoutMs: 300 },
+      ).then(
+        () => null,
+        (e: unknown) => e as { code?: string },
+      );
+      atualizacao = await executarComoUsuario(
+        contexto,
+        (tx) => tx.lote.update({ where: { id_lote: id }, data: { motivo_bloqueio: "x" } }),
+        { lockTimeoutMs: 300 },
+      ).then(
+        () => null,
+        (e: unknown) => e as { code?: string },
+      );
+    } finally {
+      await retencao.liberar();
+    }
     assert.equal(bruto?.code, "P2010");
     assert.equal(atualizacao?.code, "P2039");
     assert.equal(traduzirErroBanco(bruto)?.status, 409);
