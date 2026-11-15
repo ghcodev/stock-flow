@@ -24,6 +24,7 @@ export type Cenario = {
   prefixo: string;
   operadorUsuario: UsuarioTeste;
   operador: string;
+  adminUsuario: UsuarioTeste;
   admin: string;
   idProduto: number;
   idLocalizacao: number;
@@ -39,7 +40,8 @@ export async function montarCenario(servidor: Servidor, rotulo: string): Promise
   const prefixo = `${rotulo}${randomUUID().slice(0, 8)}`;
   const operadorUsuario = await criarUsuarioTeste("operador");
   const operador = await tokenDe(operadorUsuario);
-  const admin = await tokenDe(await criarUsuarioTeste("administrador"));
+  const adminUsuario = await criarUsuarioTeste("administrador");
+  const admin = await tokenDe(adminUsuario);
   const idProduto = (await prisma.produto.create({ data: { nome: `${prefixo}-prod`, unidade_medida: "UN" } })).id_produto;
   const idLocalizacao = (await prisma.localizacao.create({ data: { corredor: prefixo, nivel: "1", posicao: "A" } }))
     .id_localizacao;
@@ -76,6 +78,7 @@ export async function montarCenario(servidor: Servidor, rotulo: string): Promise
     prefixo,
     operadorUsuario,
     operador,
+    adminUsuario,
     admin,
     idProduto,
     idLocalizacao,

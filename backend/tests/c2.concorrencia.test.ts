@@ -66,8 +66,7 @@ describe("E1 C2: bloqueio e desbloqueio pelo administrador durante entradas do o
       assert.equal(alteracoesDeStatus.length, 10);
       assert.equal(alteracoesDeSaldo.length, 10);
       assert.equal(movimentacoes.length, 11);
-      assert.ok(alteracoesDeStatus.every((l) => l.id_usuario !== c.operadorUsuario.id && l.id_usuario !== null));
-      assert.equal(new Set(alteracoesDeStatus.map((l) => l.id_usuario)).size, 1);
+      assert.ok(alteracoesDeStatus.every((l) => l.id_usuario === c.adminUsuario.id));
       assert.ok(alteracoesDeSaldo.every((l) => l.id_usuario === c.operadorUsuario.id));
       assert.ok(movimentacoes.every((l) => l.id_usuario === c.operadorUsuario.id));
     }
