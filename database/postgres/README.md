@@ -48,3 +48,20 @@ Duas sessões pedem ao mesmo tempo 50 unidades do lote L-002, que tem saldo 70. 
 - `fn_bloquear_saida` também recusa saída de lote com `data_validade` anterior a `current_date`, mesmo com status `ativo`.
 - `stockflow_app` recebe `GRANT UPDATE (status_movimentacao) ON movimentacao`, para cancelar movimentações e controlar contagens pendentes de inventário. Nenhuma outra coluna de `movimentacao` é atualizável.
 - A PoC 1 ganhou o caso de saída de lote ativo com validade expirada, que o banco recusa com "Saída não permitida para lote vencido, com validade expirada ou bloqueado".
+
+## Dados de desenvolvimento
+
+`seed_dev.sql` fica fora de `init/` e não roda sozinho. Depois de subir o banco:
+
+```bash
+docker compose exec -T postgres psql -U stockflow_admin -d stockflow < database/postgres/seed_dev.sql
+```
+
+O script pode ser repetido sem duplicar dados. Cria 2 usuários, 6 localizações, 5 produtos e 7 lotes (ativos, um vencendo em menos de 30 dias, um vencido, um bloqueado e um abaixo do estoque mínimo), com uma movimentação de entrada por lote para o saldo bater com o histórico. As PoCs apagam todas as tabelas; rode o seed de novo depois delas.
+
+Credenciais de desenvolvimento (hash bcrypt com custo 12; não usar fora do ambiente local):
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Administrador | admin@stockflow.dev | Admin@Dev2026 |
+| Operador | operador@stockflow.dev | Operador@Dev2026 |
