@@ -117,6 +117,26 @@ describe("autenticação por padrão", () => {
     );
   });
 
+  it("token com segredo certo mas sem exp, sem iat ou mais velho que 8 h: 401", async () => {
+    const chave = new TextEncoder().encode(config.jwtSecret);
+    const base = (): SignJWT =>
+      new SignJWT({ perfil: "operador" }).setProtectedHeader({ alg: "HS256" }).setSubject(String(usuario.id));
+    const semExp = await base().setIssuedAt().sign(chave);
+    const semIat = await base().setExpirationTime(agora() + 3600).sign(chave);
+    const velho = await base()
+      .setIssuedAt(agora() - 9 * 3600)
+      .setExpirationTime(agora() + 3600)
+      .sign(chave);
+    const valido = await base()
+      .setIssuedAt()
+      .setExpirationTime(agora() + 3600)
+      .sign(chave);
+    await esperar401(await chamar("/auth/me", semExp));
+    await esperar401(await chamar("/auth/me", semIat));
+    await esperar401(await chamar("/auth/me", velho));
+    assert.equal((await chamar("/auth/me", valido)).status, 200);
+  });
+
   it("assinado com segredo errado: 401", async () => {
     await esperar401(
       await chamar("/auth/me", await assinar(usuario.id, "outro-segredo-".repeat(4), "HS256", agora() + 3600)),

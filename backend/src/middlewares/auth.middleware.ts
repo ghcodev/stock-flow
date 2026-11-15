@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { jwtVerify } from "jose";
 import { prisma } from "../db.ts";
 import { HttpError } from "../errors.ts";
-import { CHAVE_JWT } from "../services/auth.service.ts";
+import { CHAVE_JWT, DURACAO_TOKEN } from "../services/auth.service.ts";
 import type { UsuarioAutenticado } from "../types/usuario.ts";
 
 const MAX_ID_INTEGER = 2_147_483_647;
@@ -14,7 +14,11 @@ function naoAutenticado(): HttpError {
 async function idDoToken(token: string): Promise<number> {
   let sub: string | undefined;
   try {
-    ({ payload: { sub } } = await jwtVerify(token, CHAVE_JWT, { algorithms: ["HS256"] }));
+    ({ payload: { sub } } = await jwtVerify(token, CHAVE_JWT, {
+      algorithms: ["HS256"],
+      requiredClaims: ["sub", "exp", "iat"],
+      maxTokenAge: DURACAO_TOKEN,
+    }));
   } catch {
     throw naoAutenticado();
   }

@@ -7,6 +7,8 @@ import type { perfil_usuario } from "../generated/prisma/enums.ts";
 
 const HASH_FIXO = "$2b$12$62tRVnIrGjPhTvnp0HTEduwJPscDs1XRzo1ZQ12Q/tuqtkgl0XS8a";
 
+export const DURACAO_TOKEN = "8h";
+
 export const CHAVE_JWT = new TextEncoder().encode(config.jwtSecret);
 
 export type UsuarioPublico = {
