@@ -30,3 +30,7 @@ export function inicioDoPeriodo(instante: Instante): Date {
 export function fimExclusivoDoPeriodo(instante: Instante): Date {
   return new Date(instante.momento.getTime() + (instante.diaInteiro ? UM_DIA_MS : 1));
 }
+
+export function periodoValido(de: Instante, ate: Instante): boolean {
+  return inicioDoPeriodo(de).getTime() < fimExclusivoDoPeriodo(ate).getTime();
+}

@@ -1,5 +1,5 @@
 import { param, query } from "express-validator";
-import { lerInstante } from "../periodo.ts";
+import { lerInstante, periodoValido } from "../periodo.ts";
 import {
   idNoCorpo,
   quantidadePositiva,
@@ -48,7 +48,7 @@ export const validarHistorico = [
       const de = (req.query as { de?: unknown } | undefined)?.de;
       const inicio = typeof de === "string" ? lerInstante(de) : null;
       const fim = typeof ate === "string" ? lerInstante(ate) : null;
-      return !inicio || !fim || inicio.momento <= fim.momento;
+      return !inicio || !fim || periodoValido(inicio, fim);
     })
     .withMessage("O início do período deve ser anterior ao fim"),
   soEscalar(query("antes_de_id").optional(), "Cursor").matches(ID_BIGINT).withMessage("Cursor inválido"),

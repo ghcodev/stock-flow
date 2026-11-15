@@ -103,6 +103,13 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
     assert.equal(await total(`de=${encodeURIComponent(emSaoPaulo)}`), 4);
   });
 
+  it("de com hora e ate só com dia no mesmo dia é um intervalo válido (200)", async () => {
+    const r = await chamarApi(servidor, "GET", "/movimentacoes?de=2026-11-15T12:00:00Z&ate=2026-11-15", c.operador);
+    assert.equal(r.status, 200);
+    assert.equal((await chamarApi(servidor, "GET", "/movimentacoes?de=2026-11-15&ate=2026-11-15T12:00:00Z", c.operador)).status, 200);
+    assert.equal((await chamarApi(servidor, "GET", "/movimentacoes?de=2026-11-15&ate=2026-11-15", c.operador)).status, 200);
+  });
+
   it("formatos aceitos pelo ISO 8601 mas ambíguos ou fora do contrato viram 400, nunca 500", async () => {
     const recusados = [
       "2026-W47-1",
@@ -180,6 +187,8 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
       "?de=ontem",
       "?ate=2026-13-45",
       "?de=2026-05-02&ate=2026-05-01",
+      "?de=2026-05-02T00:00:00Z&ate=2026-05-01",
+      "?de=2026-05-02T12:00:01Z&ate=2026-05-02T12:00:00Z",
       "?tipo=venda",
       "?tipo=entrada&tipo=saida",
       "?id_lote=x",
