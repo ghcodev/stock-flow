@@ -25,13 +25,16 @@ docker compose up -d
 ./database/postgres/poc/run_poc1.sh
 ```
 
-Resultado esperado:
+As verificações são automáticas: cada condição esperada vira uma assertion (resultado ou SQLSTATE) e o script termina com código diferente de zero se alguma falhar. Em caso de sucesso, imprime `PoC 1: OK`.
+
+O que é verificado:
 
 - a saída de 30 unidades do lote L-001 gera dois registros em `auditoria_log` (lote de 100 para 70 e a movimentação), com o usuário e o IP definidos por `set_config`;
+- a mudança de `status_movimentacao` para `cancelada` gera um registro `UPDATE` em `auditoria_log` com status anterior e novo, usuário e IP;
 - após o `COMMIT`, `app.user_id` volta vazio;
 - o JSONB dos registros de `usuario` não contém `senha_hash`;
-- `UPDATE` e `DELETE` em `auditoria_log` com `stockflow_app` retornam `permission denied`;
-- o banco recusa saída de lote bloqueado, saída de lote ativo com validade expirada, transferência com origem igual ao destino e saída com quantidade zero, e aceita inventário com contagem zero.
+- `UPDATE` e `DELETE` em `auditoria_log` com `stockflow_app` retornam `permission denied` (SQLSTATE 42501), assim como `UPDATE` de `quantidade` e `DELETE` em `movimentacao`;
+- o banco recusa saída de lote bloqueado, saída de lote ativo com validade expirada, transferência com origem igual ao destino e saída com quantidade zero (SQLSTATE P0001 para a trigger e 23514 para os CHECKs), e aceita inventário com contagem zero.
 
 ## PoC 2 – Concorrência nas saídas
 
@@ -39,7 +42,7 @@ Resultado esperado:
 ./database/postgres/poc/run_poc2.sh
 ```
 
-Duas sessões pedem ao mesmo tempo 50 unidades do lote L-002, que tem saldo 70. Resultado esperado: uma sessão conclui a saída (70 para 20) e a outra espera a trava de `SELECT ... FOR UPDATE`, lê o saldo atualizado e é recusada com "Saldo insuficiente". O saldo final é 20.
+Duas sessões pedem ao mesmo tempo 50 unidades do lote L-002, que tem saldo 70. Verificações automáticas, com código de saída diferente de zero em caso de falha e `PoC 2: OK` em caso de sucesso: exatamente uma sessão conclui a saída (70 para 20) e a outra espera a trava de `SELECT ... FOR UPDATE`, lê o saldo atualizado e é recusada com "Saldo insuficiente". O saldo final é 20 e há exatamente uma saída concluída no lote.
 
 ## Ajustes da Etapa 1 (v3.0)
 
@@ -47,6 +50,10 @@ Duas sessões pedem ao mesmo tempo 50 unidades do lote L-002, que tem saldo 70. 
 - Novos índices B-tree: `idx_auditoria_data_hora` em `auditoria_log(data_hora)` e `idx_movimentacao_lote_data` em `movimentacao(id_lote, data_movimentacao)`. O esquema passa a ter 7 tabelas, 7 tipos ENUM, 16 índices, 2 funções e 4 triggers.
 - `fn_bloquear_saida` também recusa saída de lote com `data_validade` anterior a `current_date`, mesmo com status `ativo`.
 - `stockflow_app` recebe `GRANT UPDATE (status_movimentacao) ON movimentacao`, para cancelar movimentações e controlar contagens pendentes de inventário. Nenhuma outra coluna de `movimentacao` é atualizável.
+- `trg_auditoria_movimentacao` passou a ser `AFTER INSERT OR UPDATE OF status_movimentacao`: cancelar ou concluir uma movimentação fica na auditoria com autor, IP, valor anterior e novo. A permissão continua restrita à coluna.
+- `movimentacao.id_lote` declara `ON DELETE RESTRICT` (RNF03), como `id_usuario`.
+- `.gitattributes` fixa fim de linha LF em `database/postgres/**/*.sh`, `database/postgres/**/*.sql` e `docker-compose.yml`, para os scripts rodarem no contêiner mesmo com `core.autocrlf=true`.
+- As PoCs 1 e 2 viraram verificações automáticas (ver acima). As funções auxiliares ficam em `poc/poc_funcoes.sql`.
 - A PoC 1 ganhou o caso de saída de lote ativo com validade expirada, que o banco recusa com "Saída não permitida para lote vencido, com validade expirada ou bloqueado".
 
 ## Dados de desenvolvimento
