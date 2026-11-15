@@ -11,3 +11,7 @@ export function exigirPerfil(...perfis: perfil_usuario[]) {
     next();
   };
 }
+
+export const exigirOperacional = exigirPerfil("administrador", "operador");
+
+export const exigirAdministrador = exigirPerfil("administrador");
