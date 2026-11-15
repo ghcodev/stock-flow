@@ -27,6 +27,20 @@ describe("falhas fatais do processo", () => {
     assert.doesNotMatch(r.stderr, /VALOR-CURTO|SENHA-SINTETICA|\n\s+at /);
   });
 
+  it("desconectar pendente sem handles ativos sai com 1 pelo prazo, não com 0", () => {
+    const r = rodar(["tests/fixtures/falhas.ts", "desconectar-pendente"], {});
+    assert.equal(r.status, 1);
+    assert.equal(r.stderr, "");
+  });
+
+  for (const modo of ["sigterm", "sigint"]) {
+    it(`${modo}: liga o sinal ao encerramento e sai com 0`, () => {
+      const r = rodar(["tests/fixtures/falhas.ts", modo], {});
+      assert.equal(r.status, 0);
+      assert.equal(r.stderr, "");
+    });
+  }
+
   for (const [modo, mensagem] of [
     ["excecao", "exceção não tratada"],
     ["rejeicao", "promessa rejeitada sem tratamento"],

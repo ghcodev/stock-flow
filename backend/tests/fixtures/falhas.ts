@@ -5,9 +5,9 @@ const modo = process.argv[2];
 
 const server = http.createServer((_req, res) => res.end("ok"));
 const encerrar = criarEncerramento(server, {
-  desconectar: async () => {},
+  desconectar: modo === "desconectar-pendente" ? () => new Promise<void>(() => {}) : async () => {},
   sair: (codigo) => process.exit(codigo),
-  limiteMs: 5000,
+  limiteMs: 400,
 });
 instalarProtecoes(server, encerrar);
 
@@ -21,7 +21,10 @@ if (modo === "porta-ocupada") {
   server.listen(0, "127.0.0.1", () => {
     setImmediate(() => {
       if (modo === "excecao") throw new Error("SEGREDO-NA-EXCECAO");
-      Promise.reject(new Error("SEGREDO-NA-REJEICAO"));
+      if (modo === "rejeicao") Promise.reject(new Error("SEGREDO-NA-REJEICAO"));
+      if (modo === "sigterm") process.emit("SIGTERM");
+      if (modo === "sigint") process.emit("SIGINT");
+      if (modo === "desconectar-pendente") void encerrar(0);
     });
   });
 }

@@ -22,7 +22,6 @@ export function criarEncerramento(server: Server, opcoes: OpcoesEncerramento): E
       clearInterval(ociosas);
       sair(1);
     }, limiteMs);
-    prazo.unref();
     emAndamento = (async () => {
       try {
         const fechado = new Promise<void>((ok) => server.close(() => ok()));
