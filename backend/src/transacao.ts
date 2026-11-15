@@ -10,7 +10,7 @@ export type ContextoDeEscrita = { idUsuario: number; ip: string };
 export type OpcoesTransacao = { lockTimeoutMs?: number };
 
 const ESPERA_MAXIMA_POR_CONEXAO_MS = 5000;
-const DURACAO_MAXIMA_MS = 10_000;
+const DURACAO_MAXIMA_MS = 5000;
 
 export function contextoDe(req: Request): ContextoDeEscrita {
   return { idUsuario: usuarioAtual(req).id, ip: req.ip ?? "" };
