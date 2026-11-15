@@ -70,3 +70,6 @@ temp/
 !.claude/skills/
 !.claude/skills/**
 .maestri/
+
+# Cliente Prisma gerado
+backend/src/generated/
