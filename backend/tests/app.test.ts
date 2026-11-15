@@ -2,10 +2,11 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createApp } from "../src/app.ts";
 import { prisma } from "../src/db.ts";
-import { subir, type Servidor } from "./helpers.ts";
+import { criarUsuarioTeste, desativarUsuariosTeste, subir, tokenDe, type Servidor } from "./helpers.ts";
 
 describe("esqueleto da API", () => {
   let servidor: Servidor;
+  let autorizacao: Record<string, string>;
 
   before(async () => {
     const app = createApp((a) => {
@@ -25,10 +26,13 @@ describe("esqueleto da API", () => {
       });
     });
     servidor = await subir(app);
+    const usuario = await criarUsuarioTeste("operador");
+    autorizacao = { authorization: `Bearer ${await tokenDe(usuario)}` };
   });
 
   after(async () => {
     await servidor.fechar();
+    await desativarUsuariosTeste();
     await prisma.$disconnect();
   });
 
@@ -39,8 +43,8 @@ describe("esqueleto da API", () => {
     assert.equal(res.headers.get("x-powered-by"), null);
   });
 
-  it("rota inexistente responde 404 em JSON", async () => {
-    const res = await fetch(`${servidor.url}/nao-existe`);
+  it("rota inexistente autenticada responde 404 em JSON", async () => {
+    const res = await fetch(`${servidor.url}/nao-existe`, { headers: autorizacao });
     assert.equal(res.status, 404);
     assert.match(res.headers.get("content-type") ?? "", /application\/json/);
     const corpo = (await res.json()) as { erro: { codigo: string } };
@@ -48,7 +52,7 @@ describe("esqueleto da API", () => {
   });
 
   it("erro interno não vaza stack trace nem mensagem", async () => {
-    const res = await fetch(`${servidor.url}/_teste/erro`);
+    const res = await fetch(`${servidor.url}/_teste/erro`, { headers: autorizacao });
     assert.equal(res.status, 500);
     const texto = await res.text();
     assert.deepEqual(JSON.parse(texto), {
@@ -67,6 +71,7 @@ describe("esqueleto da API", () => {
     try {
       const res = await fetch(
         `${servidor.url}/_teste/erro/ID-SINTETICO-12345?token=TOKEN-SINTETICO-abcdef`,
+        { headers: autorizacao },
       );
       assert.equal(res.status, 500);
     } finally {
@@ -77,7 +82,7 @@ describe("esqueleto da API", () => {
   });
 
   it("BIGINT e NUMERIC saem como texto", async () => {
-    const res = await fetch(`${servidor.url}/_teste/numeros`);
+    const res = await fetch(`${servidor.url}/_teste/numeros`, { headers: autorizacao });
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { grande: "9007199254740993", decimal: "1.5" });
   });
