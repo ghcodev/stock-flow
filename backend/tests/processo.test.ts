@@ -1,6 +1,27 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+const ENV_VALIDO = {
+  DATABASE_URL: "postgresql://u:SENHA-SINTETICA@127.0.0.1:1/d",
+  JWT_SECRET: "x".repeat(40),
+  PORT: "0",
+};
+
+function rodarEntradaComFalha(arquivo: string, conteudo: string) {
+  const base = join(process.cwd(), "tests", "tmp");
+  mkdirSync(base, { recursive: true });
+  const dir = mkdtempSync(join(base, "boot-"));
+  try {
+    cpSync("src", join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", arquivo), conteudo);
+    return rodar([join(dir, "src", "server.ts")], ENV_VALIDO);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 function rodar(args: string[], env: Record<string, string>) {
   return spawnSync(process.execPath, args, {
@@ -26,6 +47,24 @@ describe("falhas fatais do processo", () => {
     assert.equal(r.status, 1);
     assert.doesNotMatch(r.stderr, /VALOR-CURTO|SENHA-SINTETICA|\n\s+at /);
   });
+
+  for (const [nome, arquivo, conteudo] of [
+    ["falha no import de app", "app.ts", 'throw new Error("SEGREDO-NO-IMPORT");\nexport const app = null;\n'],
+    ["falha no import de db", "db.ts", 'throw new Error("SEGREDO-NO-IMPORT");\nexport const prisma = null;\n'],
+    ["erro de sintaxe em app", "app.ts", "export const app = {;\n"],
+    [
+      "falha na inicialização (listen)",
+      "app.ts",
+      'export const app = { listen() { throw new Error("SEGREDO-NO-IMPORT"); } };\n',
+    ],
+  ]) {
+    it(`entrypoint: ${nome} sai com 1 e mensagem fixa`, () => {
+      const r = rodarEntradaComFalha(arquivo, conteudo);
+      assert.equal(r.status, 1);
+      assert.equal(r.stderr, "Erro fatal: falha na inicialização\n");
+      assert.equal(r.stdout, "");
+    });
+  }
 
   it("desconectar pendente sem handles ativos sai com 1 pelo prazo, não com 0", () => {
     const r = rodar(["tests/fixtures/falhas.ts", "desconectar-pendente"], {});

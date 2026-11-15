@@ -3,13 +3,14 @@ import { criarEncerramento, instalarProtecoes } from "../../src/lifecycle.ts";
 
 const modo = process.argv[2];
 
+const protecoes = instalarProtecoes((codigo) => process.exit(codigo));
 const server = http.createServer((_req, res) => res.end("ok"));
 const encerrar = criarEncerramento(server, {
   desconectar: modo === "desconectar-pendente" ? () => new Promise<void>(() => {}) : async () => {},
   sair: (codigo) => process.exit(codigo),
   limiteMs: 400,
 });
-instalarProtecoes(server, encerrar);
+protecoes.definirEncerramento(encerrar, server);
 
 if (modo === "porta-ocupada") {
   const ocupante = http.createServer();

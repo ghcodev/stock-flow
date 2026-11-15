@@ -1,4 +1,5 @@
 import type { Server } from "node:http";
+import { ConfigError } from "./errors.ts";
 
 export type Encerramento = (codigo: number) => Promise<void>;
 
@@ -41,14 +42,37 @@ export function criarEncerramento(server: Server, opcoes: OpcoesEncerramento): E
   };
 }
 
-export function instalarProtecoes(server: Server, encerrar: Encerramento): void {
+export type Protecoes = {
+  definirEncerramento: (encerrar: Encerramento, server: Server) => void;
+  falhar: (err: unknown) => void;
+};
+
+export function instalarProtecoes(sair: (codigo: number) => void): Protecoes {
+  let encerrar: Encerramento | null = null;
+  const finalizar = (codigo: number): void => {
+    if (encerrar) void encerrar(codigo);
+    else sair(codigo);
+  };
   const fatal = (mensagem: string): void => {
     process.stderr.write(`${mensagem}\n`);
-    void encerrar(1);
+    finalizar(1);
   };
   process.on("uncaughtException", () => fatal("Erro fatal: exceção não tratada"));
   process.on("unhandledRejection", () => fatal("Erro fatal: promessa rejeitada sem tratamento"));
-  server.on("error", () => fatal("Erro fatal: falha no servidor HTTP"));
-  process.on("SIGTERM", () => void encerrar(0));
-  process.on("SIGINT", () => void encerrar(0));
+  process.on("SIGTERM", () => finalizar(0));
+  process.on("SIGINT", () => finalizar(0));
+
+  return {
+    definirEncerramento(novo, server) {
+      encerrar = novo;
+      server.on("error", () => fatal("Erro fatal: falha no servidor HTTP"));
+    },
+    falhar(err) {
+      fatal(
+        err instanceof ConfigError
+          ? `Configuração inválida: ${err.message}`
+          : "Erro fatal: falha na inicialização",
+      );
+    },
+  };
 }
