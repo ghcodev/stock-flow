@@ -1,12 +1,14 @@
-import { body } from "express-validator";
+import { body, type ValidationChain } from "express-validator";
 import { semNul, soEscalar, validarId } from "./comuns.ts";
 
 export const TIPOS_ETIQUETA = ["qr_code", "rfid"];
 
-export const validarAssociarEtiqueta = [
-  validarId,
-  soEscalar(body("tipo"), "Tipo de etiqueta").isIn(TIPOS_ETIQUETA).withMessage("Tipo de etiqueta deve ser qr_code ou rfid"),
-  body("codigo")
+export function tipoEtiqueta(cadeia: ValidationChain): ValidationChain {
+  return soEscalar(cadeia, "Tipo de etiqueta").isIn(TIPOS_ETIQUETA).withMessage("Tipo de etiqueta deve ser qr_code ou rfid");
+}
+
+export function codigoEtiqueta(cadeia: ValidationChain): ValidationChain {
+  return cadeia
     .isString()
     .withMessage("Código da etiqueta deve ser texto")
     .bail()
@@ -15,5 +17,7 @@ export const validarAssociarEtiqueta = [
     .bail()
     .trim()
     .isLength({ min: 1, max: 128 })
-    .withMessage("Código da etiqueta é obrigatório e deve ter até 128 caracteres"),
-];
+    .withMessage("Código da etiqueta é obrigatório e deve ter até 128 caracteres");
+}
+
+export const validarAssociarEtiqueta = [validarId, tipoEtiqueta(body("tipo")), codigoEtiqueta(body("codigo"))];

@@ -94,3 +94,22 @@ export function campoBusca(nome: string, rotulo: string, max: number): Validatio
     .isLength({ max })
     .withMessage(`${rotulo} deve ter até ${max} caracteres`);
 }
+
+export function campoEmail(opcional: boolean): ValidationChain {
+  const base = body("email");
+  return (opcional ? base.optional() : base)
+    .isString()
+    .withMessage("E-mail é obrigatório")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .isLength({ max: 160 })
+    .withMessage("E-mail deve ter no máximo 160 caracteres")
+    .bail()
+    .isEmail()
+    .withMessage("E-mail inválido");
+}
+
+export function idDaRota(req: Request): number {
+  return dadosValidados<{ id: number }>(req, ["params"]).id;
+}

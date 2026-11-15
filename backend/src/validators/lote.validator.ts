@@ -1,6 +1,6 @@
 import { body, query } from "express-validator";
-import { campoBusca, semNul, dataIso, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
-import { TIPOS_ETIQUETA } from "./etiqueta.validator.ts";
+import { campoBusca, dataIso, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { codigoEtiqueta, tipoEtiqueta } from "./etiqueta.validator.ts";
 
 const MAX_ID = 2_147_483_647;
 const STATUS_LOTE = ["ativo", "bloqueado", "vencido"];
@@ -12,24 +12,13 @@ function idNoCorpo(campo: string, rotulo: string) {
     .toInt();
 }
 
-export const validarEtiqueta = (prefixo: string, obrigatoria: boolean) => [
-  soEscalar(
-    body(`${prefixo}.tipo`).if(obrigatoria ? body(prefixo).exists() : body(prefixo).exists({ values: "null" })),
-    "Tipo de etiqueta",
-  ).isIn(TIPOS_ETIQUETA)
-    .withMessage("Tipo de etiqueta deve ser qr_code ou rfid"),
-  body(`${prefixo}.codigo`)
-    .if(obrigatoria ? body(prefixo).exists() : body(prefixo).exists({ values: "null" }))
-    .isString()
-    .withMessage("Código da etiqueta deve ser texto")
-    .bail()
-    .custom(semNul)
-    .withMessage("Código da etiqueta contém caractere inválido")
-    .bail()
-    .trim()
-    .isLength({ min: 1, max: 128 })
-    .withMessage("Código da etiqueta é obrigatório e deve ter até 128 caracteres"),
-];
+const validarEtiqueta = (prefixo: string) => {
+  const presente = body(prefixo).exists({ values: "null" });
+  return [
+    tipoEtiqueta(body(`${prefixo}.tipo`).if(presente)),
+    codigoEtiqueta(body(`${prefixo}.codigo`).if(presente)),
+  ];
+};
 
 export const validarCriarLote = [
   texto("numero_lote", "Número do lote", 50, true),
@@ -46,7 +35,7 @@ export const validarCriarLote = [
     })
     .withMessage("Data de validade não pode ser anterior à fabricação"),
   body("etiqueta").optional({ values: "null" }).isObject().withMessage("Etiqueta deve ser um objeto"),
-  ...validarEtiqueta("etiqueta", false),
+  ...validarEtiqueta("etiqueta"),
 ];
 
 export const validarBloquearLote = [validarId, texto("motivo", "Motivo", 500, true)];

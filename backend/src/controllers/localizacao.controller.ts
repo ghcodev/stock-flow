@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { contextoDe } from "../transacao.ts";
-import { dadosValidados } from "../validators/comuns.ts";
+import { dadosValidados, idDaRota } from "../validators/comuns.ts";
 import {
   criarLocalizacao,
   listarLocalizacoes,
@@ -14,7 +14,7 @@ export async function criar(req: Request, res: Response): Promise<void> {
 }
 
 export async function obter(req: Request, res: Response): Promise<void> {
-  res.json(await obterLocalizacao(dadosValidados<{ id: number }>(req, ["params"]).id));
+  res.json(await obterLocalizacao(idDaRota(req)));
 }
 
 export async function listar(req: Request, res: Response): Promise<void> {

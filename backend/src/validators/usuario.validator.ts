@@ -1,24 +1,9 @@
 import { body, query } from "express-validator";
-import { algumCampo, semNul, campoBusca, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { algumCampo, campoBusca, campoEmail, semNul, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 
 const PERFIS = ["administrador", "operador"];
 const MIN_SENHA = 8;
 const MAX_BYTES_SENHA = 72;
-
-const email = (opcional: boolean) => {
-  const base = body("email");
-  return (opcional ? base.optional() : base)
-    .isString()
-    .withMessage("E-mail é obrigatório")
-    .bail()
-    .trim()
-    .toLowerCase()
-    .isLength({ max: 160 })
-    .withMessage("E-mail deve ter no máximo 160 caracteres")
-    .bail()
-    .isEmail()
-    .withMessage("E-mail inválido");
-};
 
 const senha = (opcional: boolean) => {
   const base = body("senha");
@@ -43,13 +28,13 @@ const perfil = (opcional: boolean) => {
     .withMessage("Perfil deve ser administrador ou operador");
 };
 
-export const validarCriarUsuario = [texto("nome", "Nome", 120, true), email(false), senha(false), perfil(false)];
+export const validarCriarUsuario = [texto("nome", "Nome", 120, true), campoEmail(false), senha(false), perfil(false)];
 
 export const validarAtualizarUsuario = [
   validarId,
   algumCampo(["nome", "email", "senha", "perfil"]),
   texto("nome", "Nome", 120, true).optional(),
-  email(true),
+  campoEmail(true),
   senha(true),
   perfil(true),
 ];

@@ -1,20 +1,10 @@
 import { body } from "express-validator";
-import { semNul } from "./comuns.ts";
+import { campoEmail, semNul } from "./comuns.ts";
 
 const MAX_BYTES_SENHA = 72;
 
 export const validarLogin = [
-  body("email")
-    .isString()
-    .withMessage("E-mail é obrigatório")
-    .bail()
-    .trim()
-    .toLowerCase()
-    .isLength({ max: 160 })
-    .withMessage("E-mail deve ter no máximo 160 caracteres")
-    .bail()
-    .isEmail()
-    .withMessage("E-mail inválido"),
+  campoEmail(false),
   body("senha")
     .isString()
     .withMessage("Senha é obrigatória")
