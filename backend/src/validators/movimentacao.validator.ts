@@ -10,6 +10,7 @@ import {
 
 const TIPOS_MOVIMENTACAO = ["entrada", "saida", "transferencia", "ajuste", "inventario"];
 const MAX_ID = 2_147_483_647;
+const ID_BIGINT = /^[1-9]\d{0,17}$/;
 
 const camposDeSaldo = [
   idNoCorpo("id_lote", "Lote"),
@@ -50,6 +51,7 @@ export const validarHistorico = [
       return !inicio || !fim || inicio.momento <= fim.momento;
     })
     .withMessage("O início do período deve ser anterior ao fim"),
+  soEscalar(query("antes_de_id").optional(), "Cursor").matches(ID_BIGINT).withMessage("Cursor inválido"),
   soEscalar(query("tipo").optional(), "Tipo").isIn(TIPOS_MOVIMENTACAO).withMessage("Tipo inválido"),
   soEscalar(query("id_lote").optional(), "Lote").isInt({ min: 1, max: MAX_ID }).withMessage("Lote inválido").toInt(),
   soEscalar(query("id_usuario").optional(), "Usuário")
@@ -59,7 +61,5 @@ export const validarHistorico = [
 ];
 
 export const validarIdMovimentacao = [
-  soEscalar(param("id"), "Identificador")
-    .matches(/^[1-9]\d{0,17}$/)
-    .withMessage("Identificador inválido"),
+  soEscalar(param("id"), "Identificador").matches(ID_BIGINT).withMessage("Identificador inválido"),
 ];

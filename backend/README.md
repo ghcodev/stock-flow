@@ -61,3 +61,7 @@ Formatos aceitos em `de` e `ate`, e somente estes:
 - `AAAA-MM-DDThh:mm[:ss[.fff]]` com `Z` ou deslocamento `+hh:mm` / `-hh:mm`. Em `de` o instante é incluído; em `ate` também (limite exclusivo 1 ms depois).
 
 Outros formatos (semana ISO, dia do ano, `20261115`, horário sem fuso, `+hhmm`) respondem 400. A interpretação não depende do fuso do processo. `de` não pode ser posterior a `ate`.
+
+Ordenação: `id_movimentacao` decrescente (a ordem real de gravação; a data é gravada com o instante do banco depois da trava do lote, então coincide com o id).
+
+Paginação: `pagina` e `limite` (padrão 20, máximo 100) usam deslocamento e `total` conta os registros do filtro. Se houver gravações enquanto o cliente percorre as páginas, o deslocamento repete linhas. Para percorrer o histórico sem repetir nem pular, use o cursor: a resposta traz `proximo_antes_de_id` (o menor id da página, ou `null` quando não há mais) e a página seguinte é pedida com `?antes_de_id=<esse id>` (mantendo os demais filtros e sem `pagina`). Com `antes_de_id`, `total` conta só os registros restantes.

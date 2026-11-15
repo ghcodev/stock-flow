@@ -102,7 +102,10 @@ export type FiltroHistorico = Paginacao & {
   tipo?: tipo_movimentacao;
   id_lote?: number;
   id_usuario?: number;
+  antes_de_id?: string;
 };
+
+export type PaginaDeHistorico = Pagina<MovimentacaoPublica> & { proximo_antes_de_id: string | null };
 
 function instanteDoFiltro(texto: string) {
   const instante = lerInstante(texto);
@@ -110,12 +113,13 @@ function instanteDoFiltro(texto: string) {
   return instante;
 }
 
-export async function listarHistorico(filtro: FiltroHistorico): Promise<Pagina<MovimentacaoPublica>> {
+export async function listarHistorico(filtro: FiltroHistorico): Promise<PaginaDeHistorico> {
   const { pagina, limite, skip, take } = intervaloDe(filtro);
   const where: Prisma.movimentacaoWhereInput = {
     ...(filtro.tipo === undefined ? {} : { tipo_movimentacao: filtro.tipo }),
     ...(filtro.id_lote === undefined ? {} : { id_lote: filtro.id_lote }),
     ...(filtro.id_usuario === undefined ? {} : { id_usuario: filtro.id_usuario }),
+    ...(filtro.antes_de_id === undefined ? {} : { id_movimentacao: { lt: BigInt(filtro.antes_de_id) } }),
     ...(filtro.de === undefined && filtro.ate === undefined
       ? {}
       : {
@@ -129,13 +133,15 @@ export async function listarHistorico(filtro: FiltroHistorico): Promise<Pagina<M
     prisma.movimentacao.findMany({
       where,
       select: SELECAO_MOVIMENTACAO,
-      orderBy: [{ data_movimentacao: "desc" }, { id_movimentacao: "desc" }],
+      orderBy: [{ id_movimentacao: "desc" }],
       skip,
       take,
     }),
     prisma.movimentacao.count({ where }),
   ]);
-  return { dados, pagina, limite, total };
+  const haMais = skip + dados.length < total;
+  const proximo = haMais ? (dados.at(-1)?.id_movimentacao.toString() ?? null) : null;
+  return { dados, pagina, limite, total, proximo_antes_de_id: proximo };
 }
 
 export async function obterMovimentacao(id: string): Promise<MovimentacaoPublica> {

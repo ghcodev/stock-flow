@@ -41,7 +41,7 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
     await prisma.$disconnect();
   });
 
-  it("lista o histórico do lote em ordem estável por data e id, incluindo a entrada inicial, com BIGINT e NUMERIC em texto", async () => {
+  it("lista o histórico do lote em ordem decrescente de id (que coincide com a data), incluindo a entrada inicial, com BIGINT e NUMERIC em texto", async () => {
     const r = await chamarApi(servidor, "GET", `/movimentacoes?id_lote=${lote}`, c.operador);
     const lista = r.corpo as Lista;
     assert.equal(lista.total, 4);
@@ -57,8 +57,8 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
       const a = lista.dados[i - 1];
       const b = lista.dados[i];
       assert.ok(a && b);
-      const ordenado = a.data_movimentacao > b.data_movimentacao || (a.data_movimentacao === b.data_movimentacao && BigInt(a.id_movimentacao) > BigInt(b.id_movimentacao));
-      assert.ok(ordenado, `ordem instável na posição ${i}`);
+      assert.ok(BigInt(a.id_movimentacao) > BigInt(b.id_movimentacao), `ordem instável na posição ${i}`);
+      assert.ok(a.data_movimentacao >= b.data_movimentacao, `data fora da ordem do id na posição ${i}`);
     }
     assert.match(r.texto, /"id_movimentacao":"\d+"/);
   });
@@ -140,6 +140,41 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
     assert.equal((await historico("")).limite, 20);
   });
 
+  it("cursor antes_de_id: gravações entre as páginas não repetem nem pulam linhas", async () => {
+    const lote2 = await c.novoLote("cursor", { quantidade: "1" });
+    for (let i = 0; i < 7; i++) {
+      assert.equal((await post("/movimentacoes/entrada", { id_lote: lote2, quantidade: 1 })).status, 201);
+    }
+    const esperados = (await c.movimentos(lote2)).map((m) => m.id_movimentacao.toString()).reverse();
+    assert.equal(esperados.length, 8);
+
+    const pagina1 = await chamarApi(servidor, "GET", `/movimentacoes?id_lote=${lote2}&limite=3`, c.operador);
+    const primeira = pagina1.corpo as Lista & { proximo_antes_de_id: string | null };
+    assert.deepEqual(primeira.dados.map((m) => m.id_movimentacao), esperados.slice(0, 3));
+    assert.equal(primeira.proximo_antes_de_id, esperados[2]);
+
+    for (let i = 0; i < 5; i++) {
+      assert.equal((await post("/movimentacoes/entrada", { id_lote: lote2, quantidade: 1 })).status, 201);
+    }
+
+    const lidas = primeira.dados.map((m) => m.id_movimentacao);
+    let cursor: string | null = primeira.proximo_antes_de_id;
+    let voltas = 0;
+    while (cursor !== null && voltas++ < 10) {
+      const r = await chamarApi(servidor, "GET", `/movimentacoes?id_lote=${lote2}&limite=3&antes_de_id=${cursor}`, c.operador);
+      const pagina = r.corpo as Lista & { proximo_antes_de_id: string | null };
+      lidas.push(...pagina.dados.map((m) => m.id_movimentacao));
+      cursor = pagina.proximo_antes_de_id;
+    }
+    assert.deepEqual(lidas, esperados);
+    assert.equal(new Set(lidas).size, lidas.length);
+    const ultima = (await chamarApi(servidor, "GET", `/movimentacoes?id_lote=${lote2}&limite=100&antes_de_id=${esperados.at(-1)}`, c.operador)).corpo as Lista & {
+      proximo_antes_de_id: string | null;
+    };
+    assert.equal(ultima.dados.length, 0);
+    assert.equal(ultima.proximo_antes_de_id, null);
+  });
+
   it("parâmetros inválidos ou repetidos: 400", async () => {
     for (const consulta of [
       "?de=ontem",
@@ -153,6 +188,11 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
       "?id_usuario=1&id_usuario=2",
       "?pagina=0",
       "?de=2026-01-01&de=2026-01-02",
+      "?antes_de_id=0",
+      "?antes_de_id=abc",
+      "?antes_de_id=1&antes_de_id=2",
+      "?antes_de_id=1.5",
+      "?antes_de_id=12345678901234567890",
     ]) {
       assert.equal((await chamarApi(servidor, "GET", `/movimentacoes${consulta}`, c.operador)).status, 400, consulta);
     }
