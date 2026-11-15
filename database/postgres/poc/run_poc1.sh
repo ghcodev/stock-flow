@@ -7,8 +7,9 @@ ADMIN="${POSTGRES_USER:-stockflow_admin}"
 DB="${POSTGRES_DB:-stockflow}"
 POC="database/postgres/poc"
 
-$PSQL -U "$ADMIN" -d "$DB" -q < "$POC/00_dados_poc.sql"
+$PSQL -v ON_ERROR_STOP=1 -U "$ADMIN" -d "$DB" -q < "$POC/00_dados_poc.sql"
 echo "== PoC 1: auditoria =="
-$PSQL -U stockflow_app -d "$DB" < "$POC/poc1_auditoria.sql"
+cat "$POC/poc_funcoes.sql" "$POC/poc1_auditoria.sql" | $PSQL -v ON_ERROR_STOP=1 -U stockflow_app -d "$DB" -q
 echo "== PoC 1: permissões e restrições =="
-$PSQL -U stockflow_app -d "$DB" < "$POC/poc1_permissoes_restricoes.sql"
+cat "$POC/poc_funcoes.sql" "$POC/poc1_permissoes_restricoes.sql" | $PSQL -v ON_ERROR_STOP=1 -U stockflow_app -d "$DB" -q
+echo "PoC 1: OK"

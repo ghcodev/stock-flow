@@ -10,16 +10,26 @@ FROM lote l, usuario u
 WHERE l.numero_lote = 'L-001' AND u.email = 'admin@stockflow.local';
 COMMIT;
 
-SELECT id_log, tabela_afetada, operacao,
-       valor_anterior->>'quantidade' AS antes,
-       valor_novo->>'quantidade' AS depois,
-       id_usuario, ip_usuario
-FROM auditoria_log
-WHERE tabela_afetada IN ('lote', 'movimentacao') AND id_usuario IS NOT NULL
-ORDER BY id_log;
-
-SELECT current_setting('app.user_id', true) AS variavel_apos_commit;
-SELECT bool_or(valor_novo ? 'senha_hash') AS senha_hash_no_log FROM auditoria_log WHERE tabela_afetada = 'usuario';
+SELECT pg_temp.afirmar(
+  (SELECT count(*) = 1 FROM auditoria_log a
+   WHERE a.tabela_afetada = 'lote' AND a.operacao = 'UPDATE'
+     AND (a.valor_anterior->>'quantidade')::numeric = 100
+     AND (a.valor_novo->>'quantidade')::numeric = 70
+     AND a.id_usuario = (SELECT id_usuario FROM usuario WHERE email = 'admin@stockflow.local')
+     AND a.ip_usuario = '192.168.0.10'),
+  'atualização do lote auditada com valores, usuário e IP');
+SELECT pg_temp.afirmar(
+  (SELECT count(*) = 1 FROM auditoria_log a
+   WHERE a.tabela_afetada = 'movimentacao' AND a.operacao = 'INSERT'
+     AND (a.valor_novo->>'quantidade')::numeric = 30
+     AND a.id_usuario = (SELECT id_usuario FROM usuario WHERE email = 'admin@stockflow.local')
+     AND a.ip_usuario = '192.168.0.10'),
+  'inserção da movimentação auditada com usuário e IP');
+SELECT pg_temp.afirmar(coalesce(current_setting('app.user_id', true), '') = '', 'app.user_id vazio após o COMMIT');
+SELECT pg_temp.afirmar(
+  (SELECT count(*) > 0 FROM auditoria_log WHERE tabela_afetada = 'usuario')
+  AND NOT (SELECT coalesce(bool_or(valor_novo ? 'senha_hash'), false) FROM auditoria_log WHERE tabela_afetada = 'usuario'),
+  'auditoria de usuário existe e não contém senha_hash');
 
 BEGIN;
 SELECT set_config('app.user_id', (SELECT id_usuario::text FROM usuario WHERE email = 'admin@stockflow.local'), true),
@@ -28,10 +38,11 @@ UPDATE movimentacao SET status_movimentacao = 'cancelada'
 WHERE id_movimentacao = (SELECT min(id_movimentacao) FROM movimentacao WHERE tipo_movimentacao = 'saida');
 COMMIT;
 
-SELECT id_log, operacao,
-       valor_anterior->>'status_movimentacao' AS status_antes,
-       valor_novo->>'status_movimentacao' AS status_depois,
-       id_usuario, ip_usuario
-FROM auditoria_log
-WHERE tabela_afetada = 'movimentacao' AND operacao = 'UPDATE'
-ORDER BY id_log;
+SELECT pg_temp.afirmar(
+  (SELECT count(*) = 1 FROM auditoria_log a
+   WHERE a.tabela_afetada = 'movimentacao' AND a.operacao = 'UPDATE'
+     AND a.valor_anterior->>'status_movimentacao' = 'concluida'
+     AND a.valor_novo->>'status_movimentacao' = 'cancelada'
+     AND a.id_usuario = (SELECT id_usuario FROM usuario WHERE email = 'admin@stockflow.local')
+     AND a.ip_usuario = '192.168.0.11'),
+  'mudança de status_movimentacao auditada com valor anterior, novo, usuário e IP');
