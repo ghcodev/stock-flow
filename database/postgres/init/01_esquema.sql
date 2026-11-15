@@ -93,5 +93,7 @@ CREATE TABLE auditoria_log (
   ip_usuario INET,
   observacao TEXT
 );
-CREATE INDEX idx_auditoria_anterior ON auditoria_log USING GIN (valor_anterior);
-CREATE INDEX idx_auditoria_novo ON auditoria_log USING GIN (valor_novo);
+CREATE INDEX idx_auditoria_anterior ON auditoria_log USING GIN (valor_anterior jsonb_path_ops);
+CREATE INDEX idx_auditoria_novo ON auditoria_log USING GIN (valor_novo jsonb_path_ops);
+CREATE INDEX idx_auditoria_data_hora ON auditoria_log (data_hora);
+CREATE INDEX idx_movimentacao_lote_data ON movimentacao (id_lote, data_movimentacao);
