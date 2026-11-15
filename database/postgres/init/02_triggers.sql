@@ -27,7 +27,7 @@ AFTER INSERT OR UPDATE OR DELETE ON lote
 FOR EACH ROW EXECUTE FUNCTION fn_auditoria();
 
 CREATE TRIGGER trg_auditoria_movimentacao
-AFTER INSERT ON movimentacao
+AFTER INSERT OR UPDATE OF status_movimentacao ON movimentacao
 FOR EACH ROW EXECUTE FUNCTION fn_auditoria();
 
 CREATE TRIGGER trg_auditoria_usuario

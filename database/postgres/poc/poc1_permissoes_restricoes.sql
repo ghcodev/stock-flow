@@ -27,3 +27,7 @@ WHERE l.numero_lote = 'L-001' AND u.email = 'admin@stockflow.local';
 INSERT INTO movimentacao (tipo_movimentacao, quantidade, saldo_anterior, saldo_posterior, id_lote, id_usuario)
 SELECT 'inventario', 0, 70, 70, l.id_lote, u.id_usuario FROM lote l, usuario u
 WHERE l.numero_lote = 'L-001' AND u.email = 'admin@stockflow.local';
+\echo 'Esperado: permission denied (UPDATE de quantidade em movimentacao)'
+UPDATE movimentacao SET quantidade = 1 WHERE id_movimentacao = 1;
+\echo 'Esperado: permission denied (DELETE em movimentacao)'
+DELETE FROM movimentacao WHERE id_movimentacao = 1;

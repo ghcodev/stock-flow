@@ -20,3 +20,18 @@ ORDER BY id_log;
 
 SELECT current_setting('app.user_id', true) AS variavel_apos_commit;
 SELECT bool_or(valor_novo ? 'senha_hash') AS senha_hash_no_log FROM auditoria_log WHERE tabela_afetada = 'usuario';
+
+BEGIN;
+SELECT set_config('app.user_id', (SELECT id_usuario::text FROM usuario WHERE email = 'admin@stockflow.local'), true),
+       set_config('app.ip', '192.168.0.11', true);
+UPDATE movimentacao SET status_movimentacao = 'cancelada'
+WHERE id_movimentacao = (SELECT min(id_movimentacao) FROM movimentacao WHERE tipo_movimentacao = 'saida');
+COMMIT;
+
+SELECT id_log, operacao,
+       valor_anterior->>'status_movimentacao' AS status_antes,
+       valor_novo->>'status_movimentacao' AS status_depois,
+       id_usuario, ip_usuario
+FROM auditoria_log
+WHERE tabela_afetada = 'movimentacao' AND operacao = 'UPDATE'
+ORDER BY id_log;
