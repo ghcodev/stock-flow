@@ -46,3 +46,20 @@ SELECT pg_temp.afirmar(
      AND a.id_usuario = (SELECT id_usuario FROM usuario WHERE email = 'admin@stockflow.local')
      AND a.ip_usuario = '192.168.0.11'),
   'mudança de status_movimentacao auditada com valor anterior, novo, usuário e IP');
+
+BEGIN;
+SELECT set_config('app.user_id', (SELECT id_usuario::text FROM usuario WHERE email = 'admin@stockflow.local'), true),
+       set_config('app.ip', '192.168.0.12', true);
+UPDATE usuario SET nome = 'Administrador PoC Atualizado', senha_hash = repeat('y', 60) WHERE email = 'admin@stockflow.local';
+COMMIT;
+
+SELECT pg_temp.afirmar(
+  (SELECT count(*) = 1 FROM auditoria_log a
+   WHERE a.tabela_afetada = 'usuario' AND a.operacao = 'UPDATE'
+     AND a.valor_anterior->>'nome' = 'Administrador PoC'
+     AND a.valor_novo->>'nome' = 'Administrador PoC Atualizado'
+     AND NOT (a.valor_anterior ? 'senha_hash')
+     AND NOT (a.valor_novo ? 'senha_hash')
+     AND a.id_usuario = (SELECT id_usuario FROM usuario WHERE email = 'admin@stockflow.local')
+     AND a.ip_usuario = '192.168.0.12'),
+  'atualização de usuário auditada sem senha_hash em valor_anterior e valor_novo');
