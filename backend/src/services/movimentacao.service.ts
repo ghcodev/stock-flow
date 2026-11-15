@@ -52,3 +52,42 @@ export function registrarSaida(contexto: ContextoDeEscrita, dados: DadosSaldo): 
     };
   });
 }
+
+export type DadosTransferencia = {
+  id_lote: number;
+  id_localizacao_destino: number;
+  motivo: string;
+  observacao?: string | null;
+};
+
+export function registrarTransferencia(
+  contexto: ContextoDeEscrita,
+  dados: DadosTransferencia,
+): Promise<MovimentacaoPublica> {
+  return alterarSaldo(contexto, dados.id_lote, async (lote, tx) => {
+    if (lote.status_lote !== "ativo") {
+      throw new HttpError(422, "LOTE_INDISPONIVEL", "Somente lote ativo pode ser transferido");
+    }
+    if (dados.id_localizacao_destino === lote.id_localizacao) {
+      throw new HttpError(422, "DESTINO_IGUAL_ORIGEM", "O destino deve ser diferente da localização atual do lote");
+    }
+    const destino = await tx.localizacao.findUnique({
+      where: { id_localizacao: dados.id_localizacao_destino },
+      select: { id_localizacao: true },
+    });
+    if (!destino) throw new HttpError(422, "LOCALIZACAO_INVALIDA", "Localização de destino não encontrada");
+    if (lote.quantidade.lte(0)) {
+      throw new HttpError(422, "LOTE_SEM_SALDO", "Lote sem saldo não pode ser transferido");
+    }
+    return {
+      tipo: "transferencia",
+      quantidade: lote.quantidade,
+      saldoPosterior: lote.quantidade,
+      origem: lote.id_localizacao,
+      destino: dados.id_localizacao_destino,
+      motivo: dados.motivo,
+      observacao: dados.observacao ?? null,
+      noLote: { id_localizacao: dados.id_localizacao_destino },
+    };
+  });
+}

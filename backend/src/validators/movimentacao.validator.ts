@@ -10,3 +10,10 @@ const camposDeSaldo = [
 export const validarEntrada = camposDeSaldo;
 
 export const validarSaida = camposDeSaldo;
+
+export const validarTransferencia = [
+  idNoCorpo("id_lote", "Lote"),
+  idNoCorpo("id_localizacao_destino", "Localização de destino"),
+  texto("motivo", "Justificativa", 255, true),
+  texto("observacao", "Observação", 5000, false),
+];
