@@ -113,3 +113,16 @@ export function campoEmail(opcional: boolean): ValidationChain {
 export function idDaRota(req: Request): number {
   return dadosValidados<{ id: number }>(req, ["params"]).id;
 }
+
+export function idNoCorpo(campo: string, rotulo: string): ValidationChain {
+  return soEscalar(body(campo), rotulo)
+    .isInt({ min: 1, max: MAX_ID })
+    .withMessage(`${rotulo} é obrigatório e deve ser um identificador válido`)
+    .toInt();
+}
+
+export function quantidadePositiva(campo: string, rotulo: string): ValidationChain {
+  return decimal(campo, rotulo, true)
+    .custom((valor: string) => /[1-9]/.test(valor))
+    .withMessage(`${rotulo} deve ser maior que zero`);
+}

@@ -1,16 +1,9 @@
 import { body, query } from "express-validator";
-import { campoBusca, dataIso, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { campoBusca, dataIso, decimal, idNoCorpo, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 import { codigoEtiqueta, tipoEtiqueta } from "./etiqueta.validator.ts";
 
 const MAX_ID = 2_147_483_647;
 const STATUS_LOTE = ["ativo", "bloqueado", "vencido"];
-
-function idNoCorpo(campo: string, rotulo: string) {
-  return soEscalar(body(campo), rotulo)
-    .isInt({ min: 1, max: MAX_ID })
-    .withMessage(`${rotulo} é obrigatório e deve ser um identificador válido`)
-    .toInt();
-}
 
 const validarEtiqueta = (prefixo: string) => {
   const presente = body(prefixo).exists({ values: "null" });
