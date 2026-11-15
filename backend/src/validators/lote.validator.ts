@@ -1,8 +1,8 @@
 import { body, query } from "express-validator";
 import { dataIso, decimal, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { TIPOS_ETIQUETA } from "./etiqueta.validator.ts";
 
 const MAX_ID = 2_147_483_647;
-const TIPOS_ETIQUETA = ["qr_code", "rfid"];
 const STATUS_LOTE = ["ativo", "bloqueado", "vencido"];
 
 function idNoCorpo(campo: string, rotulo: string) {
