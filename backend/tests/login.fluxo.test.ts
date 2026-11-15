@@ -23,43 +23,39 @@ function montar(encontrado: UsuarioParaLogin | null, senhaConfere: boolean) {
   return { buscarPorEmail, comparar, login: criarLogin({ buscarPorEmail, comparar }) };
 }
 
+async function falhaDo(
+  encontrado: UsuarioParaLogin | null,
+  senhaConfere: boolean,
+  hashEsperado: string,
+): Promise<void> {
+  const { buscarPorEmail, comparar, login } = montar(encontrado, senhaConfere);
+  const erro = await login("fulano@teste.local", "qualquer").then(
+    () => null,
+    (e: unknown) => e,
+  );
+  assert.ok(erro instanceof HttpError);
+  assert.equal(erro.status, 401);
+  assert.equal(erro.codigo, "CREDENCIAIS_INVALIDAS");
+  assert.equal(erro.message, "E-mail ou senha inválidos");
+  assert.equal(erro.campos, undefined);
+  assert.equal(buscarPorEmail.mock.callCount(), 1);
+  assert.equal(comparar.mock.callCount(), 1);
+  assert.deepEqual(comparar.mock.calls[0]?.arguments, ["qualquer", hashEsperado]);
+}
+
 describe("fluxo do login", () => {
   it("o hash de reserva é bcrypt de custo 12", () => {
     assert.equal(bcrypt.getRounds(HASH_RESERVA), 12);
   });
 
-  const falhas: [string, UsuarioParaLogin | null, boolean, string][] = [
-    ["senha errada", usuario(true), false, HASH_DO_USUARIO],
-    ["usuário inativo com senha certa", usuario(false), true, HASH_DO_USUARIO],
-    ["e-mail inexistente", null, false, HASH_RESERVA],
-  ];
+  it("senha errada: uma consulta, uma comparação e 401 padrão", () =>
+    falhaDo(usuario(true), false, HASH_DO_USUARIO));
 
-  const erros: HttpError[] = [];
+  it("usuário inativo com senha certa: uma consulta, uma comparação e 401 padrão", () =>
+    falhaDo(usuario(false), true, HASH_DO_USUARIO));
 
-  for (const [nome, encontrado, confere, hashEsperado] of falhas) {
-    it(`${nome}: uma consulta, uma comparação bcrypt e 401 padrão`, async () => {
-      const { buscarPorEmail, comparar, login } = montar(encontrado, confere);
-      const erro = await login("fulano@teste.local", "qualquer").then(
-        () => null,
-        (e: unknown) => e,
-      );
-      assert.ok(erro instanceof HttpError);
-      erros.push(erro);
-      assert.equal(buscarPorEmail.mock.callCount(), 1);
-      assert.equal(comparar.mock.callCount(), 1);
-      assert.deepEqual(comparar.mock.calls[0]?.arguments, ["qualquer", hashEsperado]);
-    });
-  }
-
-  it("as três falhas produzem exatamente o mesmo erro", () => {
-    assert.equal(erros.length, 3);
-    for (const erro of erros) {
-      assert.equal(erro.status, 401);
-      assert.equal(erro.codigo, "CREDENCIAIS_INVALIDAS");
-      assert.equal(erro.message, "E-mail ou senha inválidos");
-      assert.equal(erro.campos, undefined);
-    }
-  });
+  it("e-mail inexistente: uma consulta, comparação contra o hash de reserva e 401 padrão", () =>
+    falhaDo(null, false, HASH_RESERVA));
 
   it("sucesso: uma consulta, uma comparação, sem senha_hash na resposta", async () => {
     const { buscarPorEmail, comparar, login } = montar(usuario(true), true);
