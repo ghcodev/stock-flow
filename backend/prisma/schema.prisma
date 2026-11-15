@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model auditoria_log {
+  id_log         BigInt             @id @default(autoincrement())
+  tabela_afetada String             @db.VarChar(50)
+  operacao       operacao_auditoria
+  valor_anterior Json?
+  valor_novo     Json?
+  id_usuario     Int?
+  data_hora      DateTime           @default(now()) @db.Timestamptz(6)
+  ip_usuario     String?            @db.Inet
+  observacao     String?
+  usuario        usuario?           @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([valor_anterior(ops: JsonbPathOps)], map: "idx_auditoria_anterior", type: Gin)
+  @@index([data_hora], map: "idx_auditoria_data_hora")
+  @@index([valor_novo(ops: JsonbPathOps)], map: "idx_auditoria_novo", type: Gin)
+}
+
+model identificacao {
+  id_identificacao   Int                @id @default(autoincrement())
+  tipo_identificacao tipo_identificacao
+  codigo             String             @unique @db.VarChar(128)
+  id_lote            Int                @unique
+  lote               lote               @relation(fields: [id_lote], references: [id_lote], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model localizacao {
+  id_localizacao                                                Int              @id @default(autoincrement())
+  corredor                                                      String           @db.VarChar(10)
+  nivel                                                         String           @db.VarChar(10)
+  posicao                                                       String           @db.VarChar(10)
+  capacidade                                                    Decimal?         @db.Decimal(12, 3)
+  tipo_zona                                                     tipo_armazenagem @default(seco)
+  distancia_expedicao                                           Int              @default(0)
+  descricao                                                     String?          @db.VarChar(120)
+  lote                                                          lote[]
+  movimentacao_movimentacao_id_localizacao_destinoTolocalizacao movimentacao[]   @relation("movimentacao_id_localizacao_destinoTolocalizacao")
+  movimentacao_movimentacao_id_localizacao_origemTolocalizacao  movimentacao[]   @relation("movimentacao_id_localizacao_origemTolocalizacao")
+
+  @@unique([corredor, nivel, posicao])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model lote {
+  id_lote         Int            @id @default(autoincrement())
+  numero_lote     String         @unique @db.VarChar(50)
+  data_fabricacao DateTime?      @db.Date
+  data_validade   DateTime?      @db.Date
+  quantidade      Decimal        @default(0) @db.Decimal(12, 3)
+  id_produto      Int
+  id_localizacao  Int
+  status_lote     status_lote    @default(ativo)
+  data_bloqueio   DateTime?      @db.Timestamptz(6)
+  motivo_bloqueio String?
+  identificacao   identificacao?
+  localizacao     localizacao    @relation(fields: [id_localizacao], references: [id_localizacao], onDelete: NoAction, onUpdate: NoAction)
+  produto         produto        @relation(fields: [id_produto], references: [id_produto], onDelete: NoAction, onUpdate: NoAction)
+  movimentacao    movimentacao[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model movimentacao {
+  id_movimentacao                                              BigInt              @id @default(autoincrement())
+  tipo_movimentacao                                            tipo_movimentacao
+  data_movimentacao                                            DateTime            @default(now()) @db.Timestamptz(6)
+  quantidade                                                   Decimal             @db.Decimal(12, 3)
+  saldo_anterior                                               Decimal             @db.Decimal(12, 3)
+  saldo_posterior                                              Decimal             @db.Decimal(12, 3)
+  id_lote                                                      Int
+  id_usuario                                                   Int
+  id_localizacao_origem                                        Int?
+  id_localizacao_destino                                       Int?
+  motivo_movimentacao                                          String?             @db.VarChar(255)
+  observacao                                                   String?
+  status_movimentacao                                          status_movimentacao @default(concluida)
+  created_at                                                   DateTime            @default(now()) @db.Timestamptz(6)
+  localizacao_movimentacao_id_localizacao_destinoTolocalizacao localizacao?        @relation("movimentacao_id_localizacao_destinoTolocalizacao", fields: [id_localizacao_destino], references: [id_localizacao], onDelete: NoAction, onUpdate: NoAction)
+  localizacao_movimentacao_id_localizacao_origemTolocalizacao  localizacao?        @relation("movimentacao_id_localizacao_origemTolocalizacao", fields: [id_localizacao_origem], references: [id_localizacao], onDelete: NoAction, onUpdate: NoAction)
+  lote                                                         lote                @relation(fields: [id_lote], references: [id_lote], onUpdate: NoAction)
+  usuario                                                      usuario             @relation(fields: [id_usuario], references: [id_usuario], onUpdate: NoAction)
+
+  @@index([id_lote, data_movimentacao], map: "idx_movimentacao_lote_data")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model produto {
+  id_produto       Int              @id @default(autoincrement())
+  nome             String           @db.VarChar(120)
+  categoria        String?          @db.VarChar(60)
+  descricao        String?
+  unidade_medida   String           @db.VarChar(10)
+  tipo_armazenagem tipo_armazenagem @default(seco)
+  peso_unitario_kg Decimal?         @db.Decimal(10, 3)
+  estoque_minimo   Decimal          @default(0) @db.Decimal(12, 3)
+  ativo            Boolean          @default(true)
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  lote             lote[]
+}
+
+model usuario {
+  id_usuario    Int             @id @default(autoincrement())
+  nome          String          @db.VarChar(120)
+  email         String          @unique @db.VarChar(160)
+  senha_hash    String          @db.Char(60)
+  perfil        perfil_usuario
+  ativo         Boolean         @default(true)
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  auditoria_log auditoria_log[]
+  movimentacao  movimentacao[]
+}
+
+enum operacao_auditoria {
+  INSERT
+  UPDATE
+  DELETE
+  LOGIN
+  AJUSTE
+  BLOQUEIO
+}
+
+enum perfil_usuario {
+  administrador
+  operador
+}
+
+enum status_lote {
+  ativo
+  bloqueado
+  vencido
+}
+
+enum status_movimentacao {
+  pendente
+  concluida
+  cancelada
+}
+
+enum tipo_armazenagem {
+  seco
+  refrigerado
+  quimico
+}
+
+enum tipo_identificacao {
+  qr_code
+  rfid
+}
+
+enum tipo_movimentacao {
+  entrada
+  saida
+  transferencia
+  ajuste
+  inventario
+}
