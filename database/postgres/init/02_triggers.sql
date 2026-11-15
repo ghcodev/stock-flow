@@ -37,9 +37,9 @@ FOR EACH ROW EXECUTE FUNCTION fn_auditoria();
 CREATE OR REPLACE FUNCTION fn_bloquear_saida() RETURNS trigger AS $$
 BEGIN
   IF NEW.tipo_movimentacao = 'saida' AND EXISTS (
-    SELECT 1 FROM lote WHERE id_lote = NEW.id_lote AND status_lote IN ('vencido', 'bloqueado')
+    SELECT 1 FROM lote WHERE id_lote = NEW.id_lote AND (status_lote IN ('vencido', 'bloqueado') OR data_validade < current_date)
   ) THEN
-    RAISE EXCEPTION 'Saída não permitida para lote vencido ou bloqueado';
+    RAISE EXCEPTION 'Saída não permitida para lote vencido, com validade expirada ou bloqueado';
   END IF;
   RETURN NEW;
 END;
