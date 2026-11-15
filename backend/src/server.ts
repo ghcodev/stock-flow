@@ -16,7 +16,11 @@ async function iniciar(): Promise<void> {
   const server = app.listen(config.port, () => {
     process.stdout.write(`StockFlow API na porta ${config.port}\n`);
   });
-  const encerrar = criarEncerramento(server, () => prisma.$disconnect(), (codigo) => process.exit(codigo));
+  const encerrar = criarEncerramento(server, {
+    desconectar: () => prisma.$disconnect(),
+    sair: (codigo) => process.exit(codigo),
+    limiteMs: 10_000,
+  });
   instalarProtecoes(server, encerrar);
 }
 

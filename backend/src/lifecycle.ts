@@ -2,18 +2,35 @@ import type { Server } from "node:http";
 
 export type Encerramento = (codigo: number) => Promise<void>;
 
-export function criarEncerramento(
-  server: Server,
-  desconectar: () => Promise<void>,
-  sair: (codigo: number) => void,
-): Encerramento {
-  return async (codigo) => {
-    server.close();
-    try {
-      await desconectar();
-    } finally {
-      sair(codigo);
+export type OpcoesEncerramento = {
+  desconectar: () => Promise<void>;
+  sair: (codigo: number) => void;
+  limiteMs: number;
+};
+
+export function criarEncerramento(server: Server, opcoes: OpcoesEncerramento): Encerramento {
+  const { desconectar, sair, limiteMs } = opcoes;
+  let emAndamento: Promise<void> | null = null;
+
+  return (codigo) => {
+    if (emAndamento) {
+      if (codigo !== 0) sair(1);
+      return emAndamento;
     }
+    const prazo = setTimeout(() => sair(1), limiteMs);
+    prazo.unref();
+    emAndamento = (async () => {
+      try {
+        await new Promise<void>((ok) => server.close(() => ok()));
+        await desconectar();
+        clearTimeout(prazo);
+        sair(codigo);
+      } catch {
+        clearTimeout(prazo);
+        sair(1);
+      }
+    })();
+    return emAndamento;
   };
 }
 
