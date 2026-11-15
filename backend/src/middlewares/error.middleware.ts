@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { HttpError } from "../errors.ts";
+import { HttpError, type CampoInvalido } from "../errors.ts";
 
 type ErroDeCorpo = { type?: string };
 
@@ -18,8 +18,14 @@ function categoriaDoErro(err: unknown): string {
   return err instanceof Error && CATEGORIAS_PERMITIDAS.has(err.name) ? err.name : "Desconhecido";
 }
 
-function resposta(res: Response, status: number, codigo: string, mensagem: string): void {
-  res.status(status).json({ erro: { codigo, mensagem } });
+function resposta(
+  res: Response,
+  status: number,
+  codigo: string,
+  mensagem: string,
+  campos?: CampoInvalido[],
+): void {
+  res.status(status).json({ erro: campos ? { codigo, mensagem, campos } : { codigo, mensagem } });
 }
 
 export function rotaNaoEncontrada(_req: Request, _res: Response, next: NextFunction): void {
@@ -28,7 +34,7 @@ export function rotaNaoEncontrada(_req: Request, _res: Response, next: NextFunct
 
 export function tratadorDeErros(err: unknown, req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof HttpError) {
-    resposta(res, err.status, err.codigo, err.message);
+    resposta(res, err.status, err.codigo, err.message, err.campos);
     return;
   }
   const tipo = (err as ErroDeCorpo | null)?.type;
