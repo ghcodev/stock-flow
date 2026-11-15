@@ -1,4 +1,5 @@
 import { param, query } from "express-validator";
+import { lerInstante } from "../periodo.ts";
 import {
   idNoCorpo,
   quantidadePositiva,
@@ -33,8 +34,8 @@ const instante = (nome: string, rotulo: string) =>
     .isString()
     .withMessage(`${rotulo} inválido`)
     .bail()
-    .isISO8601({ strict: true, strictSeparator: true })
-    .withMessage(`${rotulo} deve ser uma data ou data e hora ISO 8601`);
+    .custom((valor: string) => lerInstante(valor) !== null)
+    .withMessage(`${rotulo} deve ser AAAA-MM-DD ou data e hora completas com Z ou deslocamento (+hh:mm)`);
 
 export const validarHistorico = [
   ...validarPaginacao,
@@ -44,7 +45,9 @@ export const validarHistorico = [
     .optional()
     .custom((ate: string, { req }) => {
       const de = (req.query as { de?: unknown } | undefined)?.de;
-      return typeof de !== "string" || typeof ate !== "string" || new Date(de) <= new Date(ate);
+      const inicio = typeof de === "string" ? lerInstante(de) : null;
+      const fim = typeof ate === "string" ? lerInstante(ate) : null;
+      return !inicio || !fim || inicio.momento <= fim.momento;
     })
     .withMessage("O início do período deve ser anterior ao fim"),
   soEscalar(query("tipo").optional(), "Tipo").isIn(TIPOS_MOVIMENTACAO).withMessage("Tipo inválido"),
@@ -60,4 +63,3 @@ export const validarIdMovimentacao = [
     .matches(/^[1-9]\d{0,17}$/)
     .withMessage("Identificador inválido"),
 ];
-

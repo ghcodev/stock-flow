@@ -50,3 +50,14 @@ npm test
 Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os testes não dependem do seed.
 
 Atenção: a suíte escreve no banco. Cada execução completa persiste usuários de teste (e-mail único, `@teste.local`, deixados inativos), produtos (deixados inativos), localizações, lotes, etiquetas, movimentações de entrada dos saldos iniciais e as linhas de `auditoria_log` geradas pelos triggers. Nada é apagado, porque a role da aplicação não tem DELETE, então esses dados se acumulam a cada execução. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
+
+## Histórico de movimentações
+
+`GET /movimentacoes` aceita os filtros `de`, `ate`, `tipo`, `id_lote` e `id_usuario`.
+
+Formatos aceitos em `de` e `ate`, e somente estes:
+
+- `AAAA-MM-DD`: dia inteiro em UTC. Em `de` vale desde 00:00:00 UTC; em `ate` inclui o dia todo (limite exclusivo às 00:00:00 UTC do dia seguinte).
+- `AAAA-MM-DDThh:mm[:ss[.fff]]` com `Z` ou deslocamento `+hh:mm` / `-hh:mm`. Em `de` o instante é incluído; em `ate` também (limite exclusivo 1 ms depois).
+
+Outros formatos (semana ISO, dia do ano, `20261115`, horário sem fuso, `+hhmm`) respondem 400. A interpretação não depende do fuso do processo. `de` não pode ser posterior a `ate`.

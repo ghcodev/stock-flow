@@ -75,15 +75,58 @@ describe("histórico de movimentações (A14, RF07, RN07)", () => {
     assert.equal((await historico(`?id_lote=${lote}&id_usuario=${c.operadorUsuario.id}`)).total, 3);
   });
 
-  it("filtro por período: instante, data inclusiva no fim e intervalo vazio", async () => {
-    const agora = new Date();
-    const ontem = new Date(agora.getTime() - 24 * 60 * 60 * 1000).toISOString();
-    const amanha = new Date(agora.getTime() + 24 * 60 * 60 * 1000).toISOString();
-    const hoje = agora.toISOString().slice(0, 10);
-    assert.equal((await historico(`?id_lote=${lote}&de=${encodeURIComponent(ontem)}&ate=${encodeURIComponent(amanha)}`)).total, 4);
-    assert.equal((await historico(`?id_lote=${lote}&de=${hoje}&ate=${hoje}`)).total, 4);
-    assert.equal((await historico(`?id_lote=${lote}&ate=${encodeURIComponent(ontem)}`)).total, 0);
-    assert.equal((await historico(`?id_lote=${lote}&de=${encodeURIComponent(amanha)}`)).total, 0);
+  it("período: de e ate isolados e juntos, dia completo em UTC e instantes com Z ou deslocamento (independe da hora atual)", async () => {
+    const instantes = (await historico(`?id_lote=${lote}`)).dados.map((m) => new Date(m.data_movimentacao).getTime());
+    const primeiro = Math.min(...instantes);
+    const ultimo = Math.max(...instantes);
+    const dia = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+    const umDia = 24 * 60 * 60 * 1000;
+    const codificar = (valor: string | number): string => encodeURIComponent(typeof valor === "number" ? new Date(valor).toISOString() : valor);
+    const total = async (consulta: string): Promise<number> => (await historico(`?id_lote=${lote}&${consulta}`)).total;
+
+    assert.equal(await total(`de=${dia(primeiro)}&ate=${dia(ultimo)}`), 4);
+    assert.equal(await total(`de=${dia(primeiro)}`), 4);
+    assert.equal(await total(`ate=${dia(ultimo)}`), 4);
+    assert.equal(await total(`de=${dia(ultimo + umDia)}`), 0);
+    assert.equal(await total(`ate=${dia(primeiro - umDia)}`), 0);
+    assert.equal(await total(`de=${dia(primeiro - umDia)}&ate=${dia(primeiro - umDia)}`), 0);
+
+    assert.equal(await total(`de=${codificar(primeiro)}`), 4);
+    assert.equal(await total(`de=${codificar(ultimo + 1)}`), 0);
+    assert.equal(await total(`ate=${codificar(ultimo)}`), 4);
+    assert.equal(await total(`ate=${codificar(primeiro - 1)}`), 0);
+    assert.equal(await total(`de=${codificar(primeiro)}&ate=${codificar(ultimo)}`), 4);
+
+    const comDeslocamento = new Date(ultimo).toISOString().replace("Z", "+00:00");
+    assert.equal(await total(`ate=${encodeURIComponent(comDeslocamento)}`), 4);
+    const emSaoPaulo = new Date(primeiro - 3 * 60 * 60 * 1000).toISOString().replace("Z", "-03:00");
+    assert.equal(await total(`de=${encodeURIComponent(emSaoPaulo)}`), 4);
+  });
+
+  it("formatos aceitos pelo ISO 8601 mas ambíguos ou fora do contrato viram 400, nunca 500", async () => {
+    const recusados = [
+      "2026-W47-1",
+      "2026-319",
+      "20261115",
+      "2026-11",
+      "2026-11-15T12:00:00",
+      "2026-11-15T12:00",
+      "2026-11-15 12:00:00Z",
+      "2026-11-15T12:00:00+0300",
+      "2026-11-15T12:00:00+03",
+      "2026-11-15T25:00:00Z",
+      "2026-11-15T12:60:00Z",
+      "2026-02-31",
+      "2026-13-01",
+      "0001-01-01",
+      "ontem",
+    ];
+    for (const formato of recusados) {
+      for (const parametro of ["de", "ate"]) {
+        const r = await chamarApi(servidor, "GET", `/movimentacoes?${parametro}=${encodeURIComponent(formato)}`, c.operador);
+        assert.equal(r.status, 400, `${parametro}=${formato}`);
+      }
+    }
   });
 
   it("paginação com limite máximo de 100", async () => {

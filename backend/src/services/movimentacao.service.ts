@@ -1,5 +1,6 @@
 import { HttpError } from "../errors.ts";
 import { prisma } from "../db.ts";
+import { fimExclusivoDoPeriodo, inicioDoPeriodo, lerInstante } from "../periodo.ts";
 import { Prisma } from "../generated/prisma/client.ts";
 import type { tipo_movimentacao } from "../generated/prisma/enums.ts";
 import type { ContextoDeEscrita } from "../transacao.ts";
@@ -103,12 +104,10 @@ export type FiltroHistorico = Paginacao & {
   id_usuario?: number;
 };
 
-const SO_DATA = /^\d{4}-\d{2}-\d{2}$/;
-const UM_DIA_MS = 24 * 60 * 60 * 1000;
-
-function limiteSuperior(ate: string): Date {
-  const data = new Date(ate);
-  return SO_DATA.test(ate) ? new Date(data.getTime() + UM_DIA_MS) : new Date(data.getTime() + 1);
+function instanteDoFiltro(texto: string) {
+  const instante = lerInstante(texto);
+  if (!instante) throw new HttpError(400, "VALIDACAO", "Período inválido");
+  return instante;
 }
 
 export async function listarHistorico(filtro: FiltroHistorico): Promise<Pagina<MovimentacaoPublica>> {
@@ -121,8 +120,8 @@ export async function listarHistorico(filtro: FiltroHistorico): Promise<Pagina<M
       ? {}
       : {
           data_movimentacao: {
-            ...(filtro.de === undefined ? {} : { gte: new Date(filtro.de) }),
-            ...(filtro.ate === undefined ? {} : { lt: limiteSuperior(filtro.ate) }),
+            ...(filtro.de === undefined ? {} : { gte: inicioDoPeriodo(instanteDoFiltro(filtro.de)) }),
+            ...(filtro.ate === undefined ? {} : { lt: fimExclusivoDoPeriodo(instanteDoFiltro(filtro.ate)) }),
           },
         }),
   };
