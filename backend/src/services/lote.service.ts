@@ -2,7 +2,7 @@ import { prisma } from "../db.ts";
 import { HttpError } from "../errors.ts";
 import { Prisma } from "../generated/prisma/client.ts";
 import type { status_lote, tipo_identificacao } from "../generated/prisma/enums.ts";
-import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
+import { executarComoUsuario, instanteDoBanco, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 import { literalParaLike } from "../busca.ts";
 
@@ -107,6 +107,7 @@ export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): 
       await tx.movimentacao.create({
         data: {
           tipo_movimentacao: "entrada",
+          data_movimentacao: await instanteDoBanco(tx),
           quantidade: dados.quantidade,
           saldo_anterior: "0",
           saldo_posterior: dados.quantidade,

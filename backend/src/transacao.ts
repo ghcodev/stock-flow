@@ -32,3 +32,8 @@ export function executarComoUsuario<T>(
     { maxWait: ESPERA_MAXIMA_POR_CONEXAO_MS, timeout: DURACAO_MAXIMA_MS },
   );
 }
+
+export async function instanteDoBanco(tx: Tx): Promise<Date> {
+  const [linha] = await tx.$queryRaw<{ agora: Date | string }[]>`SELECT clock_timestamp() AS agora`;
+  return new Date(linha?.agora ?? Date.now());
+}

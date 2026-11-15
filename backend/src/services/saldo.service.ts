@@ -1,7 +1,7 @@
 import { HttpError } from "../errors.ts";
 import { Prisma } from "../generated/prisma/client.ts";
 import type { status_lote, status_movimentacao, tipo_movimentacao } from "../generated/prisma/enums.ts";
-import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
+import { executarComoUsuario, instanteDoBanco, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 
 export const LOCK_TIMEOUT_MS = 1500;
 export const SALDO_MAXIMO = new Prisma.Decimal("999999999.999");
@@ -78,6 +78,7 @@ export function alterarSaldo(
     async (tx) => {
       const lote = await travarLote(tx, idLote);
       const efeito = await decidir(lote, tx);
+      const instante = await instanteDoBanco(tx);
       await tx.lote.update({
         where: { id_lote: idLote },
         data: {
@@ -89,6 +90,7 @@ export function alterarSaldo(
       return tx.movimentacao.create({
         data: {
           tipo_movimentacao: efeito.tipo,
+          data_movimentacao: instante,
           quantidade: efeito.quantidade,
           saldo_anterior: lote.quantidade,
           saldo_posterior: efeito.saldoPosterior,
