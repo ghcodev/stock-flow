@@ -20,7 +20,13 @@ O banco sobe com `docker compose up -d` na raiz. O esquema é o de `database/pos
 npm run generate
 ```
 
-O cliente vai para `src/generated/prisma`, ignorado pelo git. `npm run build` já o gera. Para reler o esquema do banco: `npm run db:pull`.
+O cliente vai para `src/generated/prisma`, ignorado pelo git. `npm run build` já o gera.
+
+## Esquema e banco
+
+O esquema do banco é definido só em `database/postgres/init`. CHECKs, triggers, permissões da role e o `ON DELETE RESTRICT` ficam apenas no SQL; o Prisma não os gerencia. Não use `prisma db push` nem migrations do Prisma.
+
+`prisma/schema.prisma` vem de `npm run db:pull`. O pull recoloca três comentários `///` (modelos `lote`, `movimentacao` e `produto`, sobre CHECKs). Depois de cada pull, remova-os: `sed -i '/^\/\/\/ /d' prisma/schema.prisma`.
 
 ## Rodar
 

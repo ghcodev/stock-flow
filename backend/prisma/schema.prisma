@@ -48,7 +48,6 @@ model localizacao {
   @@unique([corredor, nivel, posicao])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lote {
   id_lote         Int            @id @default(autoincrement())
   numero_lote     String         @unique @db.VarChar(50)
@@ -66,7 +65,6 @@ model lote {
   movimentacao    movimentacao[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model movimentacao {
   id_movimentacao                                              BigInt              @id @default(autoincrement())
   tipo_movimentacao                                            tipo_movimentacao
@@ -90,7 +88,6 @@ model movimentacao {
   @@index([id_lote, data_movimentacao], map: "idx_movimentacao_lote_data")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model produto {
   id_produto       Int              @id @default(autoincrement())
   nome             String           @db.VarChar(120)
