@@ -69,5 +69,4 @@ temp/
 .claude/*
 !.claude/skills/
 !.claude/skills/**
-prisma.config.ts
-prisma/
+.maestri/
