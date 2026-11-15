@@ -1,0 +1,67 @@
+import { body, query } from "express-validator";
+import { algumCampo, texto, validarId, validarPaginacao } from "./comuns.ts";
+
+const PERFIS = ["administrador", "operador"];
+const MIN_SENHA = 8;
+const MAX_BYTES_SENHA = 72;
+
+const email = (opcional: boolean) => {
+  const base = body("email");
+  return (opcional ? base.optional() : base)
+    .isString()
+    .withMessage("E-mail é obrigatório")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .isLength({ max: 160 })
+    .withMessage("E-mail deve ter no máximo 160 caracteres")
+    .bail()
+    .isEmail()
+    .withMessage("E-mail inválido");
+};
+
+const senha = (opcional: boolean) => {
+  const base = body("senha");
+  return (opcional ? base.optional() : base)
+    .isString()
+    .withMessage("Senha é obrigatória")
+    .bail()
+    .isLength({ min: MIN_SENHA })
+    .withMessage(`Senha deve ter no mínimo ${MIN_SENHA} caracteres`)
+    .bail()
+    .custom((valor: string) => Buffer.byteLength(valor, "utf8") <= MAX_BYTES_SENHA)
+    .withMessage(`Senha deve ter no máximo ${MAX_BYTES_SENHA} bytes`);
+};
+
+const perfil = (opcional: boolean) => {
+  const base = body("perfil");
+  return (opcional ? base.optional() : base)
+    .isIn(PERFIS)
+    .withMessage("Perfil deve ser administrador ou operador");
+};
+
+export const validarCriarUsuario = [texto("nome", "Nome", 120, true), email(false), senha(false), perfil(false)];
+
+export const validarAtualizarUsuario = [
+  validarId,
+  algumCampo(["nome", "email", "senha", "perfil"]),
+  texto("nome", "Nome", 120, true).optional(),
+  email(true),
+  senha(true),
+  perfil(true),
+];
+
+export const validarIdUsuario = [validarId];
+
+export const validarListarUsuarios = [
+  ...validarPaginacao,
+  query("busca")
+    .optional()
+    .isString()
+    .withMessage("Busca inválida")
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("Busca deve ter até 100 caracteres"),
+  query("perfil").optional().isIn(PERFIS).withMessage("Perfil inválido"),
+  query("ativo").optional().isBoolean().withMessage("Filtro ativo inválido").toBoolean(),
+];
