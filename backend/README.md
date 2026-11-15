@@ -47,4 +47,6 @@ npm run start:local
 npm test
 ```
 
-Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os testes não dependem do seed nem alteram dados.
+Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os testes não dependem do seed.
+
+Atenção: a suíte escreve no banco. Cada execução completa cria usuários de teste (e-mail único, `@teste.local`) e os deixa inativos: +8 linhas em `usuario` e +18 em `auditoria_log` (os triggers auditam os INSERTs e UPDATEs). Nada é apagado, porque a role da aplicação não tem DELETE. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
