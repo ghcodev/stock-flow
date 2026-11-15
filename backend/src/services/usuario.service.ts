@@ -77,7 +77,7 @@ export async function alterarNaTransacao(
 ): Promise<UsuarioGerenciado> {
   const administradores = await tx.$queryRaw<
     { id_usuario: number }[]
-  >`SELECT id_usuario FROM usuario WHERE perfil = 'administrador' AND ativo FOR UPDATE`;
+  >`SELECT id_usuario FROM usuario WHERE perfil = 'administrador' AND ativo ORDER BY id_usuario FOR UPDATE`;
   const alvo = await tx.usuario.findUnique({ where: { id_usuario: alvoId }, select: SELECAO });
   if (!alvo) throw new HttpError(404, "NAO_ENCONTRADO", "Usuário não encontrado");
   if (mudancas.ativo === false && alvoId === atorId) {
