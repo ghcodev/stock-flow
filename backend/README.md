@@ -49,4 +49,4 @@ npm test
 
 Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os testes não dependem do seed.
 
-Atenção: a suíte escreve no banco. Cada execução completa cria usuários de teste (e-mail único, `@teste.local`) e os deixa inativos: +8 linhas em `usuario` e +18 em `auditoria_log` (os triggers auditam os INSERTs e UPDATEs). Nada é apagado, porque a role da aplicação não tem DELETE. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
+Atenção: a suíte escreve no banco. Cada execução completa persiste usuários de teste (e-mail único, `@teste.local`, deixados inativos), produtos (deixados inativos), localizações, lotes, etiquetas, movimentações de entrada dos saldos iniciais e as linhas de `auditoria_log` geradas pelos triggers. Nada é apagado, porque a role da aplicação não tem DELETE, então esses dados se acumulam a cada execução. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
