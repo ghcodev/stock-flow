@@ -1,16 +1,23 @@
-import { app } from "./app.ts";
-import { config } from "./config.ts";
-import { prisma } from "./db.ts";
+import { ConfigError } from "./errors.ts";
 
-const server = app.listen(config.port, () => {
-  process.stdout.write(`StockFlow API na porta ${config.port}\n`);
-});
+async function iniciar(): Promise<void> {
+  let config;
+  try {
+    ({ config } = await import("./config.ts"));
+  } catch (err) {
+    const mensagem = err instanceof ConfigError ? err.message : "falha ao carregar a configuração";
+    process.stderr.write(`Configuração inválida: ${mensagem}\n`);
+    process.exit(1);
+  }
+  const { app } = await import("./app.ts");
+  const { prisma } = await import("./db.ts");
+  const { criarEncerramento, instalarProtecoes } = await import("./lifecycle.ts");
 
-async function encerrar(): Promise<void> {
-  server.close();
-  await prisma.$disconnect();
-  process.exit(0);
+  const server = app.listen(config.port, () => {
+    process.stdout.write(`StockFlow API na porta ${config.port}\n`);
+  });
+  const encerrar = criarEncerramento(server, () => prisma.$disconnect(), (codigo) => process.exit(codigo));
+  instalarProtecoes(server, encerrar);
 }
 
-process.on("SIGTERM", encerrar);
-process.on("SIGINT", encerrar);
+await iniciar();

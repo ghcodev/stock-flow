@@ -9,3 +9,10 @@ export class HttpError extends Error {
     this.codigo = codigo;
   }
 }
+
+export class ConfigError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "ConfigError";
+  }
+}
