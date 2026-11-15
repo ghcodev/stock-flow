@@ -1,6 +1,6 @@
 import { prisma } from "../db.ts";
 import { HttpError } from "../errors.ts";
-import type { Prisma } from "../generated/prisma/client.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 import type { status_lote, tipo_identificacao } from "../generated/prisma/enums.ts";
 import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
@@ -103,7 +103,7 @@ export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): 
       },
       select: { id_lote: true },
     });
-    if (dados.quantidade !== undefined && Number(dados.quantidade) > 0) {
+    if (dados.quantidade !== undefined && new Prisma.Decimal(dados.quantidade).gt(0)) {
       await tx.movimentacao.create({
         data: {
           tipo_movimentacao: "entrada",

@@ -23,6 +23,8 @@ describe("busca trata % e _ como texto literal", () => {
       const p = await prisma.produto.create({ data: { nome, unidade_medida: "UN" } });
       idProduto = p.id_produto;
     }
+    await prisma.produto.create({ data: { nome: `${prefixo}-e`, unidade_medida: "UN", categoria: `Cat%${prefixo}` } });
+    await prisma.produto.create({ data: { nome: `${prefixo}-f`, unidade_medida: "UN", categoria: `CatX${prefixo}` } });
     idLocalizacao = (await prisma.localizacao.create({ data: { corredor: prefixo, nivel: "1", posicao: "A" } }))
       .id_localizacao;
     for (const numero of [`${prefixo}-l%1`, `${prefixo}-lx1`, `${prefixo}_l2`, `${prefixo}-l2`]) {
@@ -56,12 +58,11 @@ describe("busca trata % e _ como texto literal", () => {
     assert.equal(barra.total, 1);
   });
 
-  it("busca só com % ou _ não devolve tudo", async () => {
-    const [{ n }] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM produto WHERE position('%' in nome) > 0 OR position('_' in categoria) > 0`;
-    const lista = await buscar("/produtos?busca=%25&limite=100");
-    assert.equal(BigInt(lista.total), n);
-    const total = (await buscar("/produtos?limite=1")).total;
-    assert.ok(lista.total < total);
+  it("curinga logo após o prefixo do teste não casa com nada e a categoria também é literal", async () => {
+    assert.equal((await buscar(`/produtos?busca=${encodeURIComponent(`${prefixo}%`)}`)).total, 0);
+    assert.equal((await buscar(`/produtos?busca=${encodeURIComponent(`${prefixo}_`)}`)).total, 1);
+    const porCategoria = await buscar(`/produtos?busca=${encodeURIComponent(`Cat%${prefixo}`)}`);
+    assert.deepEqual(porCategoria.dados.map((p) => p.nome), [`${prefixo}-e`]);
   });
 
   it("lotes: número do lote com % e _ literais", async () => {
