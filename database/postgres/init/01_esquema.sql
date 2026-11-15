@@ -70,7 +70,7 @@ CREATE TABLE movimentacao (
   quantidade NUMERIC(12,3) NOT NULL CHECK (quantidade >= 0),
   saldo_anterior NUMERIC(12,3) NOT NULL,
   saldo_posterior NUMERIC(12,3) NOT NULL CHECK (saldo_posterior >= 0),
-  id_lote INTEGER NOT NULL REFERENCES lote (id_lote),
+  id_lote INTEGER NOT NULL REFERENCES lote (id_lote) ON DELETE RESTRICT,
   id_usuario INTEGER NOT NULL REFERENCES usuario (id_usuario) ON DELETE RESTRICT,
   id_localizacao_origem INTEGER REFERENCES localizacao (id_localizacao),
   id_localizacao_destino INTEGER REFERENCES localizacao (id_localizacao),
