@@ -2,6 +2,7 @@ import { Router } from "express";
 import { healthRoutes } from "./health.routes.ts";
 import { criarRotasAuthProtegidas, criarRotasAuthPublicas } from "./auth.routes.ts";
 import { criarRotasProduto } from "./produto.routes.ts";
+import { criarRotasLocalizacao } from "./localizacao.routes.ts";
 
 export function criarRotasPublicas(): Router {
   const router = Router();
@@ -14,5 +15,6 @@ export function criarRotasProtegidas(): Router {
   const router = Router();
   router.use("/auth", criarRotasAuthProtegidas());
   router.use("/produtos", criarRotasProduto());
+  router.use("/localizacoes", criarRotasLocalizacao());
   return router;
 }
