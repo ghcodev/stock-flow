@@ -3,6 +3,21 @@ import { HttpError } from "../errors.ts";
 
 type ErroDeCorpo = { type?: string };
 
+const CATEGORIAS_PERMITIDAS = new Set([
+  "Error",
+  "TypeError",
+  "RangeError",
+  "SyntaxError",
+  "PrismaClientKnownRequestError",
+  "PrismaClientUnknownRequestError",
+  "PrismaClientInitializationError",
+  "PrismaClientValidationError",
+]);
+
+function categoriaDoErro(err: unknown): string {
+  return err instanceof Error && CATEGORIAS_PERMITIDAS.has(err.name) ? err.name : "Desconhecido";
+}
+
 function resposta(res: Response, status: number, codigo: string, mensagem: string): void {
   res.status(status).json({ erro: { codigo, mensagem } });
 }
@@ -25,7 +40,6 @@ export function tratadorDeErros(err: unknown, req: Request, res: Response, _next
     resposta(res, 413, "CORPO_MUITO_GRANDE", "Corpo da requisição excede o limite");
     return;
   }
-  const nome = err instanceof Error ? err.name : "desconhecido";
-  process.stderr.write(`erro interno ${req.method} ${req.path} ${nome}\n`);
+  process.stderr.write(`erro interno ${req.method} ${categoriaDoErro(err)}\n`);
   resposta(res, 500, "ERRO_INTERNO", "Erro interno do servidor");
 }

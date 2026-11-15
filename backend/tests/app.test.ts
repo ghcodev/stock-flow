@@ -12,6 +12,11 @@ describe("esqueleto da API", () => {
       a.get("/_teste/erro", () => {
         throw new Error("segredo interno postgres://usuario:senha@host");
       });
+      a.get("/_teste/erro/:id", (req) => {
+        const err = new Error("falha");
+        err.name = `Nome-${req.params.id}`;
+        throw err;
+      });
       a.get("/_teste/numeros", async (_req, res) => {
         const linhas = await prisma.$queryRaw<
           { grande: bigint; decimal: unknown }[]
@@ -50,6 +55,25 @@ describe("esqueleto da API", () => {
       erro: { codigo: "ERRO_INTERNO", mensagem: "Erro interno do servidor" },
     });
     assert.doesNotMatch(texto, /segredo|postgres|senha|stack|\.ts/);
+  });
+
+  it("log do erro 500 não contém caminho, token nem nome arbitrário", async () => {
+    const original = process.stderr.write;
+    let capturado = "";
+    process.stderr.write = ((trecho: string | Uint8Array) => {
+      capturado += String(trecho);
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      const res = await fetch(
+        `${servidor.url}/_teste/erro/ID-SINTETICO-12345?token=TOKEN-SINTETICO-abcdef`,
+      );
+      assert.equal(res.status, 500);
+    } finally {
+      process.stderr.write = original;
+    }
+    assert.match(capturado, /erro interno GET Desconhecido/);
+    assert.doesNotMatch(capturado, /SINTETICO|_teste|token/i);
   });
 
   it("BIGINT e NUMERIC saem como texto", async () => {
