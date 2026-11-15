@@ -61,8 +61,10 @@ async function buscarNaTransacao(tx: Tx, id: number): Promise<LotePublico> {
 
 export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): Promise<LotePublico> {
   return executarComoUsuario(contexto, async (tx) => {
-    const produto = await tx.produto.findUnique({ where: { id_produto: dados.id_produto }, select: { ativo: true } });
-    if (!produto) throw new HttpError(422, "PRODUTO_INVALIDO", "Produto não encontrado");
+    const [produto] = await tx.$queryRaw<
+      { ativo: boolean }[]
+    >`SELECT ativo FROM produto WHERE id_produto = ${dados.id_produto} FOR SHARE`;
+    if (!produto)throw new HttpError(422, "PRODUTO_INVALIDO", "Produto não encontrado");
     if (!produto.ativo) throw new HttpError(422, "PRODUTO_INATIVO", "Produto inativo não pode receber lotes");
     const localizacao = await tx.localizacao.findUnique({
       where: { id_localizacao: dados.id_localizacao },
