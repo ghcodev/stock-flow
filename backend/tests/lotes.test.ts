@@ -75,7 +75,7 @@ describe("lotes (A7)", () => {
     await prisma.$disconnect();
   });
 
-  it("cria lote com etiqueta: saldo inicial, datas em texto, vínculos e nenhuma movimentação", async () => {
+  it("cria lote com etiqueta: saldo inicial, datas em texto, vínculos e uma única entrada inicial", async () => {
     const r = await criar({
       numero_lote: numero("a"),
       quantidade: 10.5,
@@ -95,7 +95,7 @@ describe("lotes (A7)", () => {
       { t: lote.identificacao?.tipo_identificacao, c: lote.identificacao?.codigo },
       { t: "qr_code", c: `QR-${prefixo}-a` },
     );
-    assert.equal(await prisma.movimentacao.count({ where: { id_lote: lote.id_lote } }), 0);
+    assert.equal(await prisma.movimentacao.count({ where: { id_lote: lote.id_lote } }), 1);
     const linhas = await auditoria(lote.id_lote);
     assert.equal(linhas.length, 1);
     assert.equal(linhas[0]?.operacao, "INSERT");
@@ -218,7 +218,7 @@ describe("lotes (A7)", () => {
     assert.deepEqual(linhas.map((x) => x.operacao), ["INSERT", "UPDATE", "UPDATE"]);
     assert.deepEqual(linhas.map((x) => x.id_usuario), [operadorUsuario.id, operadorUsuario.id, linhas[2]?.id_usuario]);
     assert.notEqual(linhas[2]?.id_usuario, operadorUsuario.id);
-    assert.equal(await prisma.movimentacao.count({ where: { id_lote: lote.id_lote } }), 0);
+    assert.equal(await prisma.movimentacao.count({ where: { id_lote: lote.id_lote } }), 1);
   });
 
   it("bloquear exige motivo, 404 para inexistente; lote vencido não é bloqueado e volta vencido ao desbloquear", async () => {

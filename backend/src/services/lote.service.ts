@@ -85,6 +85,21 @@ export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): 
       },
       select: { id_lote: true },
     });
+    if (dados.quantidade !== undefined && Number(dados.quantidade) > 0) {
+      await tx.movimentacao.create({
+        data: {
+          tipo_movimentacao: "entrada",
+          quantidade: dados.quantidade,
+          saldo_anterior: "0",
+          saldo_posterior: dados.quantidade,
+          id_lote: criado.id_lote,
+          id_usuario: contexto.idUsuario,
+          id_localizacao_destino: dados.id_localizacao,
+          motivo_movimentacao: "Saldo inicial do lote",
+        },
+        select: { id_movimentacao: true },
+      });
+    }
     return buscarNaTransacao(tx, criado.id_lote);
   });
 }
