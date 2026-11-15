@@ -3,6 +3,7 @@ import { HttpError } from "../errors.ts";
 import type { Prisma } from "../generated/prisma/client.ts";
 import { executarComoUsuario, type ContextoDeEscrita } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
+import { literalParaLike } from "../busca.ts";
 
 const SELECAO = {
   id_localizacao: true,
@@ -43,10 +44,10 @@ export async function listarLocalizacoes(filtro: FiltroLocalizacoes): Promise<Pa
   const where: Prisma.localizacaoWhereInput = filtro.busca
     ? {
         OR: [
-          { corredor: { contains: filtro.busca, mode: "insensitive" } },
-          { nivel: { contains: filtro.busca, mode: "insensitive" } },
-          { posicao: { contains: filtro.busca, mode: "insensitive" } },
-          { descricao: { contains: filtro.busca, mode: "insensitive" } },
+          { corredor: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
+          { nivel: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
+          { posicao: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
+          { descricao: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
         ],
       }
     : {};

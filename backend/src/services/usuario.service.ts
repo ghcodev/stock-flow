@@ -5,6 +5,7 @@ import type { Prisma } from "../generated/prisma/client.ts";
 import type { perfil_usuario } from "../generated/prisma/enums.ts";
 import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
+import { literalParaLike } from "../busca.ts";
 
 const CUSTO_BCRYPT = 12;
 
@@ -55,8 +56,8 @@ export async function listarUsuarios(filtro: FiltroUsuarios): Promise<Pagina<Usu
     ...(filtro.busca
       ? {
           OR: [
-            { nome: { contains: filtro.busca, mode: "insensitive" } },
-            { email: { contains: filtro.busca, mode: "insensitive" } },
+            { nome: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
+            { email: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
           ],
         }
       : {}),

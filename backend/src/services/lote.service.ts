@@ -4,6 +4,7 @@ import type { Prisma } from "../generated/prisma/client.ts";
 import type { status_lote, tipo_identificacao } from "../generated/prisma/enums.ts";
 import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
+import { literalParaLike } from "../busca.ts";
 
 const SELECAO_PRODUTO = { id_produto: true, nome: true, unidade_medida: true } as const;
 const SELECAO_LOCALIZACAO = { id_localizacao: true, corredor: true, nivel: true, posicao: true } as const;
@@ -133,7 +134,7 @@ export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LotePubli
     ...(filtro.id_produto === undefined ? {} : { id_produto: filtro.id_produto }),
     ...(filtro.id_localizacao === undefined ? {} : { id_localizacao: filtro.id_localizacao }),
     ...(filtro.status === undefined ? {} : { status_lote: filtro.status }),
-    ...(filtro.numero_lote ? { numero_lote: { contains: filtro.numero_lote, mode: "insensitive" } } : {}),
+    ...(filtro.numero_lote ? { numero_lote: { contains: literalParaLike(filtro.numero_lote), mode: "insensitive" } } : {}),
   };
   const [lotes, total] = await Promise.all([
     prisma.lote.findMany({ where, select: SELECAO, orderBy: [{ id_lote: "desc" }], skip, take }),

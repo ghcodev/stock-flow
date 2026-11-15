@@ -3,6 +3,7 @@ import { HttpError } from "../errors.ts";
 import type { Prisma } from "../generated/prisma/client.ts";
 import { executarComoUsuario, type ContextoDeEscrita } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
+import { literalParaLike } from "../busca.ts";
 
 const SELECAO = {
   id_produto: true,
@@ -60,8 +61,8 @@ export async function listarProdutos(filtro: FiltroProdutos): Promise<Pagina<Pro
     ...(filtro.busca
       ? {
           OR: [
-            { nome: { contains: filtro.busca, mode: "insensitive" } },
-            { categoria: { contains: filtro.busca, mode: "insensitive" } },
+            { nome: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
+            { categoria: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
           ],
         }
       : {}),
