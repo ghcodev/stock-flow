@@ -81,6 +81,7 @@ describe("autorização por perfil e validação", () => {
     const forjado = await new SignJWT({ perfil: "administrador" })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject(String(operador.id))
+      .setIssuedAt()
       .setExpirationTime("1h")
       .sign(new TextEncoder().encode(config.jwtSecret));
     assert.equal((await chamar("/_teste/admin", forjado)).status, 403);
