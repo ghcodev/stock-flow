@@ -117,6 +117,32 @@ describe("POST /auth/login", () => {
   });
 });
 
+describe("limite de tentativas com JSON malformado", () => {
+  let servidor: Servidor;
+
+  before(async () => {
+    servidor = await subir(createApp());
+  });
+
+  after(async () => {
+    await servidor.fechar();
+    await prisma.$disconnect();
+  });
+
+  it("a 11ª resposta é 429 mesmo com corpo malformado", async () => {
+    const malformado = (): Promise<Response> =>
+      fetch(`${servidor.url}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{invalido",
+      });
+    for (let i = 0; i < 10; i++) {
+      assert.equal((await malformado()).status, 400);
+    }
+    assert.equal((await malformado()).status, 429);
+  });
+});
+
 describe("limite de tentativas de login", () => {
   let servidor: Servidor;
 
