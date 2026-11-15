@@ -1,7 +1,10 @@
 import { HttpError } from "../errors.ts";
+import { prisma } from "../db.ts";
 import { Prisma } from "../generated/prisma/client.ts";
+import type { tipo_movimentacao } from "../generated/prisma/enums.ts";
 import type { ContextoDeEscrita } from "../transacao.ts";
-import { alterarSaldo, SALDO_MAXIMO, type MovimentacaoPublica } from "./saldo.service.ts";
+import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
+import { alterarSaldo, SALDO_MAXIMO, SELECAO_MOVIMENTACAO, type MovimentacaoPublica } from "./saldo.service.ts";
 
 export type DadosSaldo = {
   id_lote: number;
@@ -90,4 +93,57 @@ export function registrarTransferencia(
       noLote: { id_localizacao: dados.id_localizacao_destino },
     };
   });
+}
+
+export type FiltroHistorico = Paginacao & {
+  de?: string;
+  ate?: string;
+  tipo?: tipo_movimentacao;
+  id_lote?: number;
+  id_usuario?: number;
+};
+
+const SO_DATA = /^\d{4}-\d{2}-\d{2}$/;
+const UM_DIA_MS = 24 * 60 * 60 * 1000;
+
+function limiteSuperior(ate: string): Date {
+  const data = new Date(ate);
+  return SO_DATA.test(ate) ? new Date(data.getTime() + UM_DIA_MS) : new Date(data.getTime() + 1);
+}
+
+export async function listarHistorico(filtro: FiltroHistorico): Promise<Pagina<MovimentacaoPublica>> {
+  const { pagina, limite, skip, take } = intervaloDe(filtro);
+  const where: Prisma.movimentacaoWhereInput = {
+    ...(filtro.tipo === undefined ? {} : { tipo_movimentacao: filtro.tipo }),
+    ...(filtro.id_lote === undefined ? {} : { id_lote: filtro.id_lote }),
+    ...(filtro.id_usuario === undefined ? {} : { id_usuario: filtro.id_usuario }),
+    ...(filtro.de === undefined && filtro.ate === undefined
+      ? {}
+      : {
+          data_movimentacao: {
+            ...(filtro.de === undefined ? {} : { gte: new Date(filtro.de) }),
+            ...(filtro.ate === undefined ? {} : { lt: limiteSuperior(filtro.ate) }),
+          },
+        }),
+  };
+  const [dados, total] = await Promise.all([
+    prisma.movimentacao.findMany({
+      where,
+      select: SELECAO_MOVIMENTACAO,
+      orderBy: [{ data_movimentacao: "desc" }, { id_movimentacao: "desc" }],
+      skip,
+      take,
+    }),
+    prisma.movimentacao.count({ where }),
+  ]);
+  return { dados, pagina, limite, total };
+}
+
+export async function obterMovimentacao(id: string): Promise<MovimentacaoPublica> {
+  const movimentacao = await prisma.movimentacao.findUnique({
+    where: { id_movimentacao: BigInt(id) },
+    select: SELECAO_MOVIMENTACAO,
+  });
+  if (!movimentacao) throw new HttpError(404, "NAO_ENCONTRADO", "Movimentação não encontrada");
+  return movimentacao;
 }
