@@ -18,6 +18,14 @@ verificar() {
   fi
 }
 
+for f in 00_dados_poc.sql poc2_saida.sql; do
+  if [ ! -f "$POC/$f" ]; then
+    echo "FALHA: arquivo ausente $POC/$f"
+    rm -f "$LOG_A" "$LOG_B"
+    exit 1
+  fi
+done
+
 $PSQL -v ON_ERROR_STOP=1 -U "$ADMIN" -d "$DB" -q < "$POC/00_dados_poc.sql" || exit 1
 echo "== PoC 2: duas saídas simultâneas de 50 unidades no lote L-002 (saldo 70) =="
 $PSQL -U stockflow_app -d "$DB" -q -v ON_ERROR_STOP=1 -v ip=10.0.0.1 < "$POC/poc2_saida.sql" > "$LOG_A" 2>&1 &

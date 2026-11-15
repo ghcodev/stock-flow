@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 cd "$(dirname "$0")/../../.."
 
 PSQL="${PSQL:-docker compose exec -T postgres psql}"
