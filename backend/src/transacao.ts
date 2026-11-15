@@ -9,6 +9,9 @@ export type ContextoDeEscrita = { idUsuario: number; ip: string };
 
 export type OpcoesTransacao = { lockTimeoutMs?: number };
 
+const ESPERA_MAXIMA_POR_CONEXAO_MS = 5000;
+const DURACAO_MAXIMA_MS = 10_000;
+
 export function contextoDe(req: Request): ContextoDeEscrita {
   return { idUsuario: usuarioAtual(req).id, ip: req.ip ?? "" };
 }
@@ -18,11 +21,14 @@ export function executarComoUsuario<T>(
   operacao: (tx: Tx) => Promise<T>,
   opcoes: OpcoesTransacao = {},
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT set_config('app.user_id', ${String(contexto.idUsuario)}, true), set_config('app.ip', ${contexto.ip}, true)`;
-    if (opcoes.lockTimeoutMs !== undefined) {
-      await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${opcoes.lockTimeoutMs}ms`}, true)`;
-    }
-    return operacao(tx);
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT set_config('app.user_id', ${String(contexto.idUsuario)}, true), set_config('app.ip', ${contexto.ip}, true)`;
+      if (opcoes.lockTimeoutMs !== undefined) {
+        await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${opcoes.lockTimeoutMs}ms`}, true)`;
+      }
+      return operacao(tx);
+    },
+    { maxWait: ESPERA_MAXIMA_POR_CONEXAO_MS, timeout: DURACAO_MAXIMA_MS },
+  );
 }
