@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { HttpError, type CampoInvalido } from "../errors.ts";
+import { traduzirErroBanco } from "../erros-banco.ts";
 
 type ErroDeCorpo = { type?: string };
 
@@ -33,8 +34,9 @@ export function rotaNaoEncontrada(_req: Request, _res: Response, next: NextFunct
 }
 
 export function tratadorDeErros(err: unknown, req: Request, res: Response, _next: NextFunction): void {
-  if (err instanceof HttpError) {
-    resposta(res, err.status, err.codigo, err.message, err.campos);
+  const conhecido = err instanceof HttpError ? err : traduzirErroBanco(err);
+  if (conhecido) {
+    resposta(res, conhecido.status, conhecido.codigo, conhecido.message, conhecido.campos);
     return;
   }
   const tipo = (err as ErroDeCorpo | null)?.type;

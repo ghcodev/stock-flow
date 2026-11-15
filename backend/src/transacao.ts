@@ -1,0 +1,28 @@
+import type { Request } from "express";
+import { prisma } from "./db.ts";
+import type { Prisma } from "./generated/prisma/client.ts";
+import { usuarioAtual } from "./middlewares/auth.middleware.ts";
+
+export type Tx = Prisma.TransactionClient;
+
+export type ContextoDeEscrita = { idUsuario: number; ip: string };
+
+export type OpcoesTransacao = { lockTimeoutMs?: number };
+
+export function contextoDe(req: Request): ContextoDeEscrita {
+  return { idUsuario: usuarioAtual(req).id, ip: req.ip ?? "" };
+}
+
+export function executarComoUsuario<T>(
+  contexto: ContextoDeEscrita,
+  operacao: (tx: Tx) => Promise<T>,
+  opcoes: OpcoesTransacao = {},
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT set_config('app.user_id', ${String(contexto.idUsuario)}, true), set_config('app.ip', ${contexto.ip}, true)`;
+    if (opcoes.lockTimeoutMs !== undefined) {
+      await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${opcoes.lockTimeoutMs}ms`}, true)`;
+    }
+    return operacao(tx);
+  });
+}
