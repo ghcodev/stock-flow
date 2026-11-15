@@ -135,6 +135,15 @@ describe("entrada (A11, RF03)", () => {
     await c.verificarInvariante(lote);
   });
 
+  it("entrada é aceita também em lote com status vencido explícito", async () => {
+    const lote = await c.novoLote("h2", { quantidade: "1" });
+    await prisma.lote.update({ where: { id_lote: lote }, data: { status_lote: "vencido" } });
+    assert.equal((await entrada({ id_lote: lote, quantidade: 2 })).status, 201);
+    assert.equal(await c.saldoDo(lote), "3");
+    assert.equal((await prisma.lote.findUniqueOrThrow({ where: { id_lote: lote } })).status_lote, "vencido");
+    await c.verificarInvariante(lote);
+  });
+
   it("dez entradas simultâneas somam exatamente e a cadeia de saldos não tem buraco", async () => {
     const lote = await c.novoLote("i", { quantidade: "100" });
     const respostas = await Promise.all(Array.from({ length: 10 }, () => entrada({ id_lote: lote, quantidade: 1 })));
