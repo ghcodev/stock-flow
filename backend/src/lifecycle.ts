@@ -17,15 +17,23 @@ export function criarEncerramento(server: Server, opcoes: OpcoesEncerramento): E
       if (codigo !== 0) sair(1);
       return emAndamento;
     }
-    const prazo = setTimeout(() => sair(1), limiteMs);
+    let ociosas: NodeJS.Timeout | undefined;
+    const prazo = setTimeout(() => {
+      clearInterval(ociosas);
+      sair(1);
+    }, limiteMs);
     prazo.unref();
     emAndamento = (async () => {
       try {
-        await new Promise<void>((ok) => server.close(() => ok()));
+        const fechado = new Promise<void>((ok) => server.close(() => ok()));
+        ociosas = setInterval(() => server.closeIdleConnections(), 50);
+        await fechado;
+        clearInterval(ociosas);
         await desconectar();
         clearTimeout(prazo);
         sair(codigo);
       } catch {
+        clearInterval(ociosas);
         clearTimeout(prazo);
         sair(1);
       }

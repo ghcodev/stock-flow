@@ -34,14 +34,16 @@ describe("encerramento", () => {
       limiteMs: 5000,
     });
 
-    const resposta = fetch(url, { headers: { connection: "close" } }).then((r) => r.text());
+    const resposta = fetch(url).then((r) => r.text());
     await chegou;
+    const inicio = Date.now();
     const primeiro = encerrar(0);
     const segundo = encerrar(0);
 
     assert.equal(await resposta, "completo");
     await Promise.all([primeiro, segundo]);
     assert.deepEqual(eventos, ["resposta-enviada", "desconectar", "sair:0"]);
+    assert.ok(Date.now() - inicio < 2000);
   });
 
   it("estourado o tempo limite, sai com 1 sem desconectar", async () => {
