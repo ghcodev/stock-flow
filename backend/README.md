@@ -10,7 +10,7 @@ npm ci
 cp .env.example .env
 ```
 
-Preencha `.env`: `DATABASE_URL` (role `stockflow_app`, porta 5433 do Docker), `JWT_SECRET` (mínimo 32 caracteres, aleatório) e, se quiser, `PORT` e `JWT_EXPIRES_IN`. A aplicação recusa subir sem `DATABASE_URL` ou `JWT_SECRET`.
+Preencha `.env`: `DATABASE_URL` (role `stockflow_app`, porta 5433 do Docker), `JWT_SECRET` (mínimo 32 caracteres, aleatório) e, se quiser, `PORT`. O token JWT dura sempre 8 h (fixo no código). A aplicação recusa subir sem `DATABASE_URL` ou `JWT_SECRET`.
 
 O banco sobe com `docker compose up -d` na raiz. O esquema é o de `database/postgres/init`; o Prisma não cria migrations.
 

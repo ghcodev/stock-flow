@@ -25,7 +25,7 @@ export async function assinarToken(id: number, perfil: perfil_usuario): Promise<
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(id))
     .setIssuedAt()
-    .setExpirationTime(config.jwtExpiresIn)
+    .setExpirationTime(DURACAO_TOKEN)
     .sign(CHAVE_JWT);
 }
 

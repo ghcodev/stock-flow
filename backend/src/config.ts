@@ -21,6 +21,5 @@ if (!Number.isInteger(port) || port < 0 || port > 65535) {
 export const config = {
   databaseUrl: obrigatoria("DATABASE_URL"),
   jwtSecret,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "8h",
   port,
 };

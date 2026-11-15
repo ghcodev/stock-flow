@@ -38,6 +38,7 @@ describe("POST /auth/login", () => {
   });
 
   it("login correto devolve token HS256 de 8 h e dados sem senha_hash", async () => {
+    process.env.JWT_EXPIRES_IN = "1m";
     const res = await login(servidor, { email: ativo.email, senha: ativo.senha });
     assert.equal(res.status, 200);
     const texto = await res.text();
