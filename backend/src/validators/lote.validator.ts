@@ -1,5 +1,5 @@
 import { body, query } from "express-validator";
-import { campoBusca, dataIso, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { campoBusca, semNul, dataIso, decimal, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 import { TIPOS_ETIQUETA } from "./etiqueta.validator.ts";
 
 const MAX_ID = 2_147_483_647;
@@ -22,6 +22,9 @@ export const validarEtiqueta = (prefixo: string, obrigatoria: boolean) => [
     .if(obrigatoria ? body(prefixo).exists() : body(prefixo).exists({ values: "null" }))
     .isString()
     .withMessage("Código da etiqueta deve ser texto")
+    .bail()
+    .custom(semNul)
+    .withMessage("Código da etiqueta contém caractere inválido")
     .bail()
     .trim()
     .isLength({ min: 1, max: 128 })

@@ -1,5 +1,5 @@
 import { body, query } from "express-validator";
-import { algumCampo, campoBusca, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
+import { algumCampo, semNul, campoBusca, soEscalar, texto, validarId, validarPaginacao } from "./comuns.ts";
 
 const PERFIS = ["administrador", "operador"];
 const MIN_SENHA = 8;
@@ -25,6 +25,9 @@ const senha = (opcional: boolean) => {
   return (opcional ? base.optional() : base)
     .isString()
     .withMessage("Senha é obrigatória")
+    .bail()
+    .custom(semNul)
+    .withMessage("Senha contém caractere inválido")
     .bail()
     .isLength({ min: MIN_SENHA })
     .withMessage(`Senha deve ter no mínimo ${MIN_SENHA} caracteres`)

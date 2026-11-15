@@ -1,5 +1,5 @@
 import { body } from "express-validator";
-import { soEscalar, validarId } from "./comuns.ts";
+import { semNul, soEscalar, validarId } from "./comuns.ts";
 
 export const TIPOS_ETIQUETA = ["qr_code", "rfid"];
 
@@ -9,6 +9,9 @@ export const validarAssociarEtiqueta = [
   body("codigo")
     .isString()
     .withMessage("Código da etiqueta deve ser texto")
+    .bail()
+    .custom(semNul)
+    .withMessage("Código da etiqueta contém caractere inválido")
     .bail()
     .trim()
     .isLength({ min: 1, max: 128 })

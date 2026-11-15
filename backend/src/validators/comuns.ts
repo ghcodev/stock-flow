@@ -9,6 +9,8 @@ export function soEscalar(cadeia: ValidationChain, rotulo: string): ValidationCh
   return cadeia.custom(ESCALAR).withMessage(`${rotulo} inválido`).bail();
 }
 
+export const semNul = (valor: string): boolean => !valor.includes("\u0000");
+
 const PADRAO_NUMERIC_12_3 = /^\d{1,9}(\.\d{1,3})?$/;
 
 export const validarId = soEscalar(param("id"), "Identificador")
@@ -37,6 +39,9 @@ export function texto(campo: string, rotulo: string, max: number, obrigatorio: b
   return cadeia
     .isString()
     .withMessage(`${rotulo} deve ser texto`)
+    .bail()
+    .custom(semNul)
+    .withMessage(`${rotulo} contém caractere inválido`)
     .bail()
     .trim()
     .isLength({ min: obrigatorio ? 1 : 0, max })
@@ -81,6 +86,9 @@ export function campoBusca(nome: string, rotulo: string, max: number): Validatio
   return soEscalar(query(nome).optional(), rotulo)
     .isString()
     .withMessage(`${rotulo} inválido`)
+    .bail()
+    .custom(semNul)
+    .withMessage(`${rotulo} contém caractere inválido`)
     .bail()
     .trim()
     .isLength({ max })
