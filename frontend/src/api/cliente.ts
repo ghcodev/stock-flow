@@ -7,6 +7,12 @@ export type OpcoesDeRequisicao = {
   consulta?: Consulta | undefined;
   corpo?: unknown;
   sinal?: AbortSignal | undefined;
+  tempoLimiteMs?: number | undefined;
+};
+
+export type ArquivoBaixado = {
+  blob: Blob;
+  nomeDoArquivo: string | null;
 };
 
 export type DependenciasDoCliente = {
@@ -23,10 +29,31 @@ export type Cliente = {
   get: <T>(caminho: string, consulta?: Consulta, sinal?: AbortSignal) => Promise<T>;
   post: <T>(caminho: string, corpo?: unknown, sinal?: AbortSignal) => Promise<T>;
   patch: <T>(caminho: string, corpo?: unknown, sinal?: AbortSignal) => Promise<T>;
+  baixar: (caminho: string, opcoes?: OpcoesDeRequisicao) => Promise<ArquivoBaixado>;
 };
 
 const BASE_PADRAO = "/api";
 const TEMPO_LIMITE_PADRAO_MS = 15_000;
+
+export function nomeDoArquivoDoCabecalho(cabecalho: string | null): string | null {
+  if (cabecalho === null) return null;
+  const estendido = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cabecalho);
+  let bruto: string | null = null;
+  if (estendido?.[1] !== undefined) {
+    try {
+      bruto = decodeURIComponent(estendido[1].trim());
+    } catch {
+      bruto = null;
+    }
+  }
+  if (bruto === null) {
+    const simples = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/i.exec(cabecalho);
+    bruto = (simples?.[1] ?? simples?.[2] ?? "").trim();
+  }
+  const limpo = bruto.replace(/[\u0000-\u001f\u007f]/g, "").split(/[\\/]/).pop() ?? "";
+  const seguro = limpo.replace(/[^A-Za-z0-9._-]/g, "_").replace(/^\.+/, "").slice(0, 100);
+  return seguro === "" ? null : seguro;
+}
 
 export function montarConsulta(consulta: Consulta | undefined): string {
   if (!consulta) return "";
@@ -129,10 +156,16 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
   const tempoLimite = dependencias.tempoLimiteMs ?? TEMPO_LIMITE_PADRAO_MS;
   const agora = dependencias.agora ?? Date.now;
 
-  async function requisitar<T>(metodo: Metodo, caminho: string, opcoes: OpcoesDeRequisicao = {}): Promise<T> {
+  async function executar<T>(
+    metodo: Metodo,
+    caminho: string,
+    opcoes: OpcoesDeRequisicao,
+    aceite: string,
+    lerSucesso: (resposta: Response, aoAbortar: () => ErroDeRede, sinal: AbortSignal) => Promise<T>,
+  ): Promise<T> {
     const url = montarUrl(base, caminho, opcoes.consulta);
     const token = dependencias.obterToken();
-    const cabecalhos: Record<string, string> = { Accept: "application/json" };
+    const cabecalhos: Record<string, string> = { Accept: aceite };
     if (token !== null) cabecalhos["Authorization"] = `Bearer ${token}`;
     const temCorpo = opcoes.corpo !== undefined;
     if (temCorpo) cabecalhos["Content-Type"] = "application/json";
@@ -142,7 +175,7 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
     const temporizador = setTimeout(() => {
       esgotou = true;
       controle.abort();
-    }, tempoLimite);
+    }, opcoes.tempoLimiteMs ?? tempoLimite);
     const cancelarPeloChamador = () => controle.abort();
     if (opcoes.sinal) {
       if (opcoes.sinal.aborted) controle.abort();
@@ -165,12 +198,7 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
         throw controle.signal.aborted ? aoAbortar() : new ErroDeRede("SEM_CONEXAO", "Sem conexão com o servidor");
       }
 
-      if (resposta.ok) {
-        if (resposta.status === 204) return undefined as T;
-        const corpo = await lerCorpoJson(resposta, aoAbortar, controle.signal);
-        if (corpo === undefined) throw new ErroDaApi(resposta.status, "RESPOSTA_INVALIDA", "Resposta inesperada do servidor");
-        return corpo as T;
-      }
+      if (resposta.ok) return await lerSucesso(resposta, aoAbortar, controle.signal);
 
       const segundos = lerSegundosParaRepetir(resposta.headers.get("Retry-After"), agora());
       const erro = erroDaResposta(resposta, await lerCorpoJson(resposta, aoAbortar, controle.signal), segundos);
@@ -182,10 +210,32 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
     }
   }
 
+  async function requisitar<T>(metodo: Metodo, caminho: string, opcoes: OpcoesDeRequisicao = {}): Promise<T> {
+    return executar<T>(metodo, caminho, opcoes, "application/json", async (resposta, aoAbortar, sinal) => {
+      if (resposta.status === 204) return undefined as T;
+      const corpo = await lerCorpoJson(resposta, aoAbortar, sinal);
+      if (corpo === undefined) throw new ErroDaApi(resposta.status, "RESPOSTA_INVALIDA", "Resposta inesperada do servidor");
+      return corpo as T;
+    });
+  }
+
+  async function baixar(caminho: string, opcoes: OpcoesDeRequisicao = {}): Promise<ArquivoBaixado> {
+    return executar<ArquivoBaixado>("GET", caminho, opcoes, "text/csv, application/octet-stream, */*;q=0.1", async (resposta, aoAbortar, sinal) => {
+      try {
+        const blob = await resposta.blob();
+        return { blob, nomeDoArquivo: nomeDoArquivoDoCabecalho(resposta.headers.get("Content-Disposition")) };
+      } catch {
+        if (sinal.aborted) throw aoAbortar();
+        throw new ErroDeRede("SEM_CONEXAO", "Conexão interrompida durante o download");
+      }
+    });
+  }
+
   return {
     requisitar,
     get: (caminho, consulta, sinal) => requisitar("GET", caminho, { consulta, sinal }),
     post: (caminho, corpo, sinal) => requisitar("POST", caminho, { corpo, sinal }),
     patch: (caminho, corpo, sinal) => requisitar("PATCH", caminho, { corpo, sinal }),
+    baixar,
   };
 }

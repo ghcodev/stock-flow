@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { caminhoDeApiValido, criarCliente, lerSegundosParaRepetir, montarConsulta, montarUrl, segmento, type DependenciasDoCliente } from "../src/api/cliente.ts";
+import { nomeDoArquivoDoCabecalho, caminhoDeApiValido, criarCliente, lerSegundosParaRepetir, montarConsulta, montarUrl, segmento, type DependenciasDoCliente } from "../src/api/cliente.ts";
 import { ErroDaApi, ErroDeRede, mensagemDoErro } from "../src/api/erros.ts";
 import { entrar } from "../src/api/autenticacao.ts";
 
@@ -344,5 +344,59 @@ describe("decodificação em camadas do caminho (S1)", () => {
   it("continua aceitando caminhos legítimos, inclusive id codificado uma vez", () => {
     for (const bom of ["/lotes/12", "/lotes/a%20b", "/inventario/contagens/9/finalizar", "/lotes/12/etiqueta"]) assert.equal(caminhoDeApiValido(bom), true, bom);
     assert.equal(montarUrl("/api", `/lotes/${segmento("12")}/bloquear`, undefined), "/api/lotes/12/bloquear");
+  });
+});
+
+describe("download de arquivo com a mesma disciplina das requisições (F6)", () => {
+  const csv = (extras: Record<string, string> = {}) =>
+    new Response("a;b\r\n1;2\r\n", { status: 200, headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="alertas-vencimento.csv"', ...extras } });
+
+  it("devolve blob e nome do arquivo, envia Authorization e pede texto", async () => {
+    const t = simular(() => csv(), { obterToken: () => "tk" });
+    const arquivo = await t.cliente.baixar("/alertas/vencimento/exportacao");
+    assert.equal(arquivo.nomeDoArquivo, "alertas-vencimento.csv");
+    assert.equal(await arquivo.blob.text(), "a;b\r\n1;2\r\n");
+    assert.equal(cabecalho(t.chamadas[0], "Authorization"), "Bearer tk");
+    assert.match(cabecalho(t.chamadas[0], "Accept") ?? "", /text\/csv/);
+  });
+
+  it("403 e 422 viram ErroDaApi com a mensagem; 401 com token invalida a sessão", async () => {
+    const proibido = simular(() => json({ erro: { codigo: "PERFIL_INSUFICIENTE", mensagem: "Acesso restrito" } }, 403), { obterToken: () => "t" });
+    await assert.rejects(proibido.cliente.baixar("/x"), (e: unknown) => e instanceof ErroDaApi && e.status === 403);
+    const grande = simular(() => json({ erro: { codigo: "EXPORTACAO_MUITO_GRANDE", mensagem: "A exportação excede o limite de 10000 linhas" } }, 422));
+    await assert.rejects(grande.cliente.baixar("/x"), (e: unknown) => e instanceof ErroDaApi && e.codigo === "EXPORTACAO_MUITO_GRANDE");
+    const expirado = simular(() => json({ erro: { codigo: "NAO_AUTORIZADO", mensagem: "x" } }, 401), { obterToken: () => "t" });
+    await assert.rejects(expirado.cliente.baixar("/x"), (e: unknown) => e instanceof ErroDaApi && e.status === 401);
+    assert.equal(expirado.naoAutorizado(), 1);
+  });
+
+  it("tempo limite próprio e cancelamento valem também durante a leitura do corpo", async () => {
+    const retida = ((_u: string, init: RequestInit) => {
+      const corpo = new ReadableStream<Uint8Array>({
+        start(controle) {
+          init.signal?.addEventListener("abort", () => controle.error(new DOMException("abortado", "AbortError")));
+        },
+      });
+      return Promise.resolve(new Response(corpo, { status: 200, headers: { "Content-Type": "text/csv" } }));
+    }) as unknown as typeof fetch;
+    const cliente = criarCliente({ buscar: retida, obterToken: () => null, aoNaoAutorizado: () => undefined, tempoLimiteMs: 60_000 });
+    await assert.rejects(cliente.baixar("/x", { tempoLimiteMs: 30 }), (e: unknown) => e instanceof ErroDeRede && e.motivo === "TEMPO_ESGOTADO");
+    const controle = new AbortController();
+    const espera = cliente.baixar("/x", { sinal: controle.signal });
+    setTimeout(() => controle.abort(), 20);
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDeRede && e.motivo === "CANCELADO");
+  });
+
+  it("nome do arquivo: aspas, filename*, caminhos e caracteres perigosos são neutralizados", () => {
+    assert.equal(nomeDoArquivoDoCabecalho('attachment; filename="alertas-vencimento.csv"'), "alertas-vencimento.csv");
+    assert.equal(nomeDoArquivoDoCabecalho("attachment; filename=relatorio.csv"), "relatorio.csv");
+    assert.equal(nomeDoArquivoDoCabecalho("attachment; filename*=UTF-8''vencimento%20a%C3%A7%C3%A3o.csv"), "vencimento_a__o.csv");
+    assert.equal(nomeDoArquivoDoCabecalho('attachment; filename="../../etc/passwd"'), "passwd");
+    assert.equal(nomeDoArquivoDoCabecalho('attachment; filename="..\\..\\x.csv"'), "x.csv");
+    assert.equal(nomeDoArquivoDoCabecalho('attachment; filename=".hidden"'), "hidden");
+    assert.equal(nomeDoArquivoDoCabecalho("attachment"), null);
+    assert.equal(nomeDoArquivoDoCabecalho(null), null);
+    assert.equal(nomeDoArquivoDoCabecalho('attachment; filename=""'), null);
+    assert.ok((nomeDoArquivoDoCabecalho(`attachment; filename="${"a".repeat(300)}.csv"`) ?? "").length <= 100);
   });
 });
