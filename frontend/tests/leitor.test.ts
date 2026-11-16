@@ -2,6 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { criarDetector, type Leitura } from "../src/leitor/detector.ts";
 import { criarCaptura, ehCampoEditavel, normalizarCodigoLido, type EventoDeTecla } from "../src/leitor/captura.ts";
+import { deveHabilitarNoInicio } from "../src/leitor/inicio.ts";
+import { rotaUsaLeitor } from "../src/sessao/rotas.ts";
+import { salvarSessao, type Armazenamento } from "../src/sessao/sessao.ts";
 import { conectarSerial, criarMontadorDeCodigos, serialDisponivel, type PortaSerial } from "../src/leitor/serial.ts";
 
 function gerador(semente: number): () => number {
@@ -108,6 +111,12 @@ describe("detector de leitor em modo teclado (Código 4, E10)", () => {
   });
 });
 
+function habilitada(dependencias: Parameters<typeof criarCaptura>[0] = {}) {
+  const captura = criarCaptura(dependencias);
+  captura.habilitar(true);
+  return captura;
+}
+
 function evento(chave: string, instante: number, extras: Partial<EventoDeTecla> = {}): EventoDeTecla & { evitados: number } {
   const estado = { evitados: 0 };
   const base: EventoDeTecla = {
@@ -140,7 +149,7 @@ function leitorFisico(captura: ReturnType<typeof criarCaptura>, codigo: string, 
 describe("captura global antes do React, sem perder o primeiro caractere e sem duplicar em campos", () => {
   it("leitura feita antes de existir ouvinte é entregue completa a quem assina depois, uma única vez", () => {
     let agora = 0;
-    const captura = criarCaptura({ agora: () => agora });
+    const captura = habilitada({ agora: () => agora });
     leitorFisico(captura, "LOTE-0001", 100);
     agora = 1500;
     const recebidas: string[] = [];
@@ -153,7 +162,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
 
   it("leitura pendente velha demais é descartada", () => {
     let agora = 0;
-    const captura = criarCaptura({ agora: () => agora, validadeDaPendenteMs: 3000 });
+    const captura = habilitada({ agora: () => agora, validadeDaPendenteMs: 3000 });
     leitorFisico(captura, "LOTE-0002", 100);
     agora = 3001;
     const recebidas: string[] = [];
@@ -162,7 +171,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("com o foco num campo editável a captura global não lê nem duplica", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: string[] = [];
     captura.assinar((leitura) => recebidas.push(leitura.codigo));
     for (const alvo of [{ tagName: "INPUT" }, { tagName: "textarea" }, { tagName: "SELECT" }, { tagName: "DIV", isContentEditable: true }]) {
@@ -173,7 +182,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("caracteres digitados num campo não se misturam com a leitura seguinte fora dele", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: string[] = [];
     captura.assinar((leitura) => recebidas.push(leitura.codigo));
     for (const [i, c] of ["a", "b", "c"].entries()) captura.processar(evento(c, i * 5, { target: { tagName: "INPUT" } }));
@@ -182,7 +191,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("só leitura de leitor chama preventDefault no Enter; digitação humana segue o comportamento normal", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: Leitura[] = [];
     captura.assinar((leitura) => recebidas.push(leitura));
     const fimDoLeitor = leitorFisico(captura, "LEITOR-OK", 0);
@@ -199,7 +208,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("atalhos com Ctrl, Meta ou Alt, teclas repetidas e composição são ignorados", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: string[] = [];
     captura.assinar((leitura) => recebidas.push(leitura.codigo));
     let instante = 0;
@@ -214,7 +223,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("leitura gigante seguida de uma etiqueta curta não emite nada nem chama o ouvinte (T1)", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: string[] = [];
     captura.assinar((leitura) => recebidas.push(leitura.codigo));
     leitorFisico(captura, "x".repeat(256) + "VALID", 0);
@@ -224,7 +233,7 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
   });
 
   it("ouvinte que cancela a assinatura deixa de receber", () => {
-    const captura = criarCaptura();
+    const captura = habilitada();
     const recebidas: string[] = [];
     const cancelar = captura.assinar((leitura) => recebidas.push(leitura.codigo));
     leitorFisico(captura, "ABCD-1", 0);
@@ -310,5 +319,84 @@ describe("Web Serial: disponibilidade e montagem de códigos em pedaços", () =>
 
   it("recusa conectar sem Web Serial ou sem contexto seguro", async () => {
     await assert.rejects(conectarSerial({ isSecureContext: false, navigator: {} }, { aoLer: () => undefined, aoEncerrar: () => undefined }), /indisponível/);
+  });
+});
+
+describe("captura só na sessão autenticada e nas rotas do leitor (T7)", () => {
+  it("desabilitada, nada entra no buffer nem é emitido; ao habilitar, teclas antigas não se misturam", () => {
+    const captura = criarCaptura();
+    const recebidas: string[] = [];
+    captura.assinar((leitura) => recebidas.push(leitura.codigo));
+    leitorFisico(captura, "NAO-DEVE-LER", 0);
+    assert.deepEqual(recebidas, []);
+    captura.habilitar(true);
+    leitorFisico(captura, "AGORA-SIM", 10_000);
+    assert.deepEqual(recebidas, ["AGORA-SIM"]);
+  });
+
+  it("desabilitar limpa o buffer parcial e a leitura pendente", () => {
+    const captura = habilitada();
+    for (const [i, c] of ["A", "B", "C"].entries()) captura.processar(evento(c, i * 5));
+    captura.habilitar(false);
+    captura.habilitar(true);
+    const recebidas: string[] = [];
+    captura.assinar((leitura) => recebidas.push(leitura.codigo));
+    captura.processar(evento("D", 100));
+    captura.processar(evento("Enter", 105));
+    assert.deepEqual(recebidas, []);
+
+    const comPendente = habilitada();
+    leitorFisico(comPendente, "PENDENTE-1", 0);
+    comPendente.habilitar(false);
+    comPendente.habilitar(true);
+    const outras: string[] = [];
+    comPendente.assinar((leitura) => outras.push(leitura.codigo));
+    assert.deepEqual(outras, []);
+  });
+
+  it("a leitura pendente expira por temporizador, mesmo sem ninguém assinar", () => {
+    const tarefas: { tarefa: () => void; atraso: number; cancelada: boolean }[] = [];
+    let agora = 0;
+    const captura = habilitada({
+      agora: () => agora,
+      validadeDaPendenteMs: 3000,
+      agendar: (tarefa, atraso) => {
+        const item = { tarefa, atraso, cancelada: false };
+        tarefas.push(item);
+        return () => {
+          item.cancelada = true;
+        };
+      },
+    });
+    leitorFisico(captura, "EXPIRA-1", 0);
+    assert.equal(tarefas.length, 1);
+    assert.equal(tarefas[0]?.atraso, 3000);
+    agora = 3000;
+    tarefas[0]?.tarefa();
+    const recebidas: string[] = [];
+    captura.assinar((leitura) => recebidas.push(leitura.codigo));
+    assert.deepEqual(recebidas, []);
+  });
+
+  it("emitir (serial) sem ouvinte e com a captura desabilitada é descartado", () => {
+    const captura = criarCaptura();
+    captura.emitir({ codigo: "SERIAL-1", origem: "serial", intervaloMedioMs: null });
+    captura.habilitar(true);
+    const recebidas: string[] = [];
+    captura.assinar((leitura) => recebidas.push(leitura.codigo));
+    assert.deepEqual(recebidas, []);
+  });
+
+  it("só habilita no início com sessão válida e rota que usa o leitor, com caixa exata", () => {
+    const dados = new Map<string, string>();
+    const armazenamento: Armazenamento = { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => void dados.set(c, v), removeItem: (c) => void dados.delete(c) };
+    const agora = Date.parse("2026-11-16T12:00:00Z");
+    const token = (exp: number) => `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.s`;
+    assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora), false);
+    salvarSessao(armazenamento, { token: token(Math.floor(agora / 1000) + 3600), usuario: { id_usuario: 1, nome: "A", email: "a@b.co", perfil: "operador" } });
+    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), true, rota);
+    for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
+    assert.equal(rotaUsaLeitor("/saida/"), true);
+    assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora + 4 * 3600 * 1000), false);
   });
 });

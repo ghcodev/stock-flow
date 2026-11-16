@@ -17,3 +17,10 @@ export function recursoDoCaminho(caminho: string): Recurso | undefined {
   const id = casamentos?.[casamentos.length - 1]?.route.id;
   return id !== undefined && RECURSOS.has(id) ? (id as Recurso) : undefined;
 }
+
+const RECURSOS_COM_LEITOR: ReadonlySet<Recurso> = new Set<Recurso>(["lotes", "entrada", "saida", "transferencia"]);
+
+export function rotaUsaLeitor(caminho: string): boolean {
+  const recurso = recursoDoCaminho(caminho);
+  return recurso !== undefined && RECURSOS_COM_LEITOR.has(recurso);
+}

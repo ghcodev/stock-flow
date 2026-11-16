@@ -25,7 +25,15 @@ export function useLeitor(aoLeitura: (leitura: Leitura) => void): EstadoDoLeitor
   const gerenciador = gerenciadorSerial();
   const estado = useSyncExternalStore(gerenciador.assinar, gerenciador.estado);
 
-  useEffect(() => capturaGlobal().assinar((leitura) => funcao.current(leitura)), []);
+  useEffect(() => {
+    const captura = capturaGlobal();
+    captura.habilitar(true);
+    const cancelar = captura.assinar((leitura) => funcao.current(leitura));
+    return () => {
+      cancelar();
+      captura.habilitar(false);
+    };
+  }, []);
 
   useEffect(() => {
     const atualizar = () => setFocoEmCampo(campoEmFoco());

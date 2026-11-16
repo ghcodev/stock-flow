@@ -34,6 +34,8 @@ export function normalizarCodigoLido(codigo: string): string | null {
 }
 
 export type Captura = {
+  habilitar: (valor: boolean) => void;
+  habilitada: () => boolean;
   processar: (evento: EventoDeTecla) => void;
   assinar: (ouvinte: Ouvinte) => () => void;
   emitir: (leitura: Leitura) => void;
@@ -43,6 +45,7 @@ export type Captura = {
 type Dependencias = {
   detector?: Detector;
   agora?: () => number;
+  agendar?: (tarefa: () => void, atrasoMs: number) => () => void;
   validadeDaPendenteMs?: number;
 };
 
@@ -50,19 +53,48 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
   const detector = dependencias.detector ?? criarDetector();
   const agora = dependencias.agora ?? (() => Date.now());
   const validade = dependencias.validadeDaPendenteMs ?? 3000;
+  const agendar =
+    dependencias.agendar ??
+    ((tarefa: () => void, atrasoMs: number) => {
+      const temporizador = setTimeout(tarefa, atrasoMs);
+      return () => clearTimeout(temporizador);
+    });
+  let habilitada = false;
+  let cancelarExpiracao: (() => void) | null = null;
   const ouvintes = new Set<Ouvinte>();
   let pendente: { leitura: Leitura; em: number } | null = null;
 
+  const descartarPendente = () => {
+    pendente = null;
+    cancelarExpiracao?.();
+    cancelarExpiracao = null;
+  };
+
   const emitir = (leitura: Leitura) => {
     if (ouvintes.size === 0) {
-      pendente = { leitura, em: agora() };
+      if (!habilitada) return;
+      descartarPendente();
+      const guardada = { leitura, em: agora() };
+      pendente = guardada;
+      cancelarExpiracao = agendar(() => {
+        if (pendente === guardada) descartarPendente();
+      }, validade);
       return;
     }
     for (const ouvinte of Array.from(ouvintes)) ouvinte(leitura);
   };
 
   return {
+    habilitar(valor) {
+      habilitada = valor;
+      if (!valor) {
+        detector.reiniciar();
+        descartarPendente();
+      }
+    },
+    habilitada: () => habilitada,
     processar(evento) {
+      if (!habilitada) return;
       if (evento.repeat === true || evento.isComposing === true || evento.ctrlKey || evento.metaKey || evento.altKey) return;
       if (ehCampoEditavel(evento.target)) {
         detector.reiniciar();
@@ -77,7 +109,7 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
       ouvintes.add(ouvinte);
       if (pendente !== null) {
         const guardada = pendente;
-        pendente = null;
+        descartarPendente();
         if (agora() - guardada.em <= validade) ouvinte(guardada.leitura);
       }
       return () => {
@@ -87,7 +119,7 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
     emitir,
     reiniciar() {
       detector.reiniciar();
-      pendente = null;
+      descartarPendente();
     },
   };
 }
@@ -100,10 +132,11 @@ export function capturaGlobal(): Captura {
   return instancia;
 }
 
-export function iniciarCaptura(alvo: Window = window): void {
+export function iniciarCaptura(alvo: Window = window, habilitada = false): void {
   if (iniciada) return;
   iniciada = true;
   const captura = capturaGlobal();
+  captura.habilitar(habilitada);
   alvo.addEventListener(
     "keydown",
     (evento) => {

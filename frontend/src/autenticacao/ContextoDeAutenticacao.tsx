@@ -45,7 +45,7 @@ export function ProvedorDeAutenticacao({ children, armazenamento }: { children: 
       else {
         limparSessao(memoria);
         gerenciadorSerial().desconectar();
-        capturaGlobal().reiniciar();
+        capturaGlobal().habilitar(false);
       }
       setSessao(nova);
     },
