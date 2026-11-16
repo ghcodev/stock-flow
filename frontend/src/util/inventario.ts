@@ -55,28 +55,45 @@ export function interpretarFalhaDeContagem(erro: unknown): FalhaDeFormulario {
   return interpretarFalhaDeFormulario(erro);
 }
 
-export type FalhaDeDecisao = { geral: string; atualizarLista: boolean; incerta: boolean };
+export type FalhaDeDecisao = { geral: string; atualizarLista: boolean; incerta: boolean; reler: boolean };
 
 export function interpretarFalhaDeDecisao(erro: unknown): FalhaDeDecisao {
   if (erro instanceof ErroDaApi) {
     if (erro.status === 409 && erro.codigo === "CONTAGEM_JA_FINALIZADA") {
-      return { geral: "Esta contagem não está mais pendente: outra pessoa já a finalizou ou cancelou. A lista será atualizada.", atualizarLista: true, incerta: false };
+      return { geral: "Esta contagem não está mais pendente: outra pessoa já a finalizou ou cancelou. A lista será atualizada.", atualizarLista: true, incerta: false, reler: false };
     }
     if (erro.status === 409 && erro.codigo === "CONTAGEM_NAO_PENDENTE") {
-      return { geral: "Somente contagem pendente pode ser cancelada. A lista será atualizada.", atualizarLista: true, incerta: false };
+      return { geral: "Somente contagem pendente pode ser cancelada. A lista será atualizada.", atualizarLista: true, incerta: false, reler: false };
     }
     if (erro.status === 409 && erro.codigo === "SALDO_FINAL_NEGATIVO") {
-      return { geral: "O saldo atual do lote não comporta a divergência desta contagem: o saldo final ficaria negativo. Cancele a contagem ou registre outra.", atualizarLista: false, incerta: false };
+      return { geral: "O saldo atual do lote não comporta a divergência desta contagem: o saldo final ficaria negativo. Cancele a contagem ou registre outra.", atualizarLista: false, incerta: false, reler: true };
     }
     if (erro.status === 422 && erro.codigo === "SALDO_EXCEDE_LIMITE") {
-      return { geral: "O saldo final excederia o limite permitido para o lote.", atualizarLista: false, incerta: false };
+      return { geral: "O saldo final excederia o limite permitido para o lote.", atualizarLista: false, incerta: false, reler: true };
     }
-    if (erro.status === 404) return { geral: "Contagem não encontrada. A lista será atualizada.", atualizarLista: true, incerta: false };
+    if (erro.status === 404) return { geral: "Contagem não encontrada. A lista será atualizada.", atualizarLista: true, incerta: false, reler: false };
   }
   const base = interpretarFalhaDeFormulario(erro);
-  return { geral: base.geral ?? "Não foi possível concluir a operação.", atualizarLista: base.incerta, incerta: base.incerta };
+  return { geral: base.geral ?? "Não foi possível concluir a operação.", atualizarLista: base.incerta, incerta: base.incerta, reler: false };
 }
 
 export function idDeContagemValido(id: string): boolean {
   return /^[1-9]\d{0,17}$/.test(id);
+}
+
+export type LeituraDoSaldo = { saldo: string | null; carregando: boolean; erro: string | null };
+
+export type DecisaoDeFinalizacao = {
+  podeConfirmar: boolean;
+  motivo: "lendo" | "falha" | "negativo" | "excede" | null;
+  saldoFinal: string | null;
+};
+
+export function decidirFinalizacao(leitura: LeituraDoSaldo, divergencia: string): DecisaoDeFinalizacao {
+  if (leitura.carregando) return { podeConfirmar: false, motivo: "lendo", saldoFinal: null };
+  if (leitura.erro !== null || leitura.saldo === null) return { podeConfirmar: false, motivo: "falha", saldoFinal: null };
+  const previsao = preverFinalizacao(leitura.saldo, divergencia);
+  if (previsao.saldoFinal === null) return { podeConfirmar: false, motivo: "falha", saldoFinal: null };
+  if (previsao.problema !== null) return { podeConfirmar: false, motivo: previsao.problema, saldoFinal: previsao.saldoFinal };
+  return { podeConfirmar: true, motivo: null, saldoFinal: previsao.saldoFinal };
 }

@@ -8,7 +8,7 @@ import { Modal } from "../../componentes/Modal.tsx";
 import { useCarregar } from "../../hooks/useCarregar.ts";
 import { formatarQuantidade } from "../../util/decimal.ts";
 import { criarEnvioUnico } from "../../util/envio.ts";
-import { interpretarFalhaDeDecisao, preverFinalizacao, textoDaDivergencia } from "../../util/inventario.ts";
+import { decidirFinalizacao, interpretarFalhaDeDecisao, textoDaDivergencia } from "../../util/inventario.ts";
 
 export type Decisao = { modo: "finalizar" | "cancelar"; contagem: Contagem };
 
@@ -28,10 +28,12 @@ export function DecidirContagem({ decisao, aoCancelar, aoAtualizarLista, aoFinal
   const [erro, setErro] = useState<string | null>(null);
   const envio = useRef(criarEnvioUnico());
   const lote = useCarregar((sinal) => obterLote(cliente, contagem.id_lote, sinal), [cliente, contagem.id_lote], finalizando);
-  const previsao = lote.dados ? preverFinalizacao(lote.dados.quantidade, contagem.divergencia) : null;
+  const decisaoDeSaldo = decidirFinalizacao({ saldo: lote.dados?.quantidade ?? null, carregando: lote.carregando, erro: lote.erro }, contagem.divergencia);
+  const liberado = !finalizando || decisaoDeSaldo.podeConfirmar;
   const unidade = lote.dados?.produto.unidade_medida ?? "";
 
   const confirmar = () => {
+    if (!liberado) return;
     const execucao = envio.current.executar(async () =>
       finalizando ? { resultado: await finalizarContagem(cliente, contagem.id_movimentacao) } : { cancelada: await cancelarContagem(cliente, contagem.id_movimentacao) },
     );
@@ -46,6 +48,7 @@ export function DecidirContagem({ decisao, aoCancelar, aoAtualizarLista, aoFinal
       (falha: unknown) => {
         const resultado = interpretarFalhaDeDecisao(falha);
         if (resultado.atualizarLista) aoAtualizarLista();
+        if (resultado.reler && finalizando) lote.recarregar();
         setErro(resultado.geral);
         setEnviando(false);
       },
@@ -67,7 +70,7 @@ export function DecidirContagem({ decisao, aoCancelar, aoAtualizarLista, aoFinal
             type="button"
             className={finalizando ? "btn btn-primary" : "btn btn-perigo"}
             onClick={confirmar}
-            disabled={enviando || (finalizando && previsao?.problema != null)}
+            disabled={enviando || !liberado}
             aria-busy={enviando}
           >
             {enviando ? <span className="spinner" aria-hidden="true" /> : null}
@@ -99,15 +102,15 @@ export function DecidirContagem({ decisao, aoCancelar, aoAtualizarLista, aoFinal
         {finalizando ? (
           <div>
             <dt>Saldo atual do lote</dt>
-            <dd>{lote.dados ? `${formatarQuantidade(lote.dados.quantidade)} ${unidade}` : lote.erro ? "indisponível" : "carregando…"}</dd>
+            <dd>{lote.carregando ? "lendo…" : lote.dados && lote.erro === null ? `${formatarQuantidade(lote.dados.quantidade)} ${unidade}` : "indisponível"}</dd>
           </div>
         ) : null}
-        {finalizando && previsao?.saldoFinal != null ? (
+        {finalizando && decisaoDeSaldo.saldoFinal !== null ? (
           <div>
             <dt>Saldo final previsto</dt>
             <dd>
               <strong>
-                {formatarQuantidade(previsao.saldoFinal)} {unidade}
+                {formatarQuantidade(decisaoDeSaldo.saldoFinal)} {unidade}
               </strong>
             </dd>
           </div>
@@ -119,8 +122,17 @@ export function DecidirContagem({ decisao, aoCancelar, aoAtualizarLista, aoFinal
             A divergência será <strong>somada ao saldo ATUAL</strong> do lote no momento da confirmação, não ao saldo que existia quando a contagem foi feita. Se houve
             movimentações depois da contagem, o saldo final reflete isso. Será gerado um ajuste de estoque, e a contagem passa a concluída.
           </p>
-          {previsao?.problema === "negativo" ? <p className="form-error">O saldo atual não comporta a divergência: o saldo final ficaria negativo.</p> : null}
-          {previsao?.problema === "excede" ? <p className="form-error">O saldo final excederia o limite permitido.</p> : null}
+          {decisaoDeSaldo.motivo === "falha" ? (
+            <div className="aviso-do-formulario" role="alert">
+              <span>Não foi possível ler o saldo atual do lote, então a finalização está bloqueada.</span>
+              <button type="button" className="btn btn-outline btn-sm" onClick={lote.recarregar}>
+                Ler de novo
+              </button>
+            </div>
+          ) : null}
+          {decisaoDeSaldo.motivo === "lendo" ? <p className="campo-ajuda">Lendo o saldo atual do lote…</p> : null}
+          {decisaoDeSaldo.motivo === "negativo" ? <p className="form-error">O saldo atual não comporta a divergência: o saldo final ficaria negativo.</p> : null}
+          {decisaoDeSaldo.motivo === "excede" ? <p className="form-error">O saldo final excederia o limite permitido.</p> : null}
         </>
       ) : (
         <p>A contagem será cancelada e o saldo do lote não muda. Esta ação não pode ser desfeita.</p>

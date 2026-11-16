@@ -242,3 +242,24 @@ describe("mapa do armazém (F9a)", () => {
     assert.equal(textoDaCapacidade("120 caixas"), "120 caixas");
   });
 });
+
+describe("X1: finalizar só com leitura atual bem-sucedida e previsão válida", () => {
+  it("leitura pendente, com erro, nova tentativa e erro de saldo seguido de nova leitura", async () => {
+    const { decidirFinalizacao } = await import("../src/util/inventario.ts");
+    assert.deepEqual(decidirFinalizacao({ saldo: null, carregando: true, erro: null }, "-2"), { podeConfirmar: false, motivo: "lendo", saldoFinal: null });
+    assert.equal(decidirFinalizacao({ saldo: "10", carregando: true, erro: null }, "-2").podeConfirmar, false);
+    assert.equal(decidirFinalizacao({ saldo: null, carregando: false, erro: "Sem conexão" }, "-2").motivo, "falha");
+    assert.equal(decidirFinalizacao({ saldo: "10", carregando: false, erro: "Sem conexão" }, "-2").podeConfirmar, false);
+    assert.deepEqual(decidirFinalizacao({ saldo: "10", carregando: false, erro: null }, "-2"), { podeConfirmar: true, motivo: null, saldoFinal: "8" });
+    assert.deepEqual(decidirFinalizacao({ saldo: "1", carregando: false, erro: null }, "-2"), { podeConfirmar: false, motivo: "negativo", saldoFinal: "-1" });
+    assert.equal(decidirFinalizacao({ saldo: "999999999.999", carregando: false, erro: null }, "1").motivo, "excede");
+    assert.equal(decidirFinalizacao({ saldo: "5", carregando: false, erro: null }, "-2").podeConfirmar, true);
+  });
+
+  it("409 de saldo e 422 de limite mandam reler o lote; os demais não", async () => {
+    const { interpretarFalhaDeDecisao } = await import("../src/util/inventario.ts");
+    assert.equal(interpretarFalhaDeDecisao(new ErroDaApi(409, "SALDO_FINAL_NEGATIVO", "x")).reler, true);
+    assert.equal(interpretarFalhaDeDecisao(new ErroDaApi(422, "SALDO_EXCEDE_LIMITE", "x")).reler, true);
+    assert.equal(interpretarFalhaDeDecisao(new ErroDaApi(409, "CONTAGEM_JA_FINALIZADA", "x")).reler, false);
+  });
+});

@@ -34,6 +34,7 @@ export function Ajuste() {
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [recarregando, setRecarregando] = useState(false);
   const envio = useRef(criarEnvioUnico());
   const vigencia = useRef(criarVigencia());
 
@@ -53,11 +54,14 @@ export function Ajuste() {
 
   const recarregarLote = async (id: number) => {
     const pedido = vigencia.current.iniciar();
+    setRecarregando(true);
     try {
       const atualizado = await obterLote(cliente, id, pedido.sinal);
       if (pedido.vigente()) setLote(atualizado);
     } catch {
-      return;
+      if (pedido.vigente()) setGeral("Não foi possível recarregar o saldo do lote. Escolha o lote de novo antes de ajustar.");
+    } finally {
+      if (pedido.vigente()) setRecarregando(false);
     }
   };
 
@@ -69,7 +73,7 @@ export function Ajuste() {
   const revisar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     const formulario = evento.currentTarget;
-    if (lote === null || envio.current.ocupado()) return;
+    if (lote === null || envio.current.ocupado() || recarregando) return;
     const invalidos = validarAjuste(lote, novoSaldo, justificativa);
     setErros(invalidos);
     setGeral(null);
@@ -82,7 +86,7 @@ export function Ajuste() {
   };
 
   const gravar = () => {
-    if (lote === null) return;
+    if (lote === null || recarregando) return;
     const atual = lote;
     const execucao = envio.current.executar(() => registrarAjuste(cliente, corpoDeAjuste(atual, novoSaldo, justificativa)));
     if (execucao === null) return;
@@ -112,7 +116,7 @@ export function Ajuste() {
   const unidade = lote?.produto.unidade_medida ?? "";
   const tamanho = justificativa.trim().length;
   const semLote = lote === null;
-  const desabilitado = semLote || enviando;
+  const desabilitado = semLote || enviando || recarregando;
 
   return (
     <>
