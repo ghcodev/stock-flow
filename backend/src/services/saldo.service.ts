@@ -59,7 +59,7 @@ type LinhaDoLote = {
   validade_expirada: boolean;
 };
 
-async function travarLote(tx: Tx, idLote: number): Promise<LoteTravado> {
+export async function travarLote(tx: Tx, idLote: number): Promise<LoteTravado> {
   const [linha] = await tx.$queryRaw<LinhaDoLote[]>`
     SELECT id_lote, id_produto, id_localizacao, status_lote::text AS status_lote, quantidade,
            (data_validade IS NOT NULL AND data_validade < current_date) AS validade_expirada
@@ -68,43 +68,54 @@ async function travarLote(tx: Tx, idLote: number): Promise<LoteTravado> {
   return { ...linha, quantidade: new Prisma.Decimal(linha.quantidade.toString()) };
 }
 
-export function alterarSaldo(
-  contexto: ContextoDeEscrita,
-  idLote: number,
-  decidir: DecisaoDoSaldo,
-): Promise<MovimentacaoPublica> {
-  return executarComoUsuario(
-    contexto,
-    async (tx) => {
-      const lote = await travarLote(tx, idLote);
-      const efeito = await decidir(lote, tx);
-      const instante = await instanteDoBanco(tx);
-      await tx.lote.update({
-        where: { id_lote: idLote },
-        data: {
-          ...(efeito.noLote.quantidade === undefined ? {} : { quantidade: efeito.noLote.quantidade }),
-          ...(efeito.noLote.id_localizacao === undefined ? {} : { id_localizacao: efeito.noLote.id_localizacao }),
-        },
-        select: { id_lote: true },
-      });
-      return tx.movimentacao.create({
-        data: {
-          tipo_movimentacao: efeito.tipo,
-          data_movimentacao: instante,
-          quantidade: efeito.quantidade,
-          saldo_anterior: lote.quantidade,
-          saldo_posterior: efeito.saldoPosterior,
-          id_lote: idLote,
-          id_usuario: contexto.idUsuario,
-          id_localizacao_origem: efeito.origem,
-          id_localizacao_destino: efeito.destino,
-          motivo_movimentacao: efeito.motivo ?? null,
-          observacao: efeito.observacao ?? null,
-          status_movimentacao: "concluida" satisfies status_movimentacao,
-        },
-        select: SELECAO_MOVIMENTACAO,
-      });
-    },
-    { lockTimeoutMs: LOCK_TIMEOUT_MS },
-  );
+export type DependenciasSaldo = {
+  executar: typeof executarComoUsuario;
+  travar: (tx: Tx, idLote: number) => Promise<LoteTravado>;
+  instante: (tx: Tx) => Promise<Date>;
+};
+
+const dependenciasReais: DependenciasSaldo = {
+  executar: executarComoUsuario,
+  travar: travarLote,
+  instante: instanteDoBanco,
+};
+
+export function criarAlteradorDeSaldo(dependencias: DependenciasSaldo = dependenciasReais) {
+  return (contexto: ContextoDeEscrita, idLote: number, decidir: DecisaoDoSaldo): Promise<MovimentacaoPublica> =>
+    dependencias.executar(
+      contexto,
+      async (tx) => {
+        const lote = await dependencias.travar(tx, idLote);
+        const efeito = await decidir(lote, tx);
+        const instante = await dependencias.instante(tx);
+        await tx.lote.update({
+          where: { id_lote: idLote },
+          data: {
+            ...(efeito.noLote.quantidade === undefined ? {} : { quantidade: efeito.noLote.quantidade }),
+            ...(efeito.noLote.id_localizacao === undefined ? {} : { id_localizacao: efeito.noLote.id_localizacao }),
+          },
+          select: { id_lote: true },
+        });
+        return tx.movimentacao.create({
+          data: {
+            tipo_movimentacao: efeito.tipo,
+            data_movimentacao: instante,
+            quantidade: efeito.quantidade,
+            saldo_anterior: lote.quantidade,
+            saldo_posterior: efeito.saldoPosterior,
+            id_lote: idLote,
+            id_usuario: contexto.idUsuario,
+            id_localizacao_origem: efeito.origem,
+            id_localizacao_destino: efeito.destino,
+            motivo_movimentacao: efeito.motivo ?? null,
+            observacao: efeito.observacao ?? null,
+            status_movimentacao: "concluida" satisfies status_movimentacao,
+          },
+          select: SELECAO_MOVIMENTACAO,
+        });
+      },
+      { lockTimeoutMs: LOCK_TIMEOUT_MS },
+    );
 }
+
+export const alterarSaldo = criarAlteradorDeSaldo();
