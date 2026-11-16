@@ -1,0 +1,64 @@
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { ErroDeRede, mensagemDoErro } from "../api/erros.ts";
+import { listaInicial, reduzirLista, type EstadoDeLista } from "../util/cursor.ts";
+import { criarVigencia } from "../util/vigencia.ts";
+
+export type PaginaDeCursor<T> = { dados: T[]; proximo: string | null; total: number };
+
+export type ListaComCursor<T> = {
+  itens: T[];
+  total: number | null;
+  carregando: boolean;
+  erro: string | null;
+  haMais: boolean;
+  carregarMais: () => void;
+  recarregar: () => void;
+};
+
+export function useListaComCursor<T>(
+  carregar: (cursor: string | undefined, sinal: AbortSignal) => Promise<PaginaDeCursor<T>>,
+  chave: string,
+  ativo = true,
+): ListaComCursor<T> {
+  const [estado, despachar] = useReducer(reduzirLista<T>, undefined, listaInicial<T>);
+  const [versao, setVersao] = useState(0);
+  const funcao = useRef(carregar);
+  funcao.current = carregar;
+  const vigencia = useRef(criarVigencia());
+  const atual = useRef<EstadoDeLista<T>>(estado);
+  atual.current = estado;
+
+  const buscar = useCallback((chaveDoPedido: string, cursor: string | undefined) => {
+    const pedido = vigencia.current.iniciar();
+    funcao.current(cursor, pedido.sinal).then(
+      (pagina) => {
+        if (pedido.vigente()) despachar({ tipo: "sucesso", chave: chaveDoPedido, dados: pagina.dados, proximo: pagina.proximo, total: pagina.total, anexar: cursor !== undefined });
+      },
+      (falha: unknown) => {
+        if (!pedido.vigente()) return;
+        if (falha instanceof ErroDeRede && falha.motivo === "CANCELADO") return;
+        despachar({ tipo: "falha", chave: chaveDoPedido, mensagem: mensagemDoErro(falha) });
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!ativo) return;
+    const identificador = `${chave}#${versao}`;
+    despachar({ tipo: "iniciar", chave: identificador });
+    buscar(identificador, undefined);
+    const vigenciaAtual = vigencia.current;
+    return () => vigenciaAtual.invalidar();
+  }, [chave, versao, ativo, buscar]);
+
+  const carregarMais = useCallback(() => {
+    const corrente = atual.current;
+    if (corrente.carregando || corrente.proximo === null) return;
+    despachar({ tipo: "carregarMais", chave: corrente.chave });
+    buscar(corrente.chave, corrente.proximo);
+  }, [buscar]);
+
+  const recarregar = useCallback(() => setVersao((v) => v + 1), []);
+
+  return { itens: estado.itens, total: estado.total, carregando: estado.carregando, erro: estado.erro, haMais: estado.proximo !== null, carregarMais, recarregar };
+}
