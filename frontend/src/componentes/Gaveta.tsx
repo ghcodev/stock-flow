@@ -11,9 +11,11 @@ type Propriedades = {
   children: ReactNode;
   rodape?: ReactNode;
   larga?: boolean;
+  bloqueada?: boolean;
 };
 
-export function Gaveta({ aberta, titulo, subtitulo, aoFechar, children, rodape, larga }: Propriedades) {
+export function Gaveta({ aberta, titulo, subtitulo, aoFechar: aoFecharPedido, children, rodape, larga, bloqueada }: Propriedades) {
+  const aoFechar = bloqueada ? () => undefined : aoFecharPedido;
   const elemento = useRef<HTMLDivElement>(null);
   const idDoTitulo = useId();
   useCamada(aberta, aoFechar, elemento);
@@ -35,7 +37,7 @@ export function Gaveta({ aberta, titulo, subtitulo, aoFechar, children, rodape, 
             <h2 id={idDoTitulo}>{titulo}</h2>
             {subtitulo ? <div className="camada-subtitulo">{subtitulo}</div> : null}
           </div>
-          <button type="button" className="camada-fechar" onClick={aoFechar} aria-label="Fechar painel">
+          <button type="button" className="camada-fechar" onClick={aoFechar} disabled={bloqueada} aria-label="Fechar painel">
             <Icone nome="x" />
           </button>
         </header>

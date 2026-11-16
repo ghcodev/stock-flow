@@ -17,9 +17,10 @@ type Propriedades = {
   aoBloquear: () => void;
   aoAssociarEtiqueta: () => void;
   aoDesbloquear: (lote: Lote) => void;
+  aoResultadoIncerto?: () => void;
 };
 
-export function DetalhesDoLote({ lote, aoFechar, aoBloquear, aoAssociarEtiqueta, aoDesbloquear }: Propriedades) {
+export function DetalhesDoLote({ lote, aoFechar, aoBloquear, aoAssociarEtiqueta, aoDesbloquear, aoResultadoIncerto }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [desbloqueando, setDesbloqueando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -32,7 +33,9 @@ export function DetalhesDoLote({ lote, aoFechar, aoBloquear, aoAssociarEtiqueta,
     try {
       aoDesbloquear(await desbloquearLote(cliente, lote.id_lote));
     } catch (falha) {
-      setErro(interpretarFalhaDeFormulario(falha).geral);
+      const resultado = interpretarFalhaDeFormulario(falha);
+      if (resultado.incerta) aoResultadoIncerto?.();
+      setErro(resultado.geral);
     } finally {
       setDesbloqueando(false);
     }
@@ -41,6 +44,7 @@ export function DetalhesDoLote({ lote, aoFechar, aoBloquear, aoAssociarEtiqueta,
   return (
     <Gaveta
       aberta
+      bloqueada={desbloqueando}
       titulo={lote.numero_lote}
       subtitulo={`Lote #${lote.id_lote}`}
       aoFechar={aoFechar}

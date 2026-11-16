@@ -10,6 +10,7 @@ import { interpretarFalhaDeFormulario, temErrosDeCampos, validarProduto, type Er
 type Propriedades = {
   produto: Produto | null;
   aoFechar: () => void;
+  aoResultadoIncerto?: () => void;
   aoSalvar: (produto: Produto, criado: boolean) => void;
 };
 
@@ -25,7 +26,7 @@ function valoresIniciais(produto: Produto | null): ValoresDeProduto {
   };
 }
 
-export function FormularioDeProduto({ produto, aoFechar, aoSalvar }: Propriedades) {
+export function FormularioDeProduto({ produto, aoFechar, aoSalvar, aoResultadoIncerto }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [valores, setValores] = useState<ValoresDeProduto>(() => valoresIniciais(produto));
   const [erros, setErros] = useState<ErrosDeCampos>({});
@@ -56,6 +57,7 @@ export function FormularioDeProduto({ produto, aoFechar, aoSalvar }: Propriedade
       aoSalvar(salvo, produto === null);
     } catch (erro) {
       const falha = interpretarFalhaDeFormulario(erro);
+      if (falha.incerta) aoResultadoIncerto?.();
       setErros(falha.campos);
       setGeral(falha.geral);
       setEnviando(false);
@@ -66,6 +68,7 @@ export function FormularioDeProduto({ produto, aoFechar, aoSalvar }: Propriedade
   return (
     <Gaveta
       aberta
+      bloqueada={enviando}
       titulo={produto ? "Editar produto" : "Novo produto"}
       subtitulo={produto ? `#${produto.id_produto}` : undefined}
       aoFechar={aoFechar}

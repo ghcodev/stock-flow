@@ -9,9 +9,11 @@ type Propriedades = {
   aoFechar: () => void;
   children: ReactNode;
   rodape?: ReactNode;
+  bloqueado?: boolean;
 };
 
-export function Modal({ aberto, titulo, aoFechar, children, rodape }: Propriedades) {
+export function Modal({ aberto, titulo, aoFechar: aoFecharPedido, children, rodape, bloqueado }: Propriedades) {
+  const aoFechar = bloqueado ? () => undefined : aoFecharPedido;
   const elemento = useRef<HTMLDivElement>(null);
   const idDoTitulo = useId();
   useCamada(aberto, aoFechar, elemento);
@@ -24,7 +26,7 @@ export function Modal({ aberto, titulo, aoFechar, children, rodape }: Propriedad
         <div ref={elemento} className="modal" role="dialog" aria-modal="true" aria-labelledby={idDoTitulo} tabIndex={-1}>
           <header className="camada-cabecalho">
             <h2 id={idDoTitulo}>{titulo}</h2>
-            <button type="button" className="camada-fechar" onClick={aoFechar} aria-label="Fechar janela">
+            <button type="button" className="camada-fechar" onClick={aoFechar} disabled={bloqueado} aria-label="Fechar janela">
               <Icone nome="x" />
             </button>
           </header>

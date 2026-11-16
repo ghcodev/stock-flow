@@ -9,10 +9,11 @@ import { interpretarFalhaDeFormulario } from "../../util/formularios.ts";
 type Propriedades = {
   produto: Produto;
   aoCancelar: () => void;
+  aoResultadoIncerto?: () => void;
   aoConfirmar: (produto: Produto) => void;
 };
 
-export function ConfirmarInativacao({ produto, aoCancelar, aoConfirmar }: Propriedades) {
+export function ConfirmarInativacao({ aoResultadoIncerto, produto, aoCancelar, aoConfirmar }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -24,7 +25,9 @@ export function ConfirmarInativacao({ produto, aoCancelar, aoConfirmar }: Propri
     try {
       aoConfirmar(await inativarProduto(cliente, produto.id_produto));
     } catch (falha) {
-      setErro(interpretarFalhaDeFormulario(falha).geral);
+      const resultado = interpretarFalhaDeFormulario(falha);
+      if (resultado.incerta) aoResultadoIncerto?.();
+      setErro(resultado.geral);
       setEnviando(false);
     }
   };
@@ -33,7 +36,8 @@ export function ConfirmarInativacao({ produto, aoCancelar, aoConfirmar }: Propri
     <Modal
       aberto
       titulo="Inativar produto"
-      aoFechar={enviando ? () => undefined : aoCancelar}
+      bloqueado={enviando}
+      aoFechar={aoCancelar}
       rodape={
         <>
           <button type="button" className="btn btn-outline" onClick={aoCancelar} disabled={enviando} data-foco-inicial="">

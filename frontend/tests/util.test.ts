@@ -159,13 +159,19 @@ describe("validação de formulários", () => {
 describe("falhas da API em formulário", () => {
   it("400 mapeia campos; 409 e 422 viram mensagem geral; rede vira mensagem fixa", () => {
     const campos = interpretarFalhaDeFormulario(new ErroDaApi(400, "VALIDACAO", "Dados inválidos", [{ campo: "nome", mensagem: "Nome é obrigatório" }]));
-    assert.deepEqual(campos, { geral: null, campos: { nome: "Nome é obrigatório" } });
-    assert.deepEqual(interpretarFalhaDeFormulario(new ErroDaApi(409, "REGISTRO_DUPLICADO", "Registro já existente")), { geral: "Registro já existente", campos: {} });
+    assert.deepEqual(campos, { geral: null, campos: { nome: "Nome é obrigatório" }, incerta: false });
+    assert.deepEqual(interpretarFalhaDeFormulario(new ErroDaApi(409, "REGISTRO_DUPLICADO", "Registro já existente")), { geral: "Registro já existente", campos: {}, incerta: false });
     assert.deepEqual(interpretarFalhaDeFormulario(new ErroDaApi(422, "PRODUTO_INATIVO", "Produto inativo não pode receber lotes")), {
       geral: "Produto inativo não pode receber lotes",
       campos: {},
+      incerta: false,
     });
-    assert.match(interpretarFalhaDeFormulario(new ErroDeRede("SEM_CONEXAO", "x")).geral ?? "", /Sem conexão/);
+    const rede = interpretarFalhaDeFormulario(new ErroDeRede("TEMPO_ESGOTADO", "x"));
+    assert.equal(rede.incerta, true);
+    assert.match(rede.geral ?? "", /resultado é desconhecido/);
+    assert.equal(interpretarFalhaDeFormulario(new ErroDeRede("CANCELADO", "x")).incerta, false);
+    assert.equal(interpretarFalhaDeFormulario(new ErroDaApi(500, "ERRO_INTERNO", "x")).incerta, true);
+    assert.equal(interpretarFalhaDeFormulario(new ErroDaApi(503, "SERVICO", "x")).incerta, false);
     assert.doesNotMatch(interpretarFalhaDeFormulario(new ErroDaApi(500, "ERRO_INTERNO", "TypeError at /app")).geral ?? "", /TypeError|\/app/);
   });
 });

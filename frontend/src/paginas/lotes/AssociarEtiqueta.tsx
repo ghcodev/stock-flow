@@ -9,12 +9,13 @@ import { interpretarFalhaDeFormulario, temErrosDeCampos, validarEtiqueta, type E
 type Propriedades = {
   lote: Lote;
   aoCancelar: () => void;
+  aoResultadoIncerto?: () => void;
   aoAssociar: (etiqueta: Etiqueta) => void;
 };
 
 const ID_DO_FORMULARIO = "formulario-de-etiqueta";
 
-export function AssociarEtiqueta({ lote, aoCancelar, aoAssociar }: Propriedades) {
+export function AssociarEtiqueta({ aoResultadoIncerto, lote, aoCancelar, aoAssociar }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [tipo, setTipo] = useState("");
   const [codigo, setCodigo] = useState("");
@@ -38,6 +39,7 @@ export function AssociarEtiqueta({ lote, aoCancelar, aoAssociar }: Propriedades)
       aoAssociar(await associarEtiqueta(cliente, lote.id_lote, tipo as TipoEtiqueta, codigo));
     } catch (falha) {
       const resultado = interpretarFalhaDeFormulario(falha);
+      if (resultado.incerta) aoResultadoIncerto?.();
       setErros(resultado.campos);
       setGeral(resultado.geral);
       setEnviando(false);
@@ -49,7 +51,8 @@ export function AssociarEtiqueta({ lote, aoCancelar, aoAssociar }: Propriedades)
     <Modal
       aberto
       titulo="Associar etiqueta"
-      aoFechar={enviando ? () => undefined : aoCancelar}
+      bloqueado={enviando}
+      aoFechar={aoCancelar}
       rodape={
         <>
           <button type="button" className="btn btn-outline" onClick={aoCancelar} disabled={enviando}>

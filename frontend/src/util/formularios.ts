@@ -1,4 +1,4 @@
-import { ErroDaApi, mensagemDoErro } from "../api/erros.ts";
+import { ErroDaApi, ErroDeRede, mensagemDoErro } from "../api/erros.ts";
 import { ehDiaValido } from "./datas.ts";
 
 export type ErrosDeCampos = Record<string, string>;
@@ -6,6 +6,7 @@ export type ErrosDeCampos = Record<string, string>;
 export type FalhaDeFormulario = {
   geral: string | null;
   campos: ErrosDeCampos;
+  incerta: boolean;
 };
 
 const NUMERIC_12_3 = /^\d{1,9}(\.\d{1,3})?$/;
@@ -24,6 +25,9 @@ export function codigoDeEtiquetaValido(codigo: string): boolean {
   return limpo.length >= 1 && limpo.length <= 128 && !CONTROLE.test(limpo);
 }
 
+const MENSAGEM_DE_RESULTADO_DESCONHECIDO =
+  "Não houve confirmação do servidor e o resultado é desconhecido. Os dados da tela foram recarregados: confira antes de repetir.";
+
 export function interpretarFalhaDeFormulario(erro: unknown): FalhaDeFormulario {
   if (erro instanceof ErroDaApi) {
     if (erro.status === 400 && erro.campos.length > 0) {
@@ -31,13 +35,15 @@ export function interpretarFalhaDeFormulario(erro: unknown): FalhaDeFormulario {
       for (const item of erro.campos) {
         if (campos[item.campo] === undefined) campos[item.campo] = item.mensagem;
       }
-      return { geral: null, campos };
+      return { geral: null, campos, incerta: false };
     }
     if (erro.status === 409 || erro.status === 422 || erro.status === 404 || erro.status === 403) {
-      return { geral: erro.message, campos: {} };
+      return { geral: erro.message, campos: {}, incerta: false };
     }
+    if (erro.status >= 500 && erro.status !== 503) return { geral: MENSAGEM_DE_RESULTADO_DESCONHECIDO, campos: {}, incerta: true };
   }
-  return { geral: mensagemDoErro(erro), campos: {} };
+  if (erro instanceof ErroDeRede && erro.motivo !== "CANCELADO") return { geral: MENSAGEM_DE_RESULTADO_DESCONHECIDO, campos: {}, incerta: true };
+  return { geral: mensagemDoErro(erro), campos: {}, incerta: false };
 }
 
 export type ValoresDeProduto = {

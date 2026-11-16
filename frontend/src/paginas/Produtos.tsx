@@ -212,6 +212,7 @@ export function Produtos() {
           key={painel.produto?.id_produto ?? "novo"}
           produto={painel.produto}
           aoFechar={() => setPainel(null)}
+          aoResultadoIncerto={recarregarTudo}
           aoSalvar={(salvo, criado) => {
             setPainel(null);
             mostrar("sucesso", criado ? "Produto cadastrado" : "Produto atualizado", salvo.nome);
@@ -224,6 +225,7 @@ export function Produtos() {
         <ConfirmarInativacao
           produto={paraInativar}
           aoCancelar={() => setParaInativar(null)}
+          aoResultadoIncerto={recarregarTudo}
           aoConfirmar={(produto) => {
             setParaInativar(null);
             setPainel(null);

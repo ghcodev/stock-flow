@@ -127,7 +127,11 @@ export function Lotes() {
     }
   };
 
+  const desbloqueioEmCurso = useRef(false);
+
   const desbloquearDireto = async (lote: Lote) => {
+    if (desbloqueioEmCurso.current) return;
+    desbloqueioEmCurso.current = true;
     try {
       await desbloquearLote(cliente, lote.id_lote);
       mostrar("sucesso", "Lote desbloqueado", lote.numero_lote);
@@ -135,6 +139,8 @@ export function Lotes() {
     } catch (falha) {
       mostrar("erro", "Não foi possível desbloquear", interpretarFalhaDeFormulario(falha).geral ?? undefined);
       recarregarTudo();
+    } finally {
+      desbloqueioEmCurso.current = false;
     }
   };
 
@@ -365,6 +371,7 @@ export function Lotes() {
         <DetalhesDoLote
           lote={painel.lote}
           aoFechar={() => setPainel(null)}
+          aoResultadoIncerto={recarregarTudo}
           aoBloquear={() => setParaBloquear(painel.lote)}
           aoAssociarEtiqueta={() => setParaEtiquetar(painel.lote)}
           aoDesbloquear={(lote) => {
@@ -375,6 +382,7 @@ export function Lotes() {
 
       {painel?.tipo === "novo" ? (
         <FormularioDeLote
+          aoResultadoIncerto={recarregarTudo}
           aoFechar={() => setPainel(null)}
           aoSalvar={(lote) => {
             setPainel(null);
@@ -388,6 +396,7 @@ export function Lotes() {
         <BloquearLote
           lote={paraBloquear}
           aoCancelar={() => setParaBloquear(null)}
+          aoResultadoIncerto={recarregarTudo}
           aoBloquear={(lote) => {
             setParaBloquear(null);
             void aposAcao(lote.id_lote, "Lote bloqueado", lote.numero_lote);
@@ -399,6 +408,7 @@ export function Lotes() {
         <AssociarEtiqueta
           lote={paraEtiquetar}
           aoCancelar={() => setParaEtiquetar(null)}
+          aoResultadoIncerto={recarregarTudo}
           aoAssociar={(etiqueta) => {
             const lote = paraEtiquetar;
             setParaEtiquetar(null);

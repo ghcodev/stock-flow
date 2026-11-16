@@ -9,12 +9,13 @@ import { interpretarFalhaDeFormulario, validarMotivo } from "../../util/formular
 type Propriedades = {
   lote: Lote;
   aoCancelar: () => void;
+  aoResultadoIncerto?: () => void;
   aoBloquear: (lote: Lote) => void;
 };
 
 const ID_DO_FORMULARIO = "formulario-de-bloqueio";
 
-export function BloquearLote({ lote, aoCancelar, aoBloquear }: Propriedades) {
+export function BloquearLote({ aoResultadoIncerto, lote, aoCancelar, aoBloquear }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState<string | undefined>(undefined);
@@ -37,6 +38,7 @@ export function BloquearLote({ lote, aoCancelar, aoBloquear }: Propriedades) {
       aoBloquear(await bloquearLote(cliente, lote.id_lote, motivo));
     } catch (falha) {
       const resultado = interpretarFalhaDeFormulario(falha);
+      if (resultado.incerta) aoResultadoIncerto?.();
       setErro(resultado.campos["motivo"]);
       setGeral(resultado.geral);
       setEnviando(false);
@@ -48,7 +50,8 @@ export function BloquearLote({ lote, aoCancelar, aoBloquear }: Propriedades) {
     <Modal
       aberto
       titulo="Bloquear lote"
-      aoFechar={enviando ? () => undefined : aoCancelar}
+      bloqueado={enviando}
+      aoFechar={aoCancelar}
       rodape={
         <>
           <button type="button" className="btn btn-outline" onClick={aoCancelar} disabled={enviando}>

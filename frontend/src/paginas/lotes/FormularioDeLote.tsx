@@ -11,6 +11,7 @@ import { interpretarFalhaDeFormulario, temErrosDeCampos, validarLote, type Erros
 
 type Propriedades = {
   aoFechar: () => void;
+  aoResultadoIncerto?: () => void;
   aoSalvar: (lote: Lote) => void;
 };
 
@@ -35,7 +36,7 @@ function traduzirCampos(campos: ErrosDeCampos): ErrosDeCampos {
   return traduzidos;
 }
 
-export function FormularioDeLote({ aoFechar, aoSalvar }: Propriedades) {
+export function FormularioDeLote({ aoFechar, aoSalvar, aoResultadoIncerto }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [valores, setValores] = useState<ValoresDeLote>(VAZIO);
   const [erros, setErros] = useState<ErrosDeCampos>({});
@@ -63,6 +64,7 @@ export function FormularioDeLote({ aoFechar, aoSalvar }: Propriedades) {
       aoSalvar(await criarLote(cliente, corpoDeLote(valores)));
     } catch (erro) {
       const falha = interpretarFalhaDeFormulario(erro);
+      if (falha.incerta) aoResultadoIncerto?.();
       setErros(traduzirCampos(falha.campos));
       setGeral(falha.geral);
       setEnviando(false);
@@ -73,6 +75,7 @@ export function FormularioDeLote({ aoFechar, aoSalvar }: Propriedades) {
   return (
     <Gaveta
       aberta
+      bloqueada={enviando}
       titulo="Registrar lote"
       aoFechar={aoFechar}
       larga
