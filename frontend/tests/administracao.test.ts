@@ -162,3 +162,43 @@ describe("inventário rotativo (F8b)", () => {
     for (const ruim of ["", "0", "01", "1/../2", "1%2f", "a", "1".repeat(19)]) assert.equal(idDeContagemValido(ruim), false, ruim);
   });
 });
+
+describe("ajuste de estoque (F8c)", () => {
+  it("justificativa de 10 a 255 caracteres depois de aparar", async () => {
+    const { validarJustificativaDoAjuste } = await import("../src/util/ajuste.ts");
+    assert.notEqual(validarJustificativaDoAjuste("         curto    "), null);
+    assert.equal(validarJustificativaDoAjuste("  dez chars!  "), null);
+    assert.equal(validarJustificativaDoAjuste("x".repeat(255)), null);
+    assert.notEqual(validarJustificativaDoAjuste("x".repeat(256)), null);
+    assert.notEqual(validarJustificativaDoAjuste("justificativa\u0000ok"), null);
+  });
+
+  it("novo saldo: obrigatório, decimal, diferente do atual (comparação exata)", async () => {
+    const { validarAjuste } = await import("../src/util/ajuste.ts");
+    const lote = { quantidade: "10.5" };
+    assert.deepEqual(validarAjuste(lote, "11", "justificativa longa"), {});
+    assert.deepEqual(validarAjuste(lote, "0", "justificativa longa"), {});
+    assert.ok(validarAjuste(lote, "", "justificativa longa")["novo_saldo"]);
+    assert.ok(validarAjuste(lote, "10,500", "justificativa longa")["novo_saldo"]);
+    assert.ok(validarAjuste(lote, "1,2345", "justificativa longa")["novo_saldo"]);
+    assert.ok(validarAjuste(lote, "-1", "justificativa longa")["novo_saldo"]);
+    assert.ok(validarAjuste(lote, "11", "curta")["motivo"]);
+  });
+
+  it("envia saldo_exibido exatamente como veio da API e normaliza só o novo saldo", async () => {
+    const { corpoDeAjuste } = await import("../src/util/ajuste.ts");
+    assert.deepEqual(corpoDeAjuste({ id_lote: 3, quantidade: "10.500" }, "12,5", "  motivo bem longo  "), { id_lote: 3, saldo_exibido: "10.500", novo_saldo: "12.5", motivo: "motivo bem longo" });
+  });
+
+  it("SALDO_DESATUALIZADO avisa e manda recarregar sem reenviar; 422 sem alteração vai ao campo; lote bloqueado só avisa", async () => {
+    const { interpretarFalhaDeAjuste, avisoDoAjuste } = await import("../src/util/ajuste.ts");
+    const desatualizado = interpretarFalhaDeAjuste(new ErroDaApi(409, "SALDO_DESATUALIZADO", "x"));
+    assert.equal(desatualizado.atualizarLote, true);
+    assert.equal(desatualizado.incerta, false);
+    assert.match(desatualizado.geral ?? "", /mudou/);
+    assert.deepEqual(Object.keys(interpretarFalhaDeAjuste(new ErroDaApi(422, "AJUSTE_SEM_ALTERACAO", "x")).campos), ["novo_saldo"]);
+    assert.match(avisoDoAjuste({ status_lote: "bloqueado" }) ?? "", /bloqueado/);
+    assert.match(avisoDoAjuste({ status_lote: "ativo", validade_expirada: true }) ?? "", /validade/);
+    assert.equal(avisoDoAjuste({ status_lote: "ativo" }), null);
+  });
+});

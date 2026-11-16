@@ -1,4 +1,5 @@
 import type { Cliente } from "./cliente.ts";
+import type { CorpoDeAjuste } from "../util/ajuste.ts";
 import type { Movimentacao } from "./tipos.ts";
 import { normalizarDecimal } from "../util/formularios.ts";
 
@@ -39,4 +40,8 @@ export function registrarSaida(cliente: Cliente, corpo: CorpoDeSaldo): Promise<M
 
 export function registrarTransferencia(cliente: Cliente, corpo: CorpoDeTransferencia): Promise<Movimentacao> {
   return cliente.post<Movimentacao>("/movimentacoes/transferencia", corpo);
+}
+
+export function registrarAjuste(cliente: Cliente, corpo: CorpoDeAjuste): Promise<Movimentacao> {
+  return cliente.post<Movimentacao>("/movimentacoes/ajuste", corpo);
 }
