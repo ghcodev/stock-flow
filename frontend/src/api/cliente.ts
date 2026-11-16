@@ -63,11 +63,13 @@ function lerCampos(valor: unknown): CampoInvalido[] {
   return campos;
 }
 
-async function lerCorpoJson(resposta: Response): Promise<unknown> {
+async function lerCorpoJson(resposta: Response, aoAbortar: () => ErroDeRede, sinal: AbortSignal): Promise<unknown> {
   try {
     return await resposta.json();
-  } catch {
-    return undefined;
+  } catch (erro) {
+    if (sinal.aborted) throw aoAbortar();
+    if (erro instanceof SyntaxError) return undefined;
+    throw new ErroDeRede("SEM_CONEXAO", "Conexão interrompida durante a resposta");
   }
 }
 
@@ -110,36 +112,38 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
       if (opcoes.sinal.aborted) controle.abort();
       else opcoes.sinal.addEventListener("abort", cancelarPeloChamador, { once: true });
     }
+    const aoAbortar = (): ErroDeRede =>
+      esgotou ? new ErroDeRede("TEMPO_ESGOTADO", "Tempo limite esgotado") : new ErroDeRede("CANCELADO", "Requisição cancelada");
 
-    let resposta: Response;
     try {
-      resposta = await dependencias.buscar(`${base}${caminho}${montarConsulta(opcoes.consulta)}`, {
-        method: metodo,
-        headers: cabecalhos,
-        body: temCorpo ? JSON.stringify(opcoes.corpo) : null,
-        signal: controle.signal,
-        credentials: "same-origin",
-      });
-    } catch {
-      if (esgotou) throw new ErroDeRede("TEMPO_ESGOTADO", "Tempo limite esgotado");
-      if (controle.signal.aborted) throw new ErroDeRede("CANCELADO", "Requisição cancelada");
-      throw new ErroDeRede("SEM_CONEXAO", "Sem conexão com o servidor");
+      let resposta: Response;
+      try {
+        resposta = await dependencias.buscar(`${base}${caminho}${montarConsulta(opcoes.consulta)}`, {
+          method: metodo,
+          headers: cabecalhos,
+          body: temCorpo ? JSON.stringify(opcoes.corpo) : null,
+          signal: controle.signal,
+          credentials: "same-origin",
+        });
+      } catch {
+        throw controle.signal.aborted ? aoAbortar() : new ErroDeRede("SEM_CONEXAO", "Sem conexão com o servidor");
+      }
+
+      if (resposta.ok) {
+        if (resposta.status === 204) return undefined as T;
+        const corpo = await lerCorpoJson(resposta, aoAbortar, controle.signal);
+        if (corpo === undefined) throw new ErroDaApi(resposta.status, "RESPOSTA_INVALIDA", "Resposta inesperada do servidor");
+        return corpo as T;
+      }
+
+      const segundos = lerSegundosParaRepetir(resposta.headers.get("Retry-After"), agora());
+      const erro = erroDaResposta(resposta, await lerCorpoJson(resposta, aoAbortar, controle.signal), segundos);
+      if (resposta.status === 401 && token !== null && dependencias.obterToken() === token) dependencias.aoNaoAutorizado();
+      throw erro;
     } finally {
       clearTimeout(temporizador);
       opcoes.sinal?.removeEventListener("abort", cancelarPeloChamador);
     }
-
-    if (resposta.ok) {
-      if (resposta.status === 204) return undefined as T;
-      const corpo = await lerCorpoJson(resposta);
-      if (corpo === undefined) throw new ErroDaApi(resposta.status, "RESPOSTA_INVALIDA", "Resposta inesperada do servidor");
-      return corpo as T;
-    }
-
-    const segundos = lerSegundosParaRepetir(resposta.headers.get("Retry-After"), agora());
-    const erro = erroDaResposta(resposta, await lerCorpoJson(resposta), segundos);
-    if (resposta.status === 401 && token !== null && dependencias.obterToken() === token) dependencias.aoNaoAutorizado();
-    throw erro;
   }
 
   return {

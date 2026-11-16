@@ -210,3 +210,63 @@ describe("401 de requisição antiga não derruba a sessão atual (R1)", () => {
     assert.equal(t.invalidacoes(), 1);
   });
 });
+
+describe("tempo limite e cancelamento valem até o fim da leitura do corpo (R2)", () => {
+  function corpoRetido() {
+    let fluxo: ReadableStreamDefaultController<Uint8Array> | null = null;
+    const buscar = ((_url: string, init: RequestInit) => {
+      const corpo = new ReadableStream<Uint8Array>({
+        start(controle) {
+          fluxo = controle;
+          init.signal?.addEventListener("abort", () => controle.error(new DOMException("abortado", "AbortError")));
+        },
+      });
+      return Promise.resolve(new Response(corpo, { status: 200, headers: { "Content-Type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    return { buscar, liberar: (texto: string) => { fluxo?.enqueue(new TextEncoder().encode(texto)); fluxo?.close(); } };
+  }
+
+  it("cabeçalhos imediatos com corpo retido: o tempo limite dispara TEMPO_ESGOTADO", async () => {
+    const t = corpoRetido();
+    const cliente = criarCliente({ buscar: t.buscar, obterToken: () => null, aoNaoAutorizado: () => undefined, tempoLimiteMs: 30 });
+    await assert.rejects(cliente.get("/x"), (e: unknown) => e instanceof ErroDeRede && e.motivo === "TEMPO_ESGOTADO");
+  });
+
+  it("abort depois dos cabeçalhos, durante a leitura do corpo: CANCELADO", async () => {
+    const t = corpoRetido();
+    const cliente = criarCliente({ buscar: t.buscar, obterToken: () => null, aoNaoAutorizado: () => undefined, tempoLimiteMs: 5000 });
+    const controle = new AbortController();
+    const espera = cliente.get("/x", undefined, controle.signal);
+    setTimeout(() => controle.abort(), 20);
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDeRede && e.motivo === "CANCELADO");
+  });
+
+  it("corpo que chega dentro do prazo é lido normalmente", async () => {
+    const t = corpoRetido();
+    const cliente = criarCliente({ buscar: t.buscar, obterToken: () => null, aoNaoAutorizado: () => undefined, tempoLimiteMs: 5000 });
+    const espera = cliente.get<{ ok: boolean }>("/x");
+    setTimeout(() => t.liberar('{"ok":true}'), 10);
+    assert.deepEqual(await espera, { ok: true });
+  });
+
+  it("corpo de erro retido também respeita o tempo limite", async () => {
+    let fluxo: ReadableStreamDefaultController<Uint8Array> | null = null;
+    const buscar = ((_url: string, init: RequestInit) => {
+      const corpo = new ReadableStream<Uint8Array>({
+        start(controle) {
+          fluxo = controle;
+          init.signal?.addEventListener("abort", () => controle.error(new DOMException("abortado", "AbortError")));
+        },
+      });
+      return Promise.resolve(new Response(corpo, { status: 500 }));
+    }) as unknown as typeof fetch;
+    const cliente = criarCliente({ buscar, obterToken: () => null, aoNaoAutorizado: () => undefined, tempoLimiteMs: 30 });
+    await assert.rejects(cliente.get("/x"), (e: unknown) => e instanceof ErroDeRede && e.motivo === "TEMPO_ESGOTADO");
+    assert.ok(fluxo !== null);
+  });
+
+  it("corpo que não é JSON continua sendo erro de resposta, não de rede", async () => {
+    const t = simular(() => new Response("não é json", { status: 200 }));
+    await assert.rejects(t.cliente.get("/x"), (e: unknown) => e instanceof ErroDaApi && e.codigo === "RESPOSTA_INVALIDA");
+  });
+});
