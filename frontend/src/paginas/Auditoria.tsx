@@ -82,6 +82,7 @@ export function Auditoria() {
     setErros(invalidos);
     if (Object.keys(invalidos).length > 0) return;
     setExpandidos(new Set());
+    if (chaveDosFiltros(consultaDeAuditoria(rascunho)) === chaveDosFiltros(consulta)) lista.recarregar();
     setAplicados(rascunho);
   };
 

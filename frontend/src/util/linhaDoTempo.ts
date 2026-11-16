@@ -9,3 +9,10 @@ export function saldoCorrenteDaLinha(eventos: readonly EventoDaLinhaDoTempo[]): 
   for (const evento of eventos) if (alteraSaldo(evento)) saldo = evento.saldo_posterior;
   return saldo;
 }
+
+export type AlvoDaBusca = { tipo: "numero"; valor: string } | { tipo: "id"; valor: number };
+
+export function chaveDaBusca(alvo: AlvoDaBusca | null, tentativa: number): string {
+  if (alvo === null) return "";
+  return `${alvo.tipo === "numero" ? "n" : "i"}:${alvo.valor}#${tentativa}`;
+}

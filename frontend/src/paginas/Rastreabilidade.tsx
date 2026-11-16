@@ -18,7 +18,7 @@ import { formatarDataHora, formatarDia } from "../util/datas.ts";
 import { formatarQuantidade } from "../util/decimal.ts";
 import { ROTULOS_DOS_TIPOS } from "../util/grafico.ts";
 import { contemNul } from "../util/formularios.ts";
-import { alteraSaldo } from "../util/linhaDoTempo.ts";
+import { alteraSaldo, chaveDaBusca } from "../util/linhaDoTempo.ts";
 import { criarVigencia } from "../util/vigencia.ts";
 import { ROTULOS_DE_ETIQUETA, ROTULOS_DE_STATUS, TONS_DE_STATUS, rotuloDaLocalizacao } from "./lotes/apresentacao.ts";
 import "../estilos/analise.css";
@@ -113,6 +113,7 @@ export function Rastreabilidade() {
   const [numero, setNumero] = useState("");
   const [erroDoCampo, setErroDoCampo] = useState<string | undefined>(undefined);
   const [alvo, setAlvo] = useState<AlvoDaRastreabilidade | null>(null);
+  const [tentativa, setTentativa] = useState(0);
   const [lote, setLote] = useState<Lote | null>(null);
   const vigencia = useRef(criarVigencia());
 
@@ -121,16 +122,18 @@ export function Rastreabilidade() {
     return () => atual.invalidar();
   }, []);
 
-  const chave = alvo === null ? "" : alvo.tipo === "numero" ? `n:${alvo.valor}` : `i:${alvo.valor}`;
-  const lista = useListaComCursor(
+  const chave = chaveDaBusca(alvo, tentativa);
+  const lista = useListaComCursor<EventoDaLinhaDoTempo, Lote>(
     async (cursor, sinal) => {
       if (alvo === null) return { dados: [], proximo: null, total: 0 };
       const resposta = await rastrear(cliente, alvo, cursor, sinal);
-      setLote(resposta.lote);
-      return { dados: resposta.linha_do_tempo, proximo: resposta.proximo_depois_de_id, total: resposta.total };
+      return { dados: resposta.linha_do_tempo, proximo: resposta.proximo_depois_de_id, total: resposta.total, extra: resposta.lote };
     },
     chave,
     alvo !== null,
+    (pagina, primeira) => {
+      if (primeira) setLote(pagina.extra ?? null);
+    },
   );
 
   const buscarPorNumero = (evento: FormEvent<HTMLFormElement>) => {
@@ -143,6 +146,7 @@ export function Rastreabilidade() {
     vigencia.current.invalidar();
     setLote(null);
     setAlvo({ tipo: "numero", valor: limpo });
+    setTentativa((atual) => atual + 1);
   };
 
   const procurarPorEtiqueta = async (codigoBruto: string) => {
@@ -156,6 +160,7 @@ export function Rastreabilidade() {
       setNumero(encontrado.numero_lote);
       setLote(null);
       setAlvo({ tipo: "id", valor: encontrado.id_lote });
+      setTentativa((atual) => atual + 1);
     } catch (falha) {
       if (pedido.vigente()) mostrar("erro", "Não foi possível buscar a etiqueta", mensagemDoErro(falha));
     }
@@ -212,7 +217,11 @@ export function Rastreabilidade() {
         </div>
       ) : naoEncontrado ? (
         <div className="cartao">
-          <EstadoDeErro mensagem={lista.erro ?? ""} aoTentarNovamente={lista.recarregar} />
+          <EstadoDeErro mensagem={lista.erro ?? ""} aoTentarNovamente={() => {
+              setLote(null);
+              lista.recarregar();
+            }}
+          />
         </div>
       ) : (
         <div className="rastreabilidade-grade">

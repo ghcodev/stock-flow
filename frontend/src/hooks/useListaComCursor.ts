@@ -3,7 +3,7 @@ import { ErroDeRede, mensagemDoErro } from "../api/erros.ts";
 import { listaInicial, reduzirLista, type EstadoDeLista } from "../util/cursor.ts";
 import { criarVigencia } from "../util/vigencia.ts";
 
-export type PaginaDeCursor<T> = { dados: T[]; proximo: string | null; total: number };
+export type PaginaDeCursor<T, E = never> = { dados: T[]; proximo: string | null; total: number; extra?: E };
 
 export type ListaComCursor<T> = {
   itens: T[];
@@ -15,15 +15,18 @@ export type ListaComCursor<T> = {
   recarregar: () => void;
 };
 
-export function useListaComCursor<T>(
-  carregar: (cursor: string | undefined, sinal: AbortSignal) => Promise<PaginaDeCursor<T>>,
+export function useListaComCursor<T, E = never>(
+  carregar: (cursor: string | undefined, sinal: AbortSignal) => Promise<PaginaDeCursor<T, E>>,
   chave: string,
   ativo = true,
+  aoCarregarPagina?: (pagina: PaginaDeCursor<T, E>, primeira: boolean) => void,
 ): ListaComCursor<T> {
   const [estado, despachar] = useReducer(reduzirLista<T>, undefined, listaInicial<T>);
   const [versao, setVersao] = useState(0);
   const funcao = useRef(carregar);
   funcao.current = carregar;
+  const aoPagina = useRef(aoCarregarPagina);
+  aoPagina.current = aoCarregarPagina;
   const vigencia = useRef(criarVigencia());
   const atual = useRef<EstadoDeLista<T>>(estado);
   atual.current = estado;
@@ -32,7 +35,9 @@ export function useListaComCursor<T>(
     const pedido = vigencia.current.iniciar();
     funcao.current(cursor, pedido.sinal).then(
       (pagina) => {
-        if (pedido.vigente()) despachar({ tipo: "sucesso", chave: chaveDoPedido, dados: pagina.dados, proximo: pagina.proximo, total: pagina.total, anexar: cursor !== undefined });
+        if (!pedido.vigente()) return;
+        despachar({ tipo: "sucesso", chave: chaveDoPedido, dados: pagina.dados, proximo: pagina.proximo, total: pagina.total, anexar: cursor !== undefined });
+        aoPagina.current?.(pagina, cursor === undefined);
       },
       (falha: unknown) => {
         if (!pedido.vigente()) return;

@@ -144,3 +144,35 @@ describe("o que altera o saldo na linha do tempo (F7)", () => {
     assert.equal(saldoCorrenteDaLinha([]), null);
   });
 });
+
+describe("W1: repetir a mesma busca reconsulta", () => {
+  it("a chave da busca muda a cada tentativa do mesmo alvo, por número e por etiqueta", async () => {
+    const { chaveDaBusca } = await import("../src/util/linhaDoTempo.ts");
+    assert.notEqual(chaveDaBusca({ tipo: "numero", valor: "L1" }, 1), chaveDaBusca({ tipo: "numero", valor: "L1" }, 2));
+    assert.notEqual(chaveDaBusca({ tipo: "id", valor: 7 }, 1), chaveDaBusca({ tipo: "id", valor: 7 }, 2));
+    assert.equal(chaveDaBusca(null, 5), "");
+  });
+
+  it("duas buscas iguais seguidas reiniciam a lista e a resposta da primeira não entra", () => {
+    type E = EstadoDeLista<number>;
+    const aplicar = (e: E, ...acoes: Parameters<typeof reduzirLista<number>>[1][]): E => acoes.reduce((s, a) => reduzirLista(s, a), e);
+    let e = aplicar(listaInicial<number>(), { tipo: "iniciar", chave: "n:L1#1" }, { tipo: "sucesso", chave: "n:L1#1", dados: [1], proximo: null, total: 1, anexar: false });
+    e = aplicar(e, { tipo: "iniciar", chave: "n:L1#2" });
+    assert.deepEqual([e.itens, e.carregando], [[], true]);
+    e = aplicar(e, { tipo: "sucesso", chave: "n:L1#1", dados: [9], proximo: null, total: 1, anexar: false });
+    assert.deepEqual(e.itens, []);
+    e = aplicar(e, { tipo: "sucesso", chave: "n:L1#2", dados: [2], proximo: null, total: 1, anexar: false });
+    assert.deepEqual(e.itens, [2]);
+  });
+
+  it("erro seguido de nova tentativa limpa o erro e carrega de novo", () => {
+    type E = EstadoDeLista<number>;
+    const aplicar = (e: E, ...acoes: Parameters<typeof reduzirLista<number>>[1][]): E => acoes.reduce((s, a) => reduzirLista(s, a), e);
+    let e = aplicar(listaInicial<number>(), { tipo: "iniciar", chave: "n:X#1" }, { tipo: "falha", chave: "n:X#1", mensagem: "Lote não encontrado" });
+    assert.equal(e.erro, "Lote não encontrado");
+    e = aplicar(e, { tipo: "iniciar", chave: "n:X#2" });
+    assert.deepEqual([e.erro, e.carregando], [null, true]);
+    e = aplicar(e, { tipo: "sucesso", chave: "n:X#2", dados: [3], proximo: null, total: 1, anexar: false });
+    assert.deepEqual([e.itens, e.erro], [[3], null]);
+  });
+});
