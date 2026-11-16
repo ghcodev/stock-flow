@@ -12,6 +12,7 @@ type Valor = {
   entrar: (email: string, senha: string) => Promise<void>;
   sair: () => void;
   limparAviso: () => void;
+  atualizarUsuario: () => Promise<void>;
 };
 
 const LIMITE_DO_TEMPORIZADOR_MS = 2_147_483_000;
@@ -88,6 +89,13 @@ export function ProvedorDeAutenticacao({ children, armazenamento }: { children: 
 
   const limparAviso = useCallback(() => setAviso(null), []);
 
+  const atualizarUsuario = useCallback(async () => {
+    const atual = sessaoAtual.current;
+    if (atual === null) return;
+    const usuario = await consultarUsuarioAtual(cliente);
+    if (sessaoAtual.current?.token === atual.token) definir({ token: atual.token, usuario });
+  }, [cliente, definir]);
+
   const token = sessao?.token ?? null;
 
   useEffect(() => {
@@ -123,8 +131,8 @@ export function ProvedorDeAutenticacao({ children, armazenamento }: { children: 
   }, [token, cliente, definir]);
 
   const valor = useMemo<Valor>(
-    () => ({ sessao, cliente, aviso, entrar, sair, limparAviso }),
-    [sessao, cliente, aviso, entrar, sair, limparAviso],
+    () => ({ sessao, cliente, aviso, entrar, sair, limparAviso, atualizarUsuario }),
+    [sessao, cliente, aviso, entrar, sair, limparAviso, atualizarUsuario],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

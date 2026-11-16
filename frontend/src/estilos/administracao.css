@@ -1,0 +1,27 @@
+.campo-senha {
+  position: relative;
+}
+
+.campo-senha .input {
+  padding-right: 40px;
+}
+
+.campo-senha-alternar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.campo-senha-alternar:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
