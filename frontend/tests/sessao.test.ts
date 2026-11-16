@@ -205,7 +205,7 @@ describe("sessão expirada ao carregar avisa o usuário (R8)", () => {
     salvarSessao(arm, sessaoDe("operador", Math.floor(AGORA / 1000) - 60));
     const lida = lerSessaoSalva(arm, AGORA);
     assert.deepEqual(lida, { sessao: null, expirada: true });
-    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), false);
+    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), true);
     assert.equal(MENSAGEM_DE_SESSAO_EXPIRADA, "Sua sessão expirou. Entre novamente.");
   });
 
@@ -227,5 +227,36 @@ describe("sessão expirada ao carregar avisa o usuário (R8)", () => {
     const semExp = memoria();
     semExp.setItem(CHAVE_DA_SESSAO, JSON.stringify({ token: "a.b.c", usuario: sessaoDe("operador").usuario }));
     assert.equal(lerSessaoSalva(semExp, AGORA).expirada, false);
+  });
+});
+
+describe("leitura inicial sem efeito colateral: bootstrap, provedor e StrictMode (U5)", () => {
+  it("a verificação antes do React não apaga a sessão expirada: o provedor ainda vê expirada=true, mesmo lendo duas vezes", async () => {
+    const { deveHabilitarNoInicio } = await import("../src/leitor/inicio.ts");
+    const arm = memoria();
+    salvarSessao(arm, sessaoDe("operador", Math.floor(AGORA / 1000) - 60));
+    assert.equal(deveHabilitarNoInicio(arm, "/lotes", AGORA), false);
+    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), true);
+    const primeira = lerSessaoSalva(arm, AGORA);
+    const segunda = lerSessaoSalva(arm, AGORA);
+    assert.deepEqual(primeira, { sessao: null, expirada: true });
+    assert.deepEqual(segunda, { sessao: null, expirada: true });
+    assert.equal(MENSAGEM_DE_SESSAO_EXPIRADA.length > 0, true);
+  });
+
+  it("só o efeito do provedor apaga: carregarSessao (apagadora) limpa e a próxima leitura já não vê expirada", () => {
+    const arm = memoria();
+    salvarSessao(arm, sessaoDe("administrador", Math.floor(AGORA / 1000) - 5));
+    assert.equal(carregarSessao(arm, AGORA), null);
+    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), false);
+    assert.deepEqual(lerSessaoSalva(arm, AGORA), { sessao: null, expirada: false });
+  });
+
+  it("sessão vigente continua habilitando o leitor sem ser alterada", async () => {
+    const { deveHabilitarNoInicio } = await import("../src/leitor/inicio.ts");
+    const arm = memoria();
+    salvarSessao(arm, sessaoDe("operador"));
+    assert.equal(deveHabilitarNoInicio(arm, "/entrada", AGORA), true);
+    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), true);
   });
 });

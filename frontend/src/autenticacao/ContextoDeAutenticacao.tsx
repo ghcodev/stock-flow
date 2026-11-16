@@ -38,6 +38,10 @@ export function ProvedorDeAutenticacao({ children, armazenamento }: { children: 
   const [aviso, setAviso] = useState<string | null>(inicial.expirada ? MENSAGEM_DE_SESSAO_EXPIRADA : null);
   const sessaoAtual = useRef<Sessao | null>(sessao);
 
+  useEffect(() => {
+    if (inicial.sessao === null) limparSessao(memoria);
+  }, [inicial, memoria]);
+
   const definir = useCallback(
     (nova: Sessao | null) => {
       sessaoAtual.current = nova;

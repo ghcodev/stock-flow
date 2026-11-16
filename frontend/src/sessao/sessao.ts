@@ -96,10 +96,11 @@ export function lerSessaoSalva(armazenamento: Armazenamento, agoraMs: number): S
   } catch {
     expirada = false;
   }
-  limparSessao(armazenamento);
   return { sessao: null, expirada };
 }
 
 export function carregarSessao(armazenamento: Armazenamento, agoraMs: number): Sessao | null {
-  return lerSessaoSalva(armazenamento, agoraMs).sessao;
+  const lida = lerSessaoSalva(armazenamento, agoraMs);
+  if (lida.sessao === null) limparSessao(armazenamento);
+  return lida.sessao;
 }
