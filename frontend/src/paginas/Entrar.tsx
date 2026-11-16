@@ -131,7 +131,7 @@ export function Entrar() {
 
         <main className="auth-form-corpo">
           <h2 className="auth-form-titulo">Entrar na sua conta</h2>
-          <p className="auth-form-sub">Use o e-mail e a senha cadastrados. Os acessos são registrados para auditoria.</p>
+          <p className="auth-form-sub">Use o e-mail e a senha cadastrados para acessar o sistema.</p>
 
           <form onSubmit={enviar} noValidate aria-busy={enviando}>
             {mensagemGeral ? (
