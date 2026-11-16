@@ -1,7 +1,6 @@
 import type { Cliente } from "./cliente.ts";
 import type { Localizacao, Lote, Pagina, Produto } from "./tipos.ts";
 import type { OpcaoDeBusca } from "../componentes/SeletorComBusca.tsx";
-import { casaComTodosOsTermos, termoMaisSeletivo, termosDeBusca } from "../util/busca.ts";
 import { rotuloDaLocalizacao } from "../paginas/lotes/apresentacao.ts";
 
 const LIMITE_DE_OPCOES = 30;
@@ -16,18 +15,12 @@ export async function buscarProdutosParaSeletor(cliente: Cliente, texto: string,
 }
 
 export async function buscarLocalizacoesParaSeletor(cliente: Cliente, texto: string, sinal: AbortSignal): Promise<OpcaoDeBusca[]> {
-  const termos = termosDeBusca(texto);
-  const prefixo = texto.trim().toLocaleLowerCase("pt-BR");
   const resposta = await cliente.get<Pagina<Localizacao>>(
     "/localizacoes",
-    { busca: termos.length === 0 ? undefined : termoMaisSeletivo(termos), limite: 100 },
+    { busca: texto === "" ? undefined : texto, limite: LIMITE_DE_OPCOES },
     sinal,
   );
-  return resposta.dados
-    .map((localizacao) => ({ valor: String(localizacao.id_localizacao), rotulo: rotuloDaLocalizacao(localizacao) }))
-    .filter((opcao) => casaComTodosOsTermos(opcao.rotulo, termos))
-    .sort((a, z) => Number(z.rotulo.toLocaleLowerCase("pt-BR").startsWith(prefixo)) - Number(a.rotulo.toLocaleLowerCase("pt-BR").startsWith(prefixo)))
-    .slice(0, LIMITE_DE_OPCOES);
+  return resposta.dados.map((localizacao) => ({ valor: String(localizacao.id_localizacao), rotulo: rotuloDaLocalizacao(localizacao) }));
 }
 
 export async function buscarLotesParaSeletor(cliente: Cliente, texto: string, sinal: AbortSignal): Promise<{ opcao: OpcaoDeBusca; lote: Lote }[]> {

@@ -248,20 +248,6 @@ describe("apresentação de lotes", () => {
   });
 });
 
-describe("busca por termos de localização", () => {
-  it("separa por espaço, hífen e barra e escolhe o termo mais seletivo", async () => {
-    const { termosDeBusca, termoMaisSeletivo, casaComTodosOsTermos } = await import("../src/util/busca.ts");
-    assert.deepEqual(termosDeBusca("A-1-01"), ["A", "1", "01"]);
-    assert.deepEqual(termosDeBusca("  corredor  b / 2 "), ["corredor", "b", "2"]);
-    assert.deepEqual(termosDeBusca(" - "), []);
-    assert.equal(termoMaisSeletivo(["A", "1", "01"]), "01");
-    assert.equal(termoMaisSeletivo([]), "");
-    assert.equal(casaComTodosOsTermos("A-1-01", ["a", "01"]), true);
-    assert.equal(casaComTodosOsTermos("A-1-02", ["a", "01"]), false);
-    assert.equal(casaComTodosOsTermos("Ação-1", ["ação"]), true);
-  });
-});
-
 describe("carga ligada à chave do pedido (T5)", () => {
   it("carga A, troca para B e falha de B: nada de A aparece sob B e o erro fica visível", async () => {
     const { aplicarFalha, aplicarSucesso, estadoInicial, visivel } = await import("../src/util/carga.ts");
