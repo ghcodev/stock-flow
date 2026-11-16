@@ -136,3 +136,22 @@ export function quantidadePositiva(campo: string, rotulo: string): ValidationCha
     .custom((valor: string) => /[1-9]/.test(valor))
     .withMessage(`${rotulo} deve ser maior que zero`);
 }
+
+export const MIN_CARACTERES_SENHA = 8;
+export const MAX_BYTES_SENHA = 72;
+
+export function campoSenha(campo: string, rotulo: string, minimo: number, opcional = false): ValidationChain {
+  const base = body(campo);
+  return (opcional ? base.optional() : base)
+    .isString()
+    .withMessage(`${rotulo} é obrigatória`)
+    .bail()
+    .custom(semNul)
+    .withMessage(`${rotulo} contém caractere inválido`)
+    .bail()
+    .isLength({ min: minimo })
+    .withMessage(minimo > 1 ? `${rotulo} deve ter no mínimo ${minimo} caracteres` : `${rotulo} é obrigatória`)
+    .bail()
+    .custom((valor: string) => Buffer.byteLength(valor, "utf8") <= MAX_BYTES_SENHA)
+    .withMessage(`${rotulo} deve ter no máximo ${MAX_BYTES_SENHA} bytes`);
+}

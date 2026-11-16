@@ -110,7 +110,7 @@ Decisões de projeto: só entram lotes com quantidade maior que zero, de qualque
 
 ## Perfil e troca da própria senha
 
-`GET /auth/me` devolve o usuário autenticado. `POST /auth/senha` (qualquer usuário autenticado) recebe `senha_atual` e `nova_senha` e responde 204. Regras (decisões de projeto): exige a senha atual (errada = 422 `SENHA_ATUAL_INCORRETA`, mensagem fixa); a nova senha tem de 8 a 72 bytes e não pode conter NUL (a mesma validação do cadastro); o hash é bcrypt com custo 12 e a troca passa por `executarComoUsuario`, então é auditada (UPDATE em `usuario` com o próprio usuário e sem `senha_hash`). A rota tem limitador de tentativas em memória, igual ao do login (10 por 15 minutos por IP, contado antes do parser de JSON).
+`GET /auth/me` devolve o usuário autenticado. `POST /auth/senha` (qualquer usuário autenticado) recebe `senha_atual` e `nova_senha` e responde 204. Regras (decisões de projeto): exige a senha atual (errada = 422 `SENHA_ATUAL_INCORRETA`, mensagem fixa); a nova senha tem no mínimo 8 caracteres e no máximo 72 bytes (limite do bcrypt) e não pode conter NUL (o mesmo validador do cadastro e da edição de usuário); o hash é bcrypt com custo 12 e a troca passa por `executarComoUsuario`, então é auditada (UPDATE em `usuario` com o próprio usuário e sem `senha_hash`). A rota tem limitador de tentativas em memória, igual ao do login (10 por 15 minutos por IP, contado antes do parser de JSON).
 
 Limite conhecido: a troca de senha **não invalida os tokens já emitidos**. A especificação não pede isso e não há coluna para versionar sessões sem migração; cada token continua valendo até expirar (8 h) ou até o usuário ser inativado.
 
