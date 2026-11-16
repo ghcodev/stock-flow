@@ -77,3 +77,9 @@ Decisões de projeto (a especificação não detalha):
 - `operacao` aceita `INSERT`, `UPDATE` e `DELETE`, os valores que os triggers gravam. Ajuste e bloqueio se acham combinando `tabela` e conteúdo (por exemplo `tabela=lote&operacao=UPDATE&valor_novo={"status_lote":"bloqueado"}`).
 - `valor_novo` e `valor_anterior` recebem um objeto JSON, aplicado com o operador `@>` (aproveita os índices GIN `jsonb_path_ops`). Limites: 512 caracteres, 3 níveis, 20 chaves, textos de até 100 caracteres, listas de até 10 itens; tipos contam (`{"id_lote":5}` casa número, `{"id_lote":"5"}` não). A chave `senha_hash` é recusada e removida das respostas.
 - Os filtros por `id_usuario`, `tabela` e `ip` não têm índice próprio; combinados com período ou conteúdo o plano usa os índices existentes. Com o log atual (cerca de 130 mil linhas) uma consulta só por usuário e tabela leva cerca de 10 ms.
+
+## Rastreabilidade do lote (RF14, RN18)
+
+`GET /rastreabilidade?numero_lote=<número exato>` ou `?id_lote=<id>` (exatamente um dos dois), para operador e administrador. Devolve o lote (produto, localização atual e etiqueta) e `linha_do_tempo` com todas as movimentações em ordem cronológica (data e, no empate, id), cada uma com data, usuário, tipo, quantidade, saldos anterior e posterior, origem, destino e `status_movimentacao`.
+
+Decisões de projeto: lote existente sem movimentações responde 200 com a linha do tempo vazia; lote inexistente responde 404; contagens de inventário entram na linha do tempo com o status explícito (`pendente`, `concluida` ou `cancelada`); como contagens não alteram saldo, a cadeia de saldos é formada só pelas movimentações concluídas que não são de inventário (os saldos de uma contagem são o instantâneo do momento da contagem). As leituras são feitas fora de transação, sem instantâneo único, e a linha do tempo não é paginada.
