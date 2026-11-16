@@ -104,7 +104,7 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 
 ## Mapa do armazém (RF12)
 
-`GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. São duas consultas por página, sem N+1.
+`GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. 
 
 Decisões de projeto: só entram lotes com quantidade maior que zero, de qualquer status (bloqueado e vencido ocupam espaço e aparecem com o status); **não há percentual de ocupação**, porque a unidade da capacidade não é definida; a resposta é paginada por localização (`pagina`, `limite` padrão 100 e máximo 100) e aceita o filtro `corredor`.
 
@@ -121,3 +121,5 @@ Marca como `vencido` o lote com status `ativo` e `data_validade < current_date`.
 Decisões de projeto: a referência de data é sempre o `current_date` do banco (a mesma fonte dos alertas de vencimento), nunca o relógio ou o fuso do Node (o fuso do banco será fixado na Etapa 4); no dia da validade o lote ainda não venceu, como na trigger; lote bloqueado continua bloqueado (o status é único e trocar apagaria o bloqueio); a ação é do sistema: transação própria com `app.user_id` e `app.ip` vazios, então a auditoria grava usuário e IP nulos (a seção 18 diz que ações do agendador não têm usuário), sem criar usuário técnico e sem herdar contexto de uma conexão do pool; cada lote é travado (`FOR UPDATE SKIP LOCKED`, lotes em uso ficam para a próxima execução) e só quem precisa é atualizado, então rodar duas vezes não gera log repetido; o processamento é em lotes de 500; uma falha escreve apenas `Agendador: falha na execução` e não derruba a API; o temporizador para no encerramento do processo, depois de esperar a execução em curso.
 
 Teto da exportação (decisão de projeto): o CSV tem no máximo 10.000 linhas. O servidor confere por `COUNT` antes de ler as linhas e lê no máximo 10.001; acima do teto responde 422 `EXPORTACAO_MUITO_GRANDE` ("A exportação excede o limite de 10000 linhas. Reduza o conjunto de alertas e tente novamente"). Nunca trunca em silêncio. O documento é montado linha a linha, sem cópias intermediárias do conjunto.
+
+Limite por posição (decisão de projeto): cada posição traz no máximo 50 lotes (ordenados por número e id) e `total_lotes` com o total de lotes com saldo da posição; para ver o restante, use `GET /lotes?id_localizacao=<id>` (a listagem de lotes já filtra por localização e é paginada).

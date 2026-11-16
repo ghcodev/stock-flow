@@ -4,6 +4,7 @@ import type { status_lote } from "../generated/prisma/enums.ts";
 import { type Pagina, type Paginacao } from "../validators/comuns.ts";
 
 const LIMITE_PADRAO = 100;
+export const MAX_LOTES_POR_POSICAO = 50;
 
 export type FiltroMapa = Paginacao & { corredor?: string };
 
@@ -23,6 +24,7 @@ export type PosicaoDoMapa = {
   posicao: string;
   capacidade: Prisma.Decimal | null;
   descricao: string | null;
+  total_lotes: number;
   lotes: LoteNoMapa[];
 };
 
@@ -40,31 +42,31 @@ export async function montarMapa(filtro: FiltroMapa): Promise<Pagina<PosicaoDoMa
     }),
     prisma.localizacao.count({ where }),
   ]);
-  const lotes = await prisma.lote.findMany({
-    where: { id_localizacao: { in: localizacoes.map((l) => l.id_localizacao) }, quantidade: { gt: 0 } },
-    select: {
-      id_lote: true,
-      numero_lote: true,
-      status_lote: true,
-      quantidade: true,
-      id_localizacao: true,
-      produto: { select: { nome: true, unidade_medida: true } },
-    },
-    orderBy: [{ numero_lote: "asc" }, { id_lote: "asc" }],
-  });
+  const ids = localizacoes.map((l) => l.id_localizacao);
+  const lotes = await prisma.$queryRaw<(LoteNoMapa & { id_localizacao: number; total_lotes: number })[]>`
+    SELECT t.id_lote, t.numero_lote, t.status_lote, t.quantidade, t.unidade_medida, t.produto, t.id_localizacao, t.total_lotes
+    FROM (
+      SELECT l.id_lote, l.numero_lote, l.status_lote::text AS status_lote, l.quantidade, p.unidade_medida,
+             p.nome AS produto, l.id_localizacao,
+             row_number() OVER (PARTITION BY l.id_localizacao ORDER BY l.numero_lote, l.id_lote) AS ordem,
+             count(*) OVER (PARTITION BY l.id_localizacao)::int AS total_lotes
+      FROM lote l JOIN produto p ON p.id_produto = l.id_produto
+      WHERE l.id_localizacao = ANY(${ids}::int[]) AND l.quantidade > 0
+    ) t
+    WHERE t.ordem <= ${MAX_LOTES_POR_POSICAO}
+    ORDER BY t.id_localizacao, t.ordem`;
   const porLocalizacao = new Map<number, LoteNoMapa[]>();
-  for (const lote of lotes) {
-    const lista = porLocalizacao.get(lote.id_localizacao) ?? [];
-    lista.push({
-      id_lote: lote.id_lote,
-      numero_lote: lote.numero_lote,
-      status_lote: lote.status_lote,
-      quantidade: lote.quantidade,
-      unidade_medida: lote.produto.unidade_medida,
-      produto: lote.produto.nome,
-    });
-    porLocalizacao.set(lote.id_localizacao, lista);
+  const totais = new Map<number, number>();
+  for (const { id_localizacao, total_lotes, ...lote } of lotes) {
+    const lista = porLocalizacao.get(id_localizacao) ?? [];
+    lista.push(lote);
+    porLocalizacao.set(id_localizacao, lista);
+    totais.set(id_localizacao, total_lotes);
   }
-  const dados = localizacoes.map((l) => ({ ...l, lotes: porLocalizacao.get(l.id_localizacao) ?? [] }));
+  const dados = localizacoes.map((l) => ({
+    ...l,
+    total_lotes: totais.get(l.id_localizacao) ?? 0,
+    lotes: porLocalizacao.get(l.id_localizacao) ?? [],
+  }));
   return { dados, pagina, limite, total };
 }

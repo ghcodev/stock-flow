@@ -8,7 +8,7 @@ import { desativarUsuariosTeste, subir, type Servidor } from "./helpers.ts";
 import { montarCenario, type Cenario } from "./movimentacao.apoio.ts";
 
 type LoteMapa = { id_lote: number; numero_lote: string; status_lote: string; quantidade: string; unidade_medida: string; produto: string };
-type Posicao = { id_localizacao: number; corredor: string; nivel: string; posicao: string; capacidade: string | null; descricao: string | null; lotes: LoteMapa[] };
+type Posicao = { total_lotes: number; id_localizacao: number; corredor: string; nivel: string; posicao: string; capacidade: string | null; descricao: string | null; lotes: LoteMapa[] };
 type Pagina = { dados: Posicao[]; pagina: number; limite: number; total: number };
 
 describe("mapa do armazém (A22, RF12)", () => {
@@ -61,6 +61,7 @@ describe("mapa do armazém (A22, RF12)", () => {
     assert.equal(cheia?.id_localizacao, posicaoCheia);
     assert.equal(cheia?.capacidade, "250.5");
     assert.equal(cheia?.descricao, "cheia");
+    assert.equal(cheia?.total_lotes, 2);
     assert.deepEqual(cheia?.lotes.map((l) => l.numero_lote), [`${c.prefixo}-a`, `${c.prefixo}-b`]);
     assert.equal(cheia?.lotes[0]?.quantidade, "10");
     assert.equal(cheia?.lotes[0]?.unidade_medida, "UN");
@@ -70,6 +71,7 @@ describe("mapa do armazém (A22, RF12)", () => {
     assert.equal(pagina.dados[1]?.id_localizacao, posicaoVazia);
     assert.equal(pagina.dados[1]?.capacidade, null);
     assert.deepEqual(pagina.dados[1]?.lotes, []);
+    assert.equal(pagina.dados[1]?.total_lotes, 0);
     assert.ok(!("ocupacao" in (cheia ?? {})) && !("percentual" in (cheia ?? {})));
   });
 
@@ -101,5 +103,28 @@ describe("mapa do armazém (A22, RF12)", () => {
     const pagina = await mapa("limite=100");
     assert.ok(pagina.dados.length <= 100);
     assert.ok(Date.now() - antes < 1500);
+  });
+
+  it("G1c: no máximo 50 lotes por posição, com total_lotes da posição, em ordem estável, e o restante pela listagem de lotes filtrada por localização", async () => {
+    const lotada = (await prisma.localizacao.create({ data: { corredor: `${corredor}`.slice(0, 9) + "L", nivel: "9", posicao: "Z" } })).id_localizacao;
+    await prisma.lote.createMany({
+      data: Array.from({ length: 55 }, (_, i) => ({
+        numero_lote: `${c.prefixo}-m${String(i).padStart(2, "0")}`,
+        id_produto: c.idProduto,
+        id_localizacao: lotada,
+        quantidade: "1",
+      })),
+    });
+    const pagina = await mapa(`corredor=${encodeURIComponent(`${corredor}`.slice(0, 9) + "L")}`);
+    const posicao = pagina.dados.find((p) => p.id_localizacao === lotada);
+    assert.equal(posicao?.total_lotes, 55);
+    assert.equal(posicao?.lotes.length, 50);
+    const numeros = posicao?.lotes.map((l) => l.numero_lote) ?? [];
+    assert.deepEqual(numeros, [...numeros].sort());
+    assert.equal(numeros[0], `${c.prefixo}-m00`);
+    assert.equal(numeros.at(-1), `${c.prefixo}-m49`);
+    const restante = await chamarApi(servidor, "GET", `/lotes?id_localizacao=${lotada}&limite=100`, c.operador);
+    assert.equal(restante.status, 200);
+    assert.equal((restante.corpo as { total: number }).total, 55);
   });
 });
