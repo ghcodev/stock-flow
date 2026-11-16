@@ -243,4 +243,30 @@ describe("lotes (A7)", () => {
     const depois = (await chamarApi(servidor, "GET", `/lotes/${lote.id_lote}`, admin)).corpo as Lote;
     assert.equal(depois.quantidade, "3");
   });
+
+  it("V2: leituras trazem validade_expirada calculada no banco; POSTs não mudam", async () => {
+    const ontem = await criar({ numero_lote: numero("v2a"), data_fabricacao: "2024-01-01", data_validade: "2024-06-30" });
+    assert.equal(ontem.status, 201);
+    assert.equal((ontem.corpo as Record<string, unknown>)["validade_expirada"], undefined);
+    const futuro = (await criar({ numero_lote: numero("v2b"), data_validade: "2099-12-31" })).corpo as Lote;
+    const sem = (await criar({ numero_lote: numero("v2c") })).corpo as Lote;
+    const idPassado = (ontem.corpo as Lote).id_lote;
+    const campo = async (id: number) =>
+      ((await chamarApi(servidor, "GET", `/lotes/${id}`, operador)).corpo as Lote & { validade_expirada: boolean }).validade_expirada;
+    assert.equal(await campo(idPassado), true);
+    assert.equal(await campo(futuro.id_lote), false);
+    assert.equal(await campo(sem.id_lote), false);
+    const hoje = (await prisma.$queryRaw<{ d: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS d`)[0]?.d ?? "";
+    const limite = (await criar({ numero_lote: numero("v2d"), data_validade: hoje })).corpo as Lote;
+    assert.equal(await campo(limite.id_lote), false);
+    const lista = (await chamarApi(servidor, "GET", `/lotes?numero_lote=${prefixo.toLowerCase()}-v2`, operador)).corpo as unknown as { dados: { validade_expirada: boolean; numero_lote: string }[] };
+    assert.equal(lista.dados.length, 4);
+    for (const lote of lista.dados) assert.equal(typeof lote.validade_expirada, "boolean");
+    assert.equal(lista.dados.find((l) => l.numero_lote === numero("v2a"))?.validade_expirada, true);
+    assert.equal(lista.dados.filter((l) => l.validade_expirada).length, 1);
+    const porEtiqueta = await criar({ numero_lote: numero("v2e"), data_validade: "2099-01-01", etiqueta: { tipo: "qr_code", codigo: `QR-${prefixo}-v2` } });
+    assert.equal(porEtiqueta.status, 201);
+    const achado = (await chamarApi(servidor, "GET", `/lotes?codigo_etiqueta=${encodeURIComponent(`QR-${prefixo}-v2`)}`, operador)).corpo as unknown as { dados: { validade_expirada: boolean }[] };
+    assert.equal(achado.dados[0]?.validade_expirada, false);
+  });
 });

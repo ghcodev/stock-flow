@@ -57,7 +57,7 @@ Atenção: a suíte escreve no banco. Cada execução completa persiste usuário
 
 ## Listagem de lotes
 
-`GET /lotes` (operador e administrador, paginado) aceita os filtros `id_produto`, `id_localizacao`, `status`, `numero_lote` (contém, sem diferenciar caixa) e `codigo_etiqueta` (casamento exato e com diferenciação de caixa, o que o leitor lê; espaços nas pontas são removidos como no cadastro; de 1 a 128 caracteres, sem NUL e uma única ocorrência, senão 400). Os filtros se combinam. Código sem lote devolve 200 com `dados: []` e `total: 0`. Cada lote traz `identificacao` (`id_identificacao`, `tipo_identificacao` e `codigo`, ou `null`). A busca usa o índice único `identificacao_codigo_key` (confirmado com EXPLAIN).
+`GET /lotes` (operador e administrador, paginado) aceita os filtros `id_produto`, `id_localizacao`, `status`, `numero_lote` (contém, sem diferenciar caixa) e `codigo_etiqueta` (casamento exato e com diferenciação de caixa, o que o leitor lê; espaços nas pontas são removidos como no cadastro; de 1 a 128 caracteres, sem NUL e uma única ocorrência, senão 400). Os filtros se combinam. Código sem lote devolve 200 com `dados: []` e `total: 0`. `GET /lotes`, `GET /lotes/:id` e a busca por etiqueta trazem também `validade_expirada` (booleano calculado no banco: `data_validade < current_date`; `false` sem validade), para a tela não depender do relógio do navegador; os `POST` não mudam. Uma consulta extra por página, sem consulta por lote. Cada lote traz `identificacao` (`id_identificacao`, `tipo_identificacao` e `codigo`, ou `null`). A busca usa o índice único `identificacao_codigo_key` (confirmado com EXPLAIN).
 
 ## Nomes nas listas (para o cliente não consultar item a item)
 

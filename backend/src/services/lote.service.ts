@@ -38,6 +38,8 @@ export type LotePublico = Omit<LoteBanco, "data_fabricacao" | "data_validade"> &
   data_validade: string | null;
 };
 
+export type LoteDeConsulta = LotePublico & { validade_expirada: boolean };
+
 export type DadosLote = {
   numero_lote: string;
   id_produto: number;
@@ -62,6 +64,14 @@ const paraData = (texto: string | null | undefined): Date | null | undefined =>
 
 function apresentar(lote: LoteBanco): LotePublico {
   return { ...lote, data_fabricacao: dia(lote.data_fabricacao), data_validade: dia(lote.data_validade) };
+}
+
+async function expiradasDoBanco(ids: number[]): Promise<Map<number, boolean>> {
+  if (ids.length === 0) return new Map();
+  const linhas = await prisma.$queryRaw<{ id_lote: number; expirada: boolean }[]>`
+    SELECT id_lote, (data_validade IS NOT NULL AND data_validade < current_date) AS expirada
+    FROM lote WHERE id_lote = ANY(${ids}::int[])`;
+  return new Map(linhas.map((linha) => [linha.id_lote, linha.expirada]));
 }
 
 async function buscarNaTransacao(tx: Tx, id: number): Promise<LotePublico> {
@@ -125,13 +135,16 @@ export async function criarLote(contexto: ContextoDeEscrita, dados: DadosLote): 
   });
 }
 
-export async function obterLote(id: number): Promise<LotePublico> {
-  const lote = await prisma.lote.findUnique({ where: { id_lote: id }, select: SELECAO });
+export async function obterLote(id: number): Promise<LoteDeConsulta> {
+  const [lote, expiradas] = await Promise.all([
+    prisma.lote.findUnique({ where: { id_lote: id }, select: SELECAO }),
+    expiradasDoBanco([id]),
+  ]);
   if (!lote) throw new HttpError(404, "NAO_ENCONTRADO", "Lote não encontrado");
-  return apresentar(lote);
+  return { ...apresentar(lote), validade_expirada: expiradas.get(id) ?? false };
 }
 
-export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LotePublico>> {
+export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LoteDeConsulta>> {
   const { pagina, limite, skip, take } = intervaloDe(filtro);
   const where: Prisma.loteWhereInput = {
     ...(filtro.id_produto === undefined ? {} : { id_produto: filtro.id_produto }),
@@ -144,7 +157,13 @@ export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LotePubli
     prisma.lote.findMany({ where, select: SELECAO, orderBy: [{ id_lote: "desc" }], skip, take }),
     prisma.lote.count({ where }),
   ]);
-  return { dados: lotes.map(apresentar), pagina, limite, total };
+  const expiradas = await expiradasDoBanco(lotes.map((lote) => lote.id_lote));
+  return {
+    dados: lotes.map((lote) => ({ ...apresentar(lote), validade_expirada: expiradas.get(lote.id_lote) ?? false })),
+    pagina,
+    limite,
+    total,
+  };
 }
 
 export function bloquearLote(contexto: ContextoDeEscrita, id: number, motivo: string): Promise<LotePublico> {
