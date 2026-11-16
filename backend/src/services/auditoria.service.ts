@@ -23,6 +23,7 @@ export type RegistroDeAuditoria = {
   valor_anterior: ValorJson | null;
   valor_novo: ValorJson | null;
   id_usuario: number | null;
+  nome_usuario: string | null;
   data_hora: Date;
   ip_usuario: string | null;
   observacao: string | null;
@@ -78,7 +79,7 @@ export function consultaDeAuditoria(filtro: FiltroAuditoria, skip: number, take:
   const condicoes = condicoesComCursor(filtro);
   return Prisma.sql`
     SELECT id_log::text AS id_log, tabela_afetada, operacao::text AS operacao, valor_anterior, valor_novo,
-           id_usuario, data_hora, host(ip_usuario) AS ip_usuario, observacao
+           id_usuario, (SELECT u.nome FROM usuario u WHERE u.id_usuario = auditoria_log.id_usuario) AS nome_usuario, data_hora, host(ip_usuario) AS ip_usuario, observacao
     FROM auditoria_log ${onde(condicoes)}
     ORDER BY auditoria_log.id_log DESC LIMIT ${take} OFFSET ${skip}`;
 }

@@ -55,6 +55,16 @@ Atenção: a suíte escreve no banco. Cada execução completa persiste usuário
 
 `GET /lotes` (operador e administrador, paginado) aceita os filtros `id_produto`, `id_localizacao`, `status`, `numero_lote` (contém, sem diferenciar caixa) e `codigo_etiqueta` (casamento exato e com diferenciação de caixa, o que o leitor lê; espaços nas pontas são removidos como no cadastro; de 1 a 128 caracteres, sem NUL e uma única ocorrência, senão 400). Os filtros se combinam. Código sem lote devolve 200 com `dados: []` e `total: 0`. Cada lote traz `identificacao` (`id_identificacao`, `tipo_identificacao` e `codigo`, ou `null`). A busca usa o índice único `identificacao_codigo_key` (confirmado com EXPLAIN).
 
+## Nomes nas listas (para o cliente não consultar item a item)
+
+As leituras abaixo trazem, na própria resposta, o número do lote e o nome de quem agiu, para a interface não precisar de uma chamada por linha:
+
+- `GET /movimentacoes` e `GET /movimentacoes/:id`: cada movimentação ganha `numero_lote` e `nome_usuario` (textos planos, ao lado de `id_lote` e `id_usuario`).
+- `GET /inventario/contagens` e `GET /inventario/contagens/:id`: o mesmo, mantendo `divergencia`.
+- `GET /auditoria`: cada registro ganha `nome_usuario`, que é `null` quando `id_usuario` é `null` (ação do sistema, como o agendador).
+
+Só esses nomes são expostos: nunca e-mail nem `senha_hash`. As respostas dos `POST` (entrada, saída, transferência, ajuste, contagem, finalização e cancelamento) não mudam. O número de consultas é constante por página, sem consulta por linha: movimentações e contagens usam a contagem mais a página, mais uma leitura em lote dos lotes e outra dos usuários da página (relações do Prisma); a auditoria resolve o nome por subconsulta na lista de colunas, avaliada só para as linhas devolvidas, pela chave primária do usuário.
+
 ## Histórico de movimentações
 
 `GET /movimentacoes` aceita os filtros `de`, `ate`, `tipo`, `id_lote` e `id_usuario`.

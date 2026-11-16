@@ -50,6 +50,20 @@ export type MovimentacaoPublica = Prisma.movimentacaoGetPayload<{ select: typeof
 
 export { SELECAO_MOVIMENTACAO };
 
+export const SELECAO_COM_NOMES = {
+  ...SELECAO_MOVIMENTACAO,
+  lote: { select: { numero_lote: true } },
+  usuario: { select: { nome: true } },
+} as const;
+
+type LinhaComNomes = Prisma.movimentacaoGetPayload<{ select: typeof SELECAO_COM_NOMES }>;
+
+export type MovimentacaoComNomes = MovimentacaoPublica & { numero_lote: string; nome_usuario: string };
+
+export function comNomes({ lote, usuario, ...movimentacao }: LinhaComNomes): MovimentacaoComNomes {
+  return { ...movimentacao, numero_lote: lote.numero_lote, nome_usuario: usuario.nome };
+}
+
 type LinhaDoLote = {
   id_lote: number;
   id_produto: number;

@@ -5,9 +5,12 @@ import type { status_movimentacao } from "../generated/prisma/enums.ts";
 import { executarComoUsuario, instanteDoBanco, type ContextoDeEscrita } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 import {
+  comNomes,
   LOCK_TIMEOUT_MS,
+  SELECAO_COM_NOMES,
   SELECAO_MOVIMENTACAO,
   travarLote,
+  type MovimentacaoComNomes,
   type MovimentacaoPublica,
 } from "./saldo.service.ts";
 
@@ -17,7 +20,9 @@ export type DadosContagem = { id_lote: number; quantidade_contada: string; obser
 
 export type FiltroContagens = Paginacao & { status?: status_movimentacao; id_lote?: number };
 
-export function comDivergencia(movimentacao: MovimentacaoPublica): ContagemPublica {
+export type ContagemComNomes = MovimentacaoComNomes & { divergencia: string };
+
+export function comDivergencia<T extends MovimentacaoPublica>(movimentacao: T): T & { divergencia: string } {
   const divergencia = new Prisma.Decimal(movimentacao.quantidade.toString()).minus(
     new Prisma.Decimal(movimentacao.saldo_anterior.toString()),
   );
@@ -58,16 +63,16 @@ export function registrarContagem(contexto: ContextoDeEscrita, dados: DadosConta
   );
 }
 
-export async function obterContagem(id: string): Promise<ContagemPublica> {
+export async function obterContagem(id: string): Promise<ContagemComNomes> {
   const contagem = await prisma.movimentacao.findFirst({
     where: { id_movimentacao: BigInt(id), tipo_movimentacao: "inventario" },
-    select: SELECAO_MOVIMENTACAO,
+    select: SELECAO_COM_NOMES,
   });
   if (!contagem) throw new HttpError(404, "NAO_ENCONTRADO", "Contagem não encontrada");
-  return comDivergencia(contagem);
+  return comDivergencia(comNomes(contagem));
 }
 
-export async function listarContagens(filtro: FiltroContagens): Promise<Pagina<ContagemPublica>> {
+export async function listarContagens(filtro: FiltroContagens): Promise<Pagina<ContagemComNomes>> {
   const { pagina, limite, skip, take } = intervaloDe(filtro);
   const where: Prisma.movimentacaoWhereInput = {
     tipo_movimentacao: "inventario",
@@ -75,8 +80,8 @@ export async function listarContagens(filtro: FiltroContagens): Promise<Pagina<C
     ...(filtro.id_lote === undefined ? {} : { id_lote: filtro.id_lote }),
   };
   const [dados, total] = await Promise.all([
-    prisma.movimentacao.findMany({ where, select: SELECAO_MOVIMENTACAO, orderBy: [{ id_movimentacao: "desc" }], skip, take }),
+    prisma.movimentacao.findMany({ where, select: SELECAO_COM_NOMES, orderBy: [{ id_movimentacao: "desc" }], skip, take }),
     prisma.movimentacao.count({ where }),
   ]);
-  return { dados: dados.map(comDivergencia), pagina, limite, total };
+  return { dados: dados.map((linha) => comDivergencia(comNomes(linha))), pagina, limite, total };
 }

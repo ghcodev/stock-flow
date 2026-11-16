@@ -5,7 +5,14 @@ import { Prisma } from "../generated/prisma/client.ts";
 import type { tipo_movimentacao } from "../generated/prisma/enums.ts";
 import type { ContextoDeEscrita } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
-import { alterarSaldo, SALDO_MAXIMO, SELECAO_MOVIMENTACAO, type MovimentacaoPublica } from "./saldo.service.ts";
+import {
+  alterarSaldo,
+  comNomes,
+  SALDO_MAXIMO,
+  SELECAO_COM_NOMES,
+  type MovimentacaoComNomes,
+  type MovimentacaoPublica,
+} from "./saldo.service.ts";
 
 export type DadosSaldo = {
   id_lote: number;
@@ -105,7 +112,7 @@ export type FiltroHistorico = Paginacao & {
   antes_de_id?: string;
 };
 
-export type PaginaDeHistorico = Pagina<MovimentacaoPublica> & { proximo_antes_de_id: string | null };
+export type PaginaDeHistorico = Pagina<MovimentacaoComNomes> & { proximo_antes_de_id: string | null };
 
 function instanteDoFiltro(texto: string) {
   const instante = lerInstante(texto);
@@ -129,28 +136,29 @@ export async function listarHistorico(filtro: FiltroHistorico): Promise<PaginaDe
           },
         }),
   };
-  const [dados, total] = await Promise.all([
+  const [linhas, total] = await Promise.all([
     prisma.movimentacao.findMany({
       where,
-      select: SELECAO_MOVIMENTACAO,
+      select: SELECAO_COM_NOMES,
       orderBy: [{ id_movimentacao: "desc" }],
       skip,
       take,
     }),
     prisma.movimentacao.count({ where }),
   ]);
+  const dados = linhas.map(comNomes);
   const haMais = skip + dados.length < total;
   const proximo = haMais ? (dados.at(-1)?.id_movimentacao.toString() ?? null) : null;
   return { dados, pagina, limite, total, proximo_antes_de_id: proximo };
 }
 
-export async function obterMovimentacao(id: string): Promise<MovimentacaoPublica> {
+export async function obterMovimentacao(id: string): Promise<MovimentacaoComNomes> {
   const movimentacao = await prisma.movimentacao.findUnique({
     where: { id_movimentacao: BigInt(id) },
-    select: SELECAO_MOVIMENTACAO,
+    select: SELECAO_COM_NOMES,
   });
   if (!movimentacao) throw new HttpError(404, "NAO_ENCONTRADO", "Movimentação não encontrada");
-  return movimentacao;
+  return comNomes(movimentacao);
 }
 
 export type DadosAjuste = {
