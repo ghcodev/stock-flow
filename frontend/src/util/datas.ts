@@ -9,6 +9,15 @@ const FORMATO_DATA_HORA = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
 });
 
+const FORMATO_DATA_HORA_UTC = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "UTC",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 function paraUtc(dia: string): number | null {
   const casamento = PADRAO_DIA.exec(dia);
   if (!casamento) return null;
@@ -33,6 +42,12 @@ export function formatarDataHora(iso: string | null): string {
   if (iso === null) return "—";
   const data = new Date(iso);
   return Number.isNaN(data.getTime()) ? iso : FORMATO_DATA_HORA.format(data);
+}
+
+export function formatarDataHoraUtc(iso: string | null): string {
+  if (iso === null) return "—";
+  const data = new Date(iso);
+  return Number.isNaN(data.getTime()) ? iso : FORMATO_DATA_HORA_UTC.format(data);
 }
 
 export function diaDeHoje(agora: Date = new Date()): string {

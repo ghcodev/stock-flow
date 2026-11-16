@@ -14,7 +14,7 @@ import { useListaComCursor } from "../hooks/useListaComCursor.ts";
 import { normalizarCodigoLido } from "../leitor/captura.ts";
 import { IndicadorDeLeitura } from "../leitor/IndicadorDeLeitura.tsx";
 import { useLeitor } from "../leitor/useLeitor.ts";
-import { formatarDataHora, formatarDia } from "../util/datas.ts";
+import { formatarDataHoraUtc, formatarDia } from "../util/datas.ts";
 import { formatarQuantidade } from "../util/decimal.ts";
 import { ROTULOS_DOS_TIPOS } from "../util/grafico.ts";
 import { contemNul } from "../util/formularios.ts";
@@ -40,7 +40,7 @@ function Evento({ evento, unidade }: { evento: EventoDaLinhaDoTempo; unidade: st
             {ROTULOS_DOS_TIPOS[evento.tipo_movimentacao]}
           </Badge>
           {evento.status_movimentacao !== "concluida" ? <Badge tom={evento.status_movimentacao === "pendente" ? "alerta" : "neutro"}>{evento.status_movimentacao === "pendente" ? "Pendente" : "Cancelada"}</Badge> : null}
-          <span className="celula-secundaria">{formatarDataHora(evento.data_movimentacao)}</span>
+          <span className="celula-secundaria">{`${formatarDataHoraUtc(evento.data_movimentacao)} UTC`}</span>
           <span className="celula-secundaria">por {evento.usuario.nome}</span>
         </div>
         {evento.tipo_movimentacao === "inventario" ? (
@@ -174,7 +174,7 @@ export function Rastreabilidade() {
 
   return (
     <>
-      <CabecalhoDePagina titulo="Rastreabilidade do lote" resumo={[{ texto: "Linha do tempo em ordem cronológica, da primeira à última movimentação" }]} acoes={<IndicadorDeLeitura leitor={leitor} />} />
+      <CabecalhoDePagina titulo="Rastreabilidade do lote" resumo={[{ texto: "Linha do tempo em ordem cronológica, da primeira à última movimentação. Horários em UTC." }]} acoes={<IndicadorDeLeitura leitor={leitor} />} />
 
       <section className="cartao" aria-label="Busca do lote">
         <form className="rastreabilidade-busca" onSubmit={buscarPorNumero} noValidate>

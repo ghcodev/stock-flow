@@ -176,3 +176,27 @@ describe("W1: repetir a mesma busca reconsulta", () => {
     assert.deepEqual([e.itens, e.erro], [[3], null]);
   });
 });
+
+describe("W4: horário exibido em UTC, igual em qualquer fuso do navegador", () => {
+  it("o mesmo instante formata igual com o fuso do processo em São Paulo, Tóquio e UTC", async () => {
+    const { formatarDataHoraUtc } = await import("../src/util/datas.ts");
+    const original = process.env["TZ"];
+    try {
+      const saidas = new Set<string>();
+      for (const fuso of ["America/Sao_Paulo", "Asia/Tokyo", "UTC"]) {
+        process.env["TZ"] = fuso;
+        saidas.add(formatarDataHoraUtc("2026-11-16T12:00:00.000Z"));
+      }
+      assert.deepEqual([...saidas], ["16/11/2026, 12:00"]);
+    } finally {
+      if (original === undefined) delete process.env["TZ"];
+      else process.env["TZ"] = original;
+    }
+  });
+
+  it("nulo vira traço e texto inválido volta como veio", async () => {
+    const { formatarDataHoraUtc } = await import("../src/util/datas.ts");
+    assert.equal(formatarDataHoraUtc(null), "—");
+    assert.equal(formatarDataHoraUtc("lixo"), "lixo");
+  });
+});

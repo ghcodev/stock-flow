@@ -12,7 +12,7 @@ import { Tabela, type Coluna } from "../componentes/Tabela.tsx";
 import { useListaComCursor } from "../hooks/useListaComCursor.ts";
 import { podeAcessar } from "../sessao/permissoes.ts";
 import { chaveDosFiltros, validarPeriodo } from "../util/auditoria.ts";
-import { formatarDataHora } from "../util/datas.ts";
+import { formatarDataHoraUtc } from "../util/datas.ts";
 import { formatarQuantidade } from "../util/decimal.ts";
 import { ROTULOS_DOS_TIPOS } from "../util/grafico.ts";
 import "../estilos/analise.css";
@@ -46,7 +46,7 @@ export function Historico() {
 
   const colunas = useMemo<Coluna<MovimentacaoDoHistorico>[]>(
     () => [
-      { id: "data", titulo: "Data e hora", render: (m) => formatarDataHora(m.data_movimentacao) },
+      { id: "data", titulo: "Data e hora (UTC)", render: (m) => formatarDataHoraUtc(m.data_movimentacao) },
       {
         id: "tipo",
         titulo: "Tipo",
@@ -83,7 +83,7 @@ export function Historico() {
     <>
       <CabecalhoDePagina
         titulo="Histórico de movimentações"
-        resumo={[{ texto: lista.total !== null ? `${lista.total} registro(s) com os filtros atuais` : "Carregando…" }, { texto: "Mais recentes primeiro" }]}
+        resumo={[{ texto: lista.total !== null ? `${lista.total} registro(s) com os filtros atuais` : "Carregando…" }, { texto: "Mais recentes primeiro. Horários e período em UTC." }]}
         acoes={
           <button type="button" className="btn btn-outline btn-sm" onClick={lista.recarregar} disabled={lista.carregando}>
             <Icone nome="refresh" />

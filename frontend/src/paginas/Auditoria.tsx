@@ -20,7 +20,7 @@ import {
   type ErrosDeAuditoria,
   type FiltrosDeAuditoria,
 } from "../util/auditoria.ts";
-import { formatarDataHora } from "../util/datas.ts";
+import { formatarDataHoraUtc } from "../util/datas.ts";
 import "../estilos/analise.css";
 
 const TONS: Record<string, TomDeBadge> = { INSERT: "sucesso", UPDATE: "info", DELETE: "perigo" };
@@ -216,7 +216,7 @@ export function Auditoria() {
                             <Icone nome={aberto ? "chevron-down" : "chevron-right"} />
                           </button>
                         </td>
-                        <td>{formatarDataHora(registro.data_hora)}</td>
+                        <td>{formatarDataHoraUtc(registro.data_hora)}</td>
                         <td>
                           <Badge tom={TONS[registro.operacao] ?? "neutro"} ponto>
                             {ROTULOS_DE_OPERACAO[registro.operacao] ?? registro.operacao}
