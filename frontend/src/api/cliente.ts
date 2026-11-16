@@ -138,7 +138,7 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
 
     const segundos = lerSegundosParaRepetir(resposta.headers.get("Retry-After"), agora());
     const erro = erroDaResposta(resposta, await lerCorpoJson(resposta), segundos);
-    if (resposta.status === 401 && token !== null) dependencias.aoNaoAutorizado();
+    if (resposta.status === 401 && token !== null && dependencias.obterToken() === token) dependencias.aoNaoAutorizado();
     throw erro;
   }
 

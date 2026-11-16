@@ -148,3 +148,65 @@ describe("cliente da API", () => {
     await assert.rejects(cliente.get("/x", undefined, controle.signal), (e: unknown) => e instanceof ErroDeRede && e.motivo === "CANCELADO");
   });
 });
+
+describe("401 de requisição antiga não derruba a sessão atual (R1)", () => {
+  function controlado() {
+    let tokenAtual: string | null = "A";
+    let invalidacoes = 0;
+    const pendentes: ((resposta: Response) => void)[] = [];
+    const buscar = (() => new Promise<Response>((resolver) => pendentes.push(resolver))) as unknown as typeof fetch;
+    const cliente = criarCliente({
+      buscar,
+      obterToken: () => tokenAtual,
+      aoNaoAutorizado: () => {
+        invalidacoes += 1;
+      },
+    });
+    const naoAutorizado = () => json({ erro: { codigo: "NAO_AUTORIZADO", mensagem: "Sessão inválida" } }, 401);
+    return {
+      cliente,
+      pendentes,
+      naoAutorizado,
+      definirToken: (valor: string | null) => {
+        tokenAtual = valor;
+      },
+      invalidacoes: () => invalidacoes,
+    };
+  }
+
+  it("token A pendente, troca para B, 401 de A chega: B continua", async () => {
+    const t = controlado();
+    const espera = t.cliente.get("/dashboard");
+    t.definirToken("B");
+    t.pendentes[0]?.(t.naoAutorizado());
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDaApi && e.status === 401);
+    assert.equal(t.invalidacoes(), 0);
+  });
+
+  it("logout com requisição pendente e depois novo login: 401 antigo não invalida", async () => {
+    const t = controlado();
+    const espera = t.cliente.get("/dashboard");
+    t.definirToken(null);
+    t.definirToken("B");
+    t.pendentes[0]?.(t.naoAutorizado());
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDaApi);
+    assert.equal(t.invalidacoes(), 0);
+  });
+
+  it("logout sem novo login: 401 antigo também não chama a invalidação", async () => {
+    const t = controlado();
+    const espera = t.cliente.get("/dashboard");
+    t.definirToken(null);
+    t.pendentes[0]?.(t.naoAutorizado());
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDaApi);
+    assert.equal(t.invalidacoes(), 0);
+  });
+
+  it("401 com o mesmo token ainda vigente invalida uma única vez", async () => {
+    const t = controlado();
+    const espera = t.cliente.get("/dashboard");
+    t.pendentes[0]?.(t.naoAutorizado());
+    await assert.rejects(espera, (e: unknown) => e instanceof ErroDaApi);
+    assert.equal(t.invalidacoes(), 1);
+  });
+});
