@@ -22,6 +22,8 @@ export function Layout() {
   const menu = useRef<HTMLElement>(null);
   const conteudo = useRef<HTMLElement>(null);
   const primeiraNavegacao = useRef(true);
+  const focarConteudo = useRef(false);
+  const gavetaAberta = movel && aberto;
   const movelAtual = useRef(movel);
   movelAtual.current = movel;
 
@@ -35,10 +37,14 @@ export function Layout() {
       return;
     }
     if (movelAtual.current) setAberto(false);
-    conteudo.current?.focus();
+    focarConteudo.current = true;
   }, [local.pathname]);
 
-  const gavetaAberta = movel && aberto;
+  useEffect(() => {
+    if (!focarConteudo.current || gavetaAberta) return;
+    focarConteudo.current = false;
+    conteudo.current?.focus();
+  });
 
   const fecharGaveta = useCallback(() => {
     setAberto(false);
