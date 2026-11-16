@@ -100,3 +100,45 @@ export type Movimentacao = {
   observacao: string | null;
   status_movimentacao: string;
 };
+
+export type Indicadores = {
+  produtos: number;
+  lotes: number;
+  vencidos: number;
+  bloqueados: number;
+  movimentacoes: number;
+  divergencias: number;
+};
+
+export type PontoDoGrafico = {
+  dia: string;
+  tipo: TipoMovimentacao;
+  total: number;
+};
+
+export type AlertaDeEstoqueMinimo = {
+  id_produto: number;
+  nome: string;
+  unidade_medida: string;
+  estoque_minimo: string;
+  saldo_ativo: string;
+};
+
+export type Dashboard = {
+  indicadores: Indicadores;
+  grafico: PontoDoGrafico[];
+  alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };
+};
+
+export type AlertaDeVencimento = {
+  id_lote: number;
+  numero_lote: string;
+  data_validade: string;
+  dias_restantes: number;
+  quantidade: string;
+  produto: string;
+  unidade_medida: string;
+  corredor: string;
+  nivel: string;
+  posicao: string;
+};
