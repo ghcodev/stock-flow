@@ -1,6 +1,6 @@
 import { prisma } from "../db.ts";
 import { HttpError } from "../errors.ts";
-import type { Prisma } from "../generated/prisma/client.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 import { executarComoUsuario, type ContextoDeEscrita } from "../transacao.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 import { literalParaLike } from "../busca.ts";
@@ -39,27 +39,49 @@ export async function obterLocalizacao(id: number): Promise<LocalizacaoPublica> 
   return localizacao;
 }
 
+export function rotuloCombinadoDeBusca(busca: string): string {
+  return busca.trim().replace(/[\s/]+/g, "-").replace(/-{2,}/g, "-");
+}
+
+async function listarPorBusca(busca: string, skip: number, take: number): Promise<{ ids: number[]; total: number }> {
+  const termo = `%${literalParaLike(busca)}%`;
+  const combinado = rotuloCombinadoDeBusca(busca);
+  const combinadoLike = `%${literalParaLike(combinado)}%`;
+  const prefixoLike = `${literalParaLike(combinado)}%`;
+  const rotulo = Prisma.sql`(l.corredor || '-' || l.nivel || '-' || l.posicao)`;
+  const condicao = Prisma.sql`(
+    l.corredor ILIKE ${termo} OR l.nivel ILIKE ${termo} OR l.posicao ILIKE ${termo} OR l.descricao ILIKE ${termo}
+    OR ${rotulo} ILIKE ${combinadoLike})`;
+  const [linhas, contagem] = await Promise.all([
+    prisma.$queryRaw<{ id_localizacao: number }[]>(Prisma.sql`
+      SELECT l.id_localizacao FROM localizacao l
+      WHERE ${condicao}
+      ORDER BY (lower(${rotulo}) = lower(${combinado})) DESC,
+               (${rotulo} ILIKE ${prefixoLike}) DESC,
+               l.corredor, l.nivel, l.posicao, l.id_localizacao
+      LIMIT ${take} OFFSET ${skip}`),
+    prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`SELECT count(*) AS total FROM localizacao l WHERE ${condicao}`),
+  ]);
+  return { ids: linhas.map((linha) => linha.id_localizacao), total: Number(contagem[0]?.total ?? 0n) };
+}
+
 export async function listarLocalizacoes(filtro: FiltroLocalizacoes): Promise<Pagina<LocalizacaoPublica>> {
   const { pagina, limite, skip, take } = intervaloDe(filtro);
-  const where: Prisma.localizacaoWhereInput = filtro.busca
-    ? {
-        OR: [
-          { corredor: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
-          { nivel: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
-          { posicao: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
-          { descricao: { contains: literalParaLike(filtro.busca), mode: "insensitive" } },
-        ],
-      }
-    : {};
+  if (filtro.busca) {
+    const { ids, total } = await listarPorBusca(filtro.busca, skip, take);
+    const lidas = await prisma.localizacao.findMany({ where: { id_localizacao: { in: ids } }, select: SELECAO });
+    const porId = new Map(lidas.map((l) => [l.id_localizacao, l]));
+    const dados = ids.flatMap((id) => porId.get(id) ?? []);
+    return { dados, pagina, limite, total };
+  }
   const [dados, total] = await Promise.all([
     prisma.localizacao.findMany({
-      where,
       select: SELECAO,
       orderBy: [{ corredor: "asc" }, { nivel: "asc" }, { posicao: "asc" }],
       skip,
       take,
     }),
-    prisma.localizacao.count({ where }),
+    prisma.localizacao.count(),
   ]);
   return { dados, pagina, limite, total };
 }

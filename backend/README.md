@@ -51,6 +51,10 @@ Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os t
 
 Atenção: a suíte escreve no banco. Cada execução completa persiste usuários de teste (e-mail único, `@teste.local`, deixados inativos), produtos (deixados inativos), localizações, lotes, etiquetas, movimentações de entrada dos saldos iniciais e as linhas de `auditoria_log` geradas pelos triggers. Nada é apagado, porque a role da aplicação não tem DELETE, então esses dados se acumulam a cada execução. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
 
+## Listagem de localizações
+
+`GET /localizacoes?busca=<texto>` (operador e administrador, paginado) casa o texto, sem diferenciar caixa, com corredor, nível, posição ou descrição (contém) **e também com o rótulo combinado** `corredor-nível-posição`: `A-1-01`, `a 1 01`, `A/1/01` e trechos como `1-01` encontram a posição A-1-01. Espaços e barras viram hífen antes de comparar. O filtro roda no banco antes do limite, com parâmetros ligados e `%`, `_` e `\` tratados como texto literal. Ordem do resultado com busca: rótulo igual ao digitado, depois rótulo que começa com o digitado, depois corredor, nível e posição. Sem busca a ordem continua sendo corredor, nível e posição. NUL e parâmetro repetido respondem 400.
+
 ## Listagem de lotes
 
 `GET /lotes` (operador e administrador, paginado) aceita os filtros `id_produto`, `id_localizacao`, `status`, `numero_lote` (contém, sem diferenciar caixa) e `codigo_etiqueta` (casamento exato e com diferenciação de caixa, o que o leitor lê; espaços nas pontas são removidos como no cadastro; de 1 a 128 caracteres, sem NUL e uma única ocorrência, senão 400). Os filtros se combinam. Código sem lote devolve 200 com `dados: []` e `total: 0`. Cada lote traz `identificacao` (`id_identificacao`, `tipo_identificacao` e `codigo`, ou `null`). A busca usa o índice único `identificacao_codigo_key` (confirmado com EXPLAIN).
