@@ -36,7 +36,7 @@ export function codigoDeEtiquetaValido(codigo: string): boolean {
 }
 
 const MENSAGEM_DE_RESULTADO_DESCONHECIDO =
-  "Não houve confirmação do servidor e o resultado é desconhecido. Os dados da tela foram recarregados: confira antes de repetir.";
+  "Não houve confirmação do servidor e o resultado é desconhecido. Os dados da tela estão sendo atualizados: confira antes de repetir.";
 
 export function interpretarFalhaDeFormulario(erro: unknown): FalhaDeFormulario {
   if (erro instanceof ErroDaApi) {

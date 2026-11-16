@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ErroDaApi } from "../src/api/erros.ts";
+import { interpretarFalhaDeMovimentacao } from "../src/util/movimentacao.ts";
 import {
   VALORES_DE_USUARIO_VAZIOS,
   corpoDeCriacao,
@@ -95,5 +96,13 @@ describe("formulário de usuário", () => {
     assert.equal(ultimo.geral, "O sistema não pode ficar sem administrador ativo");
     const auto = interpretarFalhaDeUsuario(new ErroDaApi(409, "AUTO_INATIVACAO", "O administrador não pode inativar a si mesmo"));
     assert.equal(auto.geral, "O administrador não pode inativar a si mesmo");
+  });
+});
+
+describe("W5: mensagem neutra no 503", () => {
+  it("não afirma que o saldo já foi recarregado, mas pede para recarregar o lote", () => {
+    const falha = interpretarFalhaDeMovimentacao(new ErroDaApi(503, "SERVICO_OCUPADO", "x"));
+    assert.equal(falha.atualizarLote, true);
+    assert.doesNotMatch(falha.geral ?? "", /recarregad/);
   });
 });

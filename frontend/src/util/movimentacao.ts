@@ -101,7 +101,7 @@ export function interpretarFalhaDeMovimentacao(erro: unknown): FalhaDeMovimentac
   }
   if (erro.status === 409 || erro.status === 422) return { ...base, atualizarLote: true, geral: erro.message };
   if (erro.status === 404) return { ...base, atualizarLote: true, geral: "Lote não encontrado." };
-  if (erro.status === 503) return { ...base, atualizarLote: true, geral: "O servidor está ocupado. Tente novamente em instantes; o saldo e o status do lote foram recarregados." };
+  if (erro.status === 503) return { ...base, atualizarLote: true, geral: "O servidor está ocupado. Tente novamente em instantes." };
   if (erro.status >= 500) {
     return { ...base, incerta: true, geral: "O servidor não conseguiu concluir. Confira o histórico de movimentações antes de repetir." };
   }
