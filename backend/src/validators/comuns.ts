@@ -33,7 +33,13 @@ export function intervaloDe(entrada: Paginacao): { pagina: number; limite: numbe
   return { pagina, limite, skip: (pagina - 1) * limite, take: limite };
 }
 
-export function texto(campo: string, rotulo: string, max: number, obrigatorio: boolean): ValidationChain {
+export function texto(
+  campo: string,
+  rotulo: string,
+  max: number,
+  obrigatorio: boolean,
+  minimo = obrigatorio ? 1 : 0,
+): ValidationChain {
   const base = body(campo);
   const cadeia = obrigatorio ? base : base.optional({ values: "null" });
   return cadeia
@@ -44,9 +50,13 @@ export function texto(campo: string, rotulo: string, max: number, obrigatorio: b
     .withMessage(`${rotulo} contém caractere inválido`)
     .bail()
     .trim()
-    .isLength({ min: obrigatorio ? 1 : 0, max })
+    .isLength({ min: minimo, max })
     .withMessage(
-      obrigatorio ? `${rotulo} é obrigatório e deve ter até ${max} caracteres` : `${rotulo} deve ter até ${max} caracteres`,
+      minimo > 1
+        ? `${rotulo} deve ter entre ${minimo} e ${max} caracteres`
+        : obrigatorio
+          ? `${rotulo} é obrigatório e deve ter até ${max} caracteres`
+          : `${rotulo} deve ter até ${max} caracteres`,
     );
 }
 

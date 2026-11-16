@@ -63,8 +63,10 @@ export async function montarCenario(servidor: Servidor, rotulo: string): Promise
   const movimentos = (idLote: number) =>
     prisma.movimentacao.findMany({ where: { id_lote: idLote }, orderBy: { id_movimentacao: "asc" } });
   const verificarInvariante = async (idLote: number): Promise<void> => {
-    const lista = await movimentos(idLote);
-    assert.ok(lista.length > 0, "lote sem movimentações");
+    const lista = (await movimentos(idLote)).filter(
+      (m) => m.tipo_movimentacao !== "inventario" && m.status_movimentacao === "concluida",
+    );
+    assert.ok(lista.length > 0, "lote sem movimentações que alteram saldo");
     assert.equal(lista.at(-1)?.saldo_posterior.toString(), await saldoDo(idLote), "saldo do lote difere da última movimentação");
     for (let i = 1; i < lista.length; i++) {
       assert.equal(lista[i]?.saldo_anterior.toString(), lista[i - 1]?.saldo_posterior.toString(), `buraco na posição ${i}`);

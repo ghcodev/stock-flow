@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { contagem, contagens, contar } from "../controllers/inventario.controller.ts";
+import { exigirOperacional } from "../middlewares/perfil.middleware.ts";
+import { validar } from "../middlewares/validation.middleware.ts";
+import { validarContagem, validarListarContagens } from "../validators/inventario.validator.ts";
+import { validarIdMovimentacao } from "../validators/movimentacao.validator.ts";
+
+export function criarRotasInventario(): Router {
+  const router = Router();
+  router.use(exigirOperacional);
+  router.get("/contagens", validarListarContagens, validar, contagens);
+  router.post("/contagens", validarContagem, validar, contar);
+  router.get("/contagens/:id", validarIdMovimentacao, validar, contagem);
+  return router;
+}
