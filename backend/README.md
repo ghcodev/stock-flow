@@ -110,6 +110,8 @@ Paginação da linha do tempo (decisão de projeto): é paginada de verdade, sem
 
 Indicadores (decisões de projeto; a especificação lista os seis nomes sem definir a conta): `produtos` = produtos ativos; `lotes` = lotes com status ativo e quantidade > 0; `vencidos` = lotes com status vencido; `bloqueados` = lotes com status bloqueado; `movimentacoes` = movimentações com status concluída gravadas no dia corrente do banco (todos os tipos, inclusive contagem de inventário concluída); `divergencias` = contagens de inventário pendentes cuja quantidade contada difere do saldo registrado na contagem. Os valores são contagens inteiras (números JSON).
 
+`data_referencia`: o `current_date` do banco em `AAAA-MM-DD`. É o último dia da janela do gráfico; o cliente monta os 30 dias só a partir dele (a API devolve apenas dias com movimento, e o relógio ou o fuso do navegador não decidem a janela). É lido numa consulta própria, então em uma virada de dia exatamente entre as consultas o gráfico pode ter um dia a menos de diferença até a próxima atualização.
+
 `grafico`: movimentações concluídas por dia e por tipo nos últimos 30 dias (hoje e os 29 anteriores), em uma consulta agregada: `[{ "dia": "AAAA-MM-DD", "tipo": "...", "total": n }]`.
 
 `alertas_estoque_minimo` (RN09): produto ativo cuja soma da quantidade dos lotes com status ativo é menor que o estoque mínimo (sem lote ativo a soma é 0), do maior déficit para o menor, até 100 itens, com `total` de produtos em alerta. Lotes bloqueados e vencidos não entram na soma.

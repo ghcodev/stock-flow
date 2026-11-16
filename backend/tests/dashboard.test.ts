@@ -8,6 +8,7 @@ import { desativarUsuariosTeste, subir, type Servidor } from "./helpers.ts";
 import { montarCenario, type Cenario } from "./movimentacao.apoio.ts";
 
 type Resposta = {
+  data_referencia: string;
   indicadores: Record<string, number>;
   grafico: { dia: string; tipo: string; total: number }[];
   alertas_estoque_minimo: { total: number; itens: { id_produto: number; nome: string; estoque_minimo: string; saldo_ativo: string }[] };
@@ -134,6 +135,10 @@ describe("dashboard (A20, RF11, RN09)", () => {
       assert.deepEqual(Object.keys(corpo.indicadores).sort(), ["bloqueados", "divergencias", "lotes", "movimentacoes", "produtos", "vencidos"]);
       for (const valor of Object.values(corpo.indicadores)) assert.ok(Number.isInteger(valor) && valor >= 0);
       assert.ok(Array.isArray(corpo.grafico));
+      assert.match(corpo.data_referencia, /^\d{4}-\d{2}-\d{2}$/);
+      const [banco] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
+      assert.equal(corpo.data_referencia, banco?.dia);
+      for (const ponto of corpo.grafico) assert.ok(ponto.dia <= corpo.data_referencia);
       assert.ok(corpo.alertas_estoque_minimo.itens.length <= 100);
       assert.ok(Number.isInteger(corpo.alertas_estoque_minimo.total) && corpo.alertas_estoque_minimo.total >= corpo.alertas_estoque_minimo.itens.length);
       for (const item of corpo.alertas_estoque_minimo.itens) {

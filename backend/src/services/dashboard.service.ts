@@ -23,6 +23,7 @@ export type AlertaDeEstoqueMinimo = {
 };
 
 export type Dashboard = {
+  data_referencia: string;
   indicadores: Indicadores;
   grafico: PontoDoGrafico[];
   alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };
@@ -68,6 +69,11 @@ export function movimentacoesPorDiaETipo(escopo?: Escopo): Promise<PontoDoGrafic
     GROUP BY 1, 2 ORDER BY 1, 2`;
 }
 
+export async function diaDeReferencia(): Promise<string> {
+  const [linha] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
+  return linha?.dia ?? "";
+}
+
 export async function alertasDeEstoqueMinimo(escopo?: Escopo): Promise<Dashboard["alertas_estoque_minimo"]> {
   const linhas = await prisma.$queryRaw<(AlertaDeEstoqueMinimo & { total: number })[]>`
     SELECT p.id_produto, p.nome, p.unidade_medida, p.estoque_minimo,
@@ -86,10 +92,11 @@ export async function alertasDeEstoqueMinimo(escopo?: Escopo): Promise<Dashboard
 }
 
 export async function montarDashboard(): Promise<Dashboard> {
-  const [indicadores, grafico, alertas] = await Promise.all([
+  const [dataReferencia, indicadores, grafico, alertas] = await Promise.all([
+    diaDeReferencia(),
     calcularIndicadores(),
     movimentacoesPorDiaETipo(),
     alertasDeEstoqueMinimo(),
   ]);
-  return { indicadores, grafico, alertas_estoque_minimo: alertas };
+  return { data_referencia: dataReferencia, indicadores, grafico, alertas_estoque_minimo: alertas };
 }
