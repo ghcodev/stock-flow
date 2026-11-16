@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLotes, obterLote } from "../api/lotes.ts";
 import { buscarLocalizacoesParaSeletor, buscarProdutosParaSeletor } from "../api/buscas.ts";
 import type { Lote, StatusLote } from "../api/tipos.ts";
@@ -20,6 +21,7 @@ import { normalizarCodigoLido } from "../leitor/captura.ts";
 import type { Leitura } from "../leitor/detector.ts";
 import { IndicadorDeLeitura } from "../leitor/IndicadorDeLeitura.tsx";
 import { useLeitor } from "../leitor/useLeitor.ts";
+import { localizacaoDaUrl } from "../util/filtroDeUrl.ts";
 import { criarVigencia } from "../util/vigencia.ts";
 import { compararDias, diaDeHoje, formatarDia } from "../util/datas.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
@@ -43,7 +45,9 @@ export function Lotes() {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState<FiltroDeStatus>("todos");
   const [idProduto, setIdProduto] = useState("");
-  const [idLocalizacao, setIdLocalizacao] = useState("");
+  const [parametrosDaUrl] = useSearchParams();
+  const localizacaoInicial = useMemo(() => localizacaoDaUrl(parametrosDaUrl.toString()), [parametrosDaUrl]);
+  const [idLocalizacao, setIdLocalizacao] = useState(localizacaoInicial?.id ?? "");
   const [pagina, setPagina] = useState(1);
   const [painel, setPainelBruto] = useState<Painel>(null);
   const vigencia = useRef(criarVigencia());
@@ -336,6 +340,7 @@ export function Lotes() {
             rotulo="Filtrar por localização"
             placeholder="Todas as localizações"
             valor={idLocalizacao}
+            rotuloInicial={localizacaoInicial?.rotulo ?? ""}
             aoMudar={(valor) => {
               setIdLocalizacao(valor);
               setPagina(1);

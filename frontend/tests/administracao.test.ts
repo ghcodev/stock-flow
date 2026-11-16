@@ -202,3 +202,43 @@ describe("ajuste de estoque (F8c)", () => {
     assert.equal(avisoDoAjuste({ status_lote: "ativo" }), null);
   });
 });
+
+describe("filtro de localização vindo da URL (F9a)", () => {
+  it("aceita id válido e rótulo seguro; rejeita o resto sem quebrar", async () => {
+    const { localizacaoDaUrl, ligacaoParaLotesDaLocalizacao } = await import("../src/util/filtroDeUrl.ts");
+    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12&rotulo=A-1-02"), { id: "12", rotulo: "A-1-02" });
+    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12&rotulo=%3Cimg%20src%3Dx%3E"), { id: "12", rotulo: "Localização 12" });
+    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12"), { id: "12", rotulo: "Localização 12" });
+    for (const ruim of ["", "?id_localizacao=0", "?id_localizacao=abc", "?id_localizacao=1%2F..", "?id_localizacao=99999999999", "?rotulo=A"]) assert.equal(localizacaoDaUrl(ruim), null, ruim);
+    assert.equal(ligacaoParaLotesDaLocalizacao(5, "A-1-02"), "/lotes?id_localizacao=5&rotulo=A-1-02");
+  });
+});
+
+describe("mapa do armazém (F9a)", () => {
+  const posicao = (corredor: string, nivel: string, p: string, total = 0, lotes = 0) =>
+    ({ id_localizacao: 1, corredor, nivel, posicao: p, capacidade: null, descricao: null, total_lotes: total, lotes: Array.from({ length: lotes }, () => ({})) }) as unknown as import("../src/api/mapa.ts").PosicaoDoMapa;
+
+  it("agrupa por corredor e nível mantendo a ordem do servidor", async () => {
+    const { agruparPorCorredorENivel } = await import("../src/util/mapa.ts");
+    const grupos = agruparPorCorredorENivel([posicao("A", "1", "01"), posicao("A", "1", "02"), posicao("A", "2", "01"), posicao("B", "1", "01")]);
+    assert.deepEqual(grupos.map((g) => [g.corredor, g.niveis.map((n) => [n.nivel, n.posicoes.length])]), [["A", [["1", 2], ["2", 1]]], ["B", [["1", 1]]]]);
+  });
+
+  it("'ver todos' só quando o total passa do que foi listado (50)", async () => {
+    const { haMaisLotesQueOsListados, MAXIMO_DE_LOTES_POR_POSICAO } = await import("../src/util/mapa.ts");
+    assert.equal(MAXIMO_DE_LOTES_POR_POSICAO, 50);
+    assert.equal(haMaisLotesQueOsListados(posicao("A", "1", "01", 50, 50)), false);
+    assert.equal(haMaisLotesQueOsListados(posicao("A", "1", "01", 51, 50)), true);
+  });
+
+  it("corredor: vazio vale, até 10 caracteres, sem NUL; capacidade só como texto quando existe", async () => {
+    const { validarCorredor, textoDaCapacidade } = await import("../src/util/mapa.ts");
+    assert.equal(validarCorredor(""), null);
+    assert.equal(validarCorredor(" A "), null);
+    assert.notEqual(validarCorredor("12345678901"), null);
+    assert.notEqual(validarCorredor("A\u0000"), null);
+    assert.equal(textoDaCapacidade(null), null);
+    assert.equal(textoDaCapacidade("  "), null);
+    assert.equal(textoDaCapacidade("120 caixas"), "120 caixas");
+  });
+});
