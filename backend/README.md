@@ -83,3 +83,13 @@ Decisões de projeto (a especificação não detalha):
 `GET /rastreabilidade?numero_lote=<número exato>` ou `?id_lote=<id>` (exatamente um dos dois), para operador e administrador. Devolve o lote (produto, localização atual e etiqueta) e `linha_do_tempo` com todas as movimentações em ordem cronológica (data e, no empate, id), cada uma com data, usuário, tipo, quantidade, saldos anterior e posterior, origem, destino e `status_movimentacao`.
 
 Decisões de projeto: lote existente sem movimentações responde 200 com a linha do tempo vazia; lote inexistente responde 404; contagens de inventário entram na linha do tempo com o status explícito (`pendente`, `concluida` ou `cancelada`); como contagens não alteram saldo, a cadeia de saldos é formada só pelas movimentações concluídas que não são de inventário (os saldos de uma contagem são o instantâneo do momento da contagem). As leituras são feitas fora de transação, sem instantâneo único, e a linha do tempo não é paginada.
+
+## Dashboard (RF11, RN09)
+
+`GET /dashboard`, para operador e administrador, com agregação no banco. A data de referência é sempre o `current_date` do banco (a mesma fonte dos alertas e do agendador), nunca o relógio ou o fuso do Node.
+
+Indicadores (decisões de projeto; a especificação lista os seis nomes sem definir a conta): `produtos` = produtos ativos; `lotes` = lotes com status ativo e quantidade > 0; `vencidos` = lotes com status vencido; `bloqueados` = lotes com status bloqueado; `movimentacoes` = movimentações com status concluída gravadas no dia corrente do banco (todos os tipos, inclusive contagem de inventário concluída); `divergencias` = contagens de inventário pendentes cuja quantidade contada difere do saldo registrado na contagem. Os valores são contagens inteiras (números JSON).
+
+`grafico`: movimentações concluídas por dia e por tipo nos últimos 30 dias (hoje e os 29 anteriores), em uma consulta agregada: `[{ "dia": "AAAA-MM-DD", "tipo": "...", "total": n }]`.
+
+`alertas_estoque_minimo` (RN09): produto ativo cuja soma da quantidade dos lotes com status ativo é menor que o estoque mínimo (sem lote ativo a soma é 0), do maior déficit para o menor, até 100 itens, com `total` de produtos em alerta. Lotes bloqueados e vencidos não entram na soma.
