@@ -1,3 +1,4 @@
+import { formatarInteiro } from "../util/decimal.ts";
 import { janelaDePaginas, limitesDaPagina, ultimaPagina } from "../util/paginacao.ts";
 import { Icone } from "./Icone.tsx";
 
@@ -15,7 +16,7 @@ export function Paginacao({ pagina, limite, total, carregando, aoMudar }: Propri
   return (
     <nav className="paginacao" aria-label="Paginação">
       <span aria-live="polite">
-        Exibindo <strong>{primeiroItem}</strong>–<strong>{ultimoItem}</strong> de <strong>{total}</strong>
+        Exibindo <strong>{formatarInteiro(primeiroItem)}</strong>–<strong>{formatarInteiro(ultimoItem)}</strong> de <strong>{formatarInteiro(total)}</strong>
       </span>
       <div className="paginacao-controles">
         <button type="button" className="paginacao-botao" onClick={() => aoMudar(pagina - 1)} disabled={pagina <= 1 || carregando} aria-label="Página anterior">

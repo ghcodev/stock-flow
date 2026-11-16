@@ -358,6 +358,7 @@
 }
 
 .tabela td.mono {
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -972,4 +973,38 @@
   .paginacao {
     padding: var(--space-3) var(--space-4);
   }
+}
+
+.celula-validade {
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.celula-validade--alerta {
+  color: var(--color-warning-700);
+}
+
+.celula-validade--perigo {
+  color: var(--color-danger-700);
+}
+
+.codigo {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.etiqueta-codigo {
+  display: inline-block;
+  max-width: 180px;
+  padding: 2px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
 }

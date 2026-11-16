@@ -225,3 +225,19 @@ describe("janela e limites da paginação", () => {
     assert.deepEqual(limitesDaPagina(1, 20, 135), { primeiro: 1, ultimo: 20 });
   });
 });
+
+describe("apresentação de lotes", () => {
+  it("rotula a localização e descreve a validade a partir de uma data de referência", async () => {
+    const { rotuloDaLocalizacao, situacaoDeValidade } = await import("../src/paginas/lotes/apresentacao.ts");
+    assert.equal(rotuloDaLocalizacao({ corredor: "A", nivel: "2", posicao: "07" }), "A-2-07");
+    const base = { status_lote: "ativo" as const };
+    assert.equal(situacaoDeValidade({ ...base, data_validade: null }, "2026-05-27"), null);
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-27" }, "2026-05-27"), { texto: "vence hoje", tom: "alerta" });
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-28" }, "2026-05-27"), { texto: "vence em 1 dia", tom: "alerta" });
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-06-26" }, "2026-05-27"), { texto: "vence em 30 dias", tom: "alerta" });
+    assert.equal(situacaoDeValidade({ ...base, data_validade: "2026-06-27" }, "2026-05-27"), null);
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-26" }, "2026-05-27"), { texto: "venceu há 1 dia", tom: "perigo" });
+    assert.deepEqual(situacaoDeValidade({ status_lote: "vencido", data_validade: "2026-05-20" }, "2026-05-27"), { texto: "venceu há 7 dias", tom: "perigo" });
+    assert.equal(situacaoDeValidade({ status_lote: "bloqueado", data_validade: "2026-05-28" }, "2026-05-27"), null);
+  });
+});
