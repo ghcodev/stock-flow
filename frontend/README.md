@@ -24,7 +24,7 @@ O Vite sobe em `http://localhost:5173`. O cliente chama sempre `/api/...`; o pro
 
 ## Regras do projeto
 
-- Nenhuma cor literal fora de `src/estilos/tokens.css` (exceção: `public/favicon.svg`, que não enxerga variáveis CSS).
+- Nenhuma cor literal fora de `src/estilos/tokens.css` (única exceção: `public/favicon.svg`, porque o favicon não enxerga variáveis CSS; é uma exceção aprovada pelo Orquestrador, não uma regra geral).
 - Token JWT só em `sessionStorage`; nunca em log.
 - Toda tela é protegida por padrão; o menu e as rotas seguem os perfis, mas o backend é a autoridade.
 - Sem `dangerouslySetInnerHTML` com dado da API, sem `any`, sem `console.log`.
