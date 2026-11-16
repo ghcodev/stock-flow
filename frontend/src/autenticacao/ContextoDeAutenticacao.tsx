@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { consultarUsuarioAtual, entrar as entrarNaApi } from "../api/autenticacao.ts";
 import { criarCliente, type Cliente } from "../api/cliente.ts";
+import { capturaGlobal } from "../leitor/captura.ts";
+import { gerenciadorSerial } from "../leitor/gerenciador.ts";
 import { MENSAGEM_DE_SESSAO_EXPIRADA, expiracaoDoToken, lerSessaoSalva, limparSessao, salvarSessao, tokenVigente, type Armazenamento, type Sessao } from "../sessao/sessao.ts";
 
 type Valor = {
@@ -40,7 +42,11 @@ export function ProvedorDeAutenticacao({ children, armazenamento }: { children: 
     (nova: Sessao | null) => {
       sessaoAtual.current = nova;
       if (nova) salvarSessao(memoria, nova);
-      else limparSessao(memoria);
+      else {
+        limparSessao(memoria);
+        gerenciadorSerial().desconectar();
+        capturaGlobal().reiniciar();
+      }
       setSessao(nova);
     },
     [memoria],
