@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import "../../estilos/movimentacao.css";
 import { buscarLocalizacoesParaSeletor } from "../../api/buscas.ts";
-import { obterLote } from "../../api/lotes.ts";
 import { corpoDeSaldo, corpoDeTransferencia, registrarEntrada, registrarSaida, registrarTransferencia } from "../../api/movimentacoes.ts";
 import type { Lote, Movimentacao } from "../../api/tipos.ts";
 import { useAutenticacao } from "../../autenticacao/ContextoDeAutenticacao.tsx";
@@ -11,10 +10,10 @@ import { CabecalhoDePagina } from "../../componentes/CabecalhoDePagina.tsx";
 import { AvisoDoFormulario, CampoDeAreaDeTexto, CampoDeTexto, focarPrimeiroInvalido } from "../../componentes/Campo.tsx";
 import { Icone } from "../../componentes/Icone.tsx";
 import { SeletorComBusca } from "../../componentes/SeletorComBusca.tsx";
+import { useLeituraDoLote } from "../../hooks/useLeituraDoLote.ts";
 import { formatarDataHora } from "../../util/datas.ts";
 import { formatarQuantidade } from "../../util/decimal.ts";
 import { criarEnvioUnico } from "../../util/envio.ts";
-import { criarVigencia } from "../../util/vigencia.ts";
 import type { ErrosDeCampos } from "../../util/formularios.ts";
 import {
   avaliarQuantidade,
@@ -66,7 +65,8 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
   const { cliente } = useAutenticacao();
   const { mostrar } = useAvisos();
   const configuracao = CONFIGURACAO[modo];
-  const [lote, setLote] = useState<Lote | null>(null);
+  const leitura = useLeituraDoLote();
+  const lote = leitura.lote;
   const [quantidade, setQuantidade] = useState("");
   const [motivo, setMotivo] = useState("");
   const [observacao, setObservacao] = useState("");
@@ -78,12 +78,6 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [chaveDoDestino, setChaveDoDestino] = useState(0);
   const envio = useRef(criarEnvioUnico());
-  const vigencia = useRef(criarVigencia());
-
-  useEffect(() => {
-    const atual = vigencia.current;
-    return () => atual.invalidar();
-  }, []);
 
   const avaliacao = useMemo(
     () => (lote !== null && modo !== "transferencia" ? avaliarQuantidade(quantidade, lote, modo) : { erro: null, saldoApos: null }),
@@ -105,19 +99,8 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
   };
 
   const escolher = (novo: Lote) => {
-    vigencia.current.invalidar();
-    setLote(novo);
+    leitura.escolher(novo);
     limparFormulario();
-  };
-
-  const recarregarLote = async (id: number) => {
-    const pedido = vigencia.current.iniciar();
-    try {
-      const atualizado = await obterLote(cliente, id, pedido.sinal);
-      if (pedido.vigente()) setLote(atualizado);
-    } catch {
-      return;
-    }
   };
 
   const alterar = (campo: string, aplicar: (valor: string) => void) => (valor: string) => {
@@ -146,7 +129,7 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
   const enviar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     const formulario = evento.currentTarget;
-    if (lote === null || envio.current.ocupado()) return;
+    if (lote === null || !leitura.podeEscrever || envio.current.ocupado()) return;
     if (bloqueio !== null) {
       setGeral(bloqueio);
       return;
@@ -170,8 +153,7 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
       (movimentacao) => {
         setResultado({ movimentacao, numeroDoLote: atual.numero_lote, unidade: atual.produto.unidade_medida, destino: modo === "transferencia" ? rotuloDoDestino : null });
         mostrar("sucesso", configuracao.sucesso, `${atual.numero_lote} · saldo ${formatarQuantidade(movimentacao.saldo_posterior)} ${atual.produto.unidade_medida}`);
-        vigencia.current.invalidar();
-        setLote(null);
+        leitura.limpar();
         limparFormulario();
         setEnviando(false);
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -181,14 +163,14 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
         setErros(traduzirCampos(falha.campos));
         setGeral(falha.geral);
         setEnviando(false);
-        if (falha.atualizarLote) void recarregarLote(atual.id_lote);
+        if (falha.atualizarLote) leitura.reler(atual.id_lote);
         focarPrimeiroInvalido(formulario);
       },
     );
   };
 
   const semLote = lote === null;
-  const desabilitado = semLote || enviando;
+  const desabilitado = semLote || enviando || !leitura.podeEscrever;
 
   return (
     <>
@@ -206,8 +188,7 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
               aviso={aviso}
               desabilitado={enviando}
               aoTrocar={() => {
-                vigencia.current.invalidar();
-                setLote(null);
+                leitura.limpar();
                 limparFormulario();
               }}
             />
@@ -220,6 +201,15 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
           </div>
           <div className="cartao-corpo">
             <AvisoDoFormulario mensagem={geral} />
+            {leitura.estado === "falhou" && lote ? (
+              <div className="aviso-do-formulario" role="alert">
+                <span>Não foi possível ler o saldo atual do lote, então o registro está bloqueado.</span>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => leitura.reler(lote.id_lote)}>
+                  Ler de novo
+                </button>
+              </div>
+            ) : null}
+            {leitura.estado === "pendente" ? <p className="campo-ajuda">Lendo o saldo atual do lote…</p> : null}
             <form className="formulario" onSubmit={enviar} noValidate aria-busy={enviando}>
               {modo === "transferencia" ? (
                 <>

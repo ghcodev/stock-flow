@@ -1,16 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { registrarContagem } from "../../api/inventario.ts";
-import { obterLote } from "../../api/lotes.ts";
-import type { Lote } from "../../api/tipos.ts";
 import { useAutenticacao } from "../../autenticacao/ContextoDeAutenticacao.tsx";
 import { AvisoDoFormulario, CampoDeAreaDeTexto, CampoDeTexto, focarPrimeiroInvalido } from "../../componentes/Campo.tsx";
 import { Icone } from "../../componentes/Icone.tsx";
+import { useLeituraDoLote } from "../../hooks/useLeituraDoLote.ts";
 import { formatarQuantidade } from "../../util/decimal.ts";
 import { criarEnvioUnico } from "../../util/envio.ts";
 import { temErrosDeCampos, type ErrosDeCampos } from "../../util/formularios.ts";
 import { corpoDeContagem, divergenciaDaContagem, interpretarFalhaDeContagem, textoDaDivergencia, validarContagem } from "../../util/inventario.ts";
 import { decimalValido, normalizarDecimal } from "../../util/formularios.ts";
-import { criarVigencia } from "../../util/vigencia.ts";
 import { ResumoDoLote } from "../movimentacao/ResumoDoLote.tsx";
 import { SeletorDeLote } from "../movimentacao/SeletorDeLote.tsx";
 
@@ -21,19 +19,14 @@ type Propriedades = {
 
 export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propriedades) {
   const { cliente } = useAutenticacao();
-  const [lote, setLote] = useState<Lote | null>(null);
+  const leitura = useLeituraDoLote();
+  const lote = leitura.lote;
   const [quantidade, setQuantidade] = useState("");
   const [observacao, setObservacao] = useState("");
   const [erros, setErros] = useState<ErrosDeCampos>({});
   const [geral, setGeral] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const envio = useRef(criarEnvioUnico());
-  const vigencia = useRef(criarVigencia());
-
-  useEffect(() => {
-    const atual = vigencia.current;
-    return () => atual.invalidar();
-  }, []);
 
   const previa = useMemo(() => {
     if (lote === null || quantidade.trim() === "" || !decimalValido(quantidade)) return null;
@@ -47,20 +40,10 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
     setGeral(null);
   };
 
-  const recarregarLote = async (id: number) => {
-    const pedido = vigencia.current.iniciar();
-    try {
-      const atualizado = await obterLote(cliente, id, pedido.sinal);
-      if (pedido.vigente()) setLote(atualizado);
-    } catch {
-      return;
-    }
-  };
-
   const enviar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     const formulario = evento.currentTarget;
-    if (lote === null || envio.current.ocupado()) return;
+    if (lote === null || !leitura.podeEscrever || envio.current.ocupado()) return;
     const invalidos = validarContagem(quantidade, observacao);
     setErros(invalidos);
     setGeral(null);
@@ -74,8 +57,7 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
     setEnviando(true);
     execucao.then(
       () => {
-        vigencia.current.invalidar();
-        setLote(null);
+        leitura.limpar();
         limpar();
         setEnviando(false);
         aoRegistrar(atual.numero_lote);
@@ -86,7 +68,7 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
         setErros(resultado.campos);
         setGeral(resultado.geral);
         setEnviando(false);
-        void recarregarLote(atual.id_lote);
+        leitura.reler(atual.id_lote);
         focarPrimeiroInvalido(formulario);
       },
     );
@@ -108,8 +90,7 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
         <SeletorDeLote
           ocupado={enviando}
           aoEscolher={(novo) => {
-            vigencia.current.invalidar();
-            setLote(novo);
+            leitura.escolher(novo);
             limpar();
           }}
         />
@@ -117,12 +98,20 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
           lote={lote}
           desabilitado={enviando}
           aoTrocar={() => {
-            vigencia.current.invalidar();
-            setLote(null);
+            leitura.limpar();
             limpar();
           }}
         />
         <AvisoDoFormulario mensagem={geral} />
+        {leitura.estado === "falhou" && lote ? (
+          <div className="aviso-do-formulario" role="alert">
+            <span>Não foi possível ler o saldo atual do lote, então o registro está bloqueado.</span>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => leitura.reler(lote.id_lote)}>
+              Ler de novo
+            </button>
+          </div>
+        ) : null}
+        {leitura.estado === "pendente" ? <p className="campo-ajuda">Lendo o saldo atual do lote…</p> : null}
         <form className="formulario" onSubmit={enviar} noValidate aria-busy={enviando}>
           <CampoDeTexto
             obrigatorio
@@ -136,7 +125,7 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
                 ? `Saldo registrado ${formatarQuantidade(lote.quantidade)} ${unidade}. Divergência: ${textoDaDivergencia(previa, formatarQuantidade)} ${unidade}.`
                 : "Zero é permitido. Até 3 casas decimais."
             }
-            desabilitado={lote === null || enviando}
+            desabilitado={lote === null || !leitura.podeEscrever || enviando}
           />
           <CampoDeAreaDeTexto
             rotulo="Observação (opcional)"
@@ -148,10 +137,10 @@ export function FormularioDeContagem({ aoRegistrar, aoResultadoIncerto }: Propri
             erro={erros["observacao"]}
             tamanhoMaximo={5000}
             linhas={2}
-            desabilitado={lote === null || enviando}
+            desabilitado={lote === null || !leitura.podeEscrever || enviando}
           />
           <div className="formulario-acoes">
-            <button type="submit" className="btn btn-primary btn-lg" disabled={lote === null || enviando} aria-busy={enviando}>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={lote === null || !leitura.podeEscrever || enviando} aria-busy={enviando}>
               {enviando ? <span className="spinner" aria-hidden="true" /> : <Icone nome="clipboard" />}
               {enviando ? "Registrando…" : "Registrar contagem"}
             </button>

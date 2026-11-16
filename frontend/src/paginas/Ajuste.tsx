@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { obterLote } from "../api/lotes.ts";
+import { useRef, useState, type FormEvent } from "react";
 import { registrarAjuste } from "../api/movimentacoes.ts";
-import type { Lote, Movimentacao } from "../api/tipos.ts";
+import type { Movimentacao } from "../api/tipos.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
 import { useAvisos } from "../componentes/Avisos.tsx";
 import { Badge } from "../componentes/Badge.tsx";
@@ -14,7 +13,7 @@ import { formatarDataHoraUtc } from "../util/datas.ts";
 import { formatarQuantidade } from "../util/decimal.ts";
 import { criarEnvioUnico } from "../util/envio.ts";
 import { normalizarDecimal, temErrosDeCampos, type ErrosDeCampos } from "../util/formularios.ts";
-import { criarVigencia } from "../util/vigencia.ts";
+import { useLeituraDoLote } from "../hooks/useLeituraDoLote.ts";
 import { ResumoDoLote } from "./movimentacao/ResumoDoLote.tsx";
 import { SeletorDeLote } from "./movimentacao/SeletorDeLote.tsx";
 import "../estilos/administracao.css";
@@ -25,7 +24,8 @@ type Resultado = { movimentacao: Movimentacao; numeroDoLote: string; unidade: st
 export function Ajuste() {
   const { cliente } = useAutenticacao();
   const { mostrar } = useAvisos();
-  const [lote, setLote] = useState<Lote | null>(null);
+  const leitura = useLeituraDoLote();
+  const lote = leitura.lote;
   const [novoSaldo, setNovoSaldo] = useState("");
   const [justificativa, setJustificativa] = useState("");
   const [erros, setErros] = useState<ErrosDeCampos>({});
@@ -34,14 +34,7 @@ export function Ajuste() {
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
-  const [recarregando, setRecarregando] = useState(false);
   const envio = useRef(criarEnvioUnico());
-  const vigencia = useRef(criarVigencia());
-
-  useEffect(() => {
-    const atual = vigencia.current;
-    return () => atual.invalidar();
-  }, []);
 
   const limpar = () => {
     setNovoSaldo("");
@@ -52,19 +45,6 @@ export function Ajuste() {
     setErroDaConfirmacao(null);
   };
 
-  const recarregarLote = async (id: number) => {
-    const pedido = vigencia.current.iniciar();
-    setRecarregando(true);
-    try {
-      const atualizado = await obterLote(cliente, id, pedido.sinal);
-      if (pedido.vigente()) setLote(atualizado);
-    } catch {
-      if (pedido.vigente()) setGeral("Não foi possível recarregar o saldo do lote. Escolha o lote de novo antes de ajustar.");
-    } finally {
-      if (pedido.vigente()) setRecarregando(false);
-    }
-  };
-
   const alterar = (campo: string, aplicar: (valor: string) => void) => (valor: string) => {
     aplicar(valor);
     setErros(({ [campo]: _removido, ...resto }) => resto);
@@ -73,7 +53,7 @@ export function Ajuste() {
   const revisar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     const formulario = evento.currentTarget;
-    if (lote === null || envio.current.ocupado() || recarregando) return;
+    if (lote === null || !leitura.podeEscrever || envio.current.ocupado()) return;
     const invalidos = validarAjuste(lote, novoSaldo, justificativa);
     setErros(invalidos);
     setGeral(null);
@@ -86,7 +66,7 @@ export function Ajuste() {
   };
 
   const gravar = () => {
-    if (lote === null || recarregando) return;
+    if (lote === null || !leitura.podeEscrever) return;
     const atual = lote;
     const execucao = envio.current.executar(() => registrarAjuste(cliente, corpoDeAjuste(atual, novoSaldo, justificativa)));
     if (execucao === null) return;
@@ -96,8 +76,7 @@ export function Ajuste() {
       (movimentacao) => {
         setResultado({ movimentacao, numeroDoLote: atual.numero_lote, unidade: atual.produto.unidade_medida });
         mostrar("sucesso", "Ajuste registrado", `${atual.numero_lote} · saldo ${formatarQuantidade(movimentacao.saldo_posterior)} ${atual.produto.unidade_medida}`);
-        vigencia.current.invalidar();
-        setLote(null);
+        leitura.limpar();
         limpar();
         setEnviando(false);
       },
@@ -107,7 +86,7 @@ export function Ajuste() {
         setErros(resultadoDaFalha.campos);
         setGeral(resultadoDaFalha.geral);
         setEnviando(false);
-        if (resultadoDaFalha.atualizarLote) void recarregarLote(atual.id_lote);
+        if (resultadoDaFalha.atualizarLote) leitura.reler(atual.id_lote);
       },
     );
   };
@@ -116,7 +95,7 @@ export function Ajuste() {
   const unidade = lote?.produto.unidade_medida ?? "";
   const tamanho = justificativa.trim().length;
   const semLote = lote === null;
-  const desabilitado = semLote || enviando || recarregando;
+  const desabilitado = semLote || enviando || !leitura.podeEscrever;
 
   return (
     <>
@@ -131,8 +110,7 @@ export function Ajuste() {
             <SeletorDeLote
               ocupado={enviando}
               aoEscolher={(novo) => {
-                vigencia.current.invalidar();
-                setLote(novo);
+                leitura.escolher(novo);
                 limpar();
               }}
             />
@@ -141,8 +119,7 @@ export function Ajuste() {
               aviso={aviso !== null ? { tom: "alerta", texto: aviso } : null}
               desabilitado={enviando}
               aoTrocar={() => {
-                vigencia.current.invalidar();
-                setLote(null);
+                leitura.limpar();
                 limpar();
               }}
             />
@@ -155,6 +132,15 @@ export function Ajuste() {
           </div>
           <div className="cartao-corpo">
             <AvisoDoFormulario mensagem={geral} />
+            {leitura.estado === "falhou" && lote ? (
+              <div className="aviso-do-formulario" role="alert">
+                <span>Não foi possível ler o saldo atual do lote, então o ajuste está bloqueado.</span>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => leitura.reler(lote.id_lote)}>
+                  Ler de novo
+                </button>
+              </div>
+            ) : null}
+            {leitura.estado === "pendente" ? <p className="campo-ajuda">Lendo o saldo atual do lote…</p> : null}
             <form className="formulario" onSubmit={revisar} noValidate aria-busy={enviando}>
               <CampoDeTexto
                 rotulo="Saldo exibido"

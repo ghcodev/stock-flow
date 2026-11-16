@@ -286,3 +286,47 @@ describe("Y1: tela sob demanda recriável", () => {
     assert.equal(chamadas, 0);
   });
 });
+
+describe("Y2: leitura do lote (pendente, falhou, válida)", () => {
+  const lote = (id: number, quantidade = "10") => ({ id_lote: id, quantidade }) as unknown as import("../src/api/tipos.ts").Lote;
+
+  it("só a leitura válida do lote atual libera a escrita", async () => {
+    const { reduzirLeitura, podeEscreverNoLote } = await import("../src/util/leituraDoLote.ts");
+    let l = reduzirLeitura(null, { tipo: "escolher", lote: lote(1) });
+    assert.equal(podeEscreverNoLote(l), true);
+    l = reduzirLeitura(l, { tipo: "reler", id: 1 });
+    assert.equal(podeEscreverNoLote(l), false);
+    l = reduzirLeitura(l, { tipo: "recebida", lote: lote(1, "7") });
+    assert.equal(podeEscreverNoLote(l), true);
+    assert.equal(l?.lote.quantidade, "7");
+  });
+
+  it("falha da releitura mantém a escrita bloqueada até nova leitura bem-sucedida", async () => {
+    const { reduzirLeitura, podeEscreverNoLote } = await import("../src/util/leituraDoLote.ts");
+    let l = reduzirLeitura(null, { tipo: "escolher", lote: lote(1) });
+    l = reduzirLeitura(l, { tipo: "reler", id: 1 });
+    l = reduzirLeitura(l, { tipo: "falhou", id: 1 });
+    assert.equal(l?.estado, "falhou");
+    assert.equal(podeEscreverNoLote(l), false);
+    l = reduzirLeitura(l, { tipo: "reler", id: 1 });
+    l = reduzirLeitura(l, { tipo: "recebida", lote: lote(1) });
+    assert.equal(podeEscreverNoLote(l), true);
+  });
+
+  it("trocar de lote (seletor, leitor ou Trocar) durante a releitura pendente descarta a resposta antiga e libera o novo", async () => {
+    const { reduzirLeitura, podeEscreverNoLote } = await import("../src/util/leituraDoLote.ts");
+    let l = reduzirLeitura(null, { tipo: "escolher", lote: lote(1) });
+    l = reduzirLeitura(l, { tipo: "reler", id: 1 });
+    l = reduzirLeitura(l, { tipo: "escolher", lote: lote(2, "5") });
+    assert.equal(podeEscreverNoLote(l), true);
+    assert.equal(l?.lote.id_lote, 2);
+    l = reduzirLeitura(l, { tipo: "recebida", lote: lote(1, "99") });
+    assert.equal(l?.lote.id_lote, 2);
+    assert.equal(l?.lote.quantidade, "5");
+    l = reduzirLeitura(l, { tipo: "falhou", id: 1 });
+    assert.equal(l?.estado, "valida");
+    l = reduzirLeitura(l, { tipo: "limpar" });
+    assert.equal(l, null);
+    assert.equal(podeEscreverNoLote(reduzirLeitura(l, { tipo: "recebida", lote: lote(2) })), false);
+  });
+});
