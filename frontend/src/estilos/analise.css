@@ -249,3 +249,7 @@
     width: 100%;
   }
 }
+
+.carregar-mais-nota {
+  color: var(--color-text-secondary);
+}

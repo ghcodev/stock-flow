@@ -173,7 +173,7 @@ export function Historico() {
           aoTentarNovamente={lista.recarregar}
           vazio={{ titulo: "Nenhuma movimentação encontrada", descricao: filtrosAtivos ? "Revise ou limpe os filtros." : "Ainda não há movimentações registradas." }}
         />
-        <CarregarMais exibidos={lista.itens.length} total={lista.total} haMais={lista.haMais} carregando={lista.carregando && lista.itens.length > 0} erro={lista.erro} aoCarregarMais={lista.carregarMais} />
+        <CarregarMais exibidos={lista.itens.length} ocultos={lista.ocultos} total={lista.total} haMais={lista.haMais} carregando={lista.carregando && lista.itens.length > 0} erro={lista.erro} aoCarregarMais={lista.carregarMais} />
       </section>
     </>
   );

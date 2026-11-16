@@ -4,13 +4,14 @@ import { Icone } from "./Icone.tsx";
 type Propriedades = {
   exibidos: number;
   total: number | null;
+  ocultos?: number;
   haMais: boolean;
   carregando: boolean;
   erro: string | null;
   aoCarregarMais: () => void;
 };
 
-export function CarregarMais({ exibidos, total, haMais, carregando, erro, aoCarregarMais }: Propriedades) {
+export function CarregarMais({ exibidos, total, ocultos = 0, haMais, carregando, erro, aoCarregarMais }: Propriedades) {
   return (
     <div className="carregar-mais">
       <span aria-live="polite">
@@ -22,6 +23,11 @@ export function CarregarMais({ exibidos, total, haMais, carregando, erro, aoCarr
           </>
         ) : null}
       </span>
+      {ocultos > 0 ? (
+        <span className="carregar-mais-erro carregar-mais-nota">
+          {formatarInteiro(ocultos)} registro(s) mais antigos já lidos foram ocultados para manter a tela rápida. Use Atualizar para voltar ao início.
+        </span>
+      ) : null}
       {erro && exibidos > 0 ? (
         <span className="carregar-mais-erro" role="alert">
           {erro}

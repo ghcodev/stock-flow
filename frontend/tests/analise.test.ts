@@ -200,3 +200,15 @@ describe("W4: horário exibido em UTC, igual em qualquer fuso do navegador", () 
     assert.equal(formatarDataHoraUtc("lixo"), "lixo");
   });
 });
+
+describe("W6: janela de itens renderizados mantém o cursor do servidor", () => {
+  it("passando do máximo, descarta os mais antigos já lidos e conta os ocultos", () => {
+    let e = reduzirLista(listaInicial<number>(), { tipo: "iniciar", chave: "A#0" });
+    e = reduzirLista(e, { tipo: "sucesso", chave: "A#0", dados: [1, 2, 3], proximo: "c3", total: 9, anexar: false, maximo: 4 });
+    e = reduzirLista(e, { tipo: "carregarMais", chave: "A#0" });
+    e = reduzirLista(e, { tipo: "sucesso", chave: "A#0", dados: [4, 5, 6], proximo: "c6", total: 9, anexar: true, maximo: 4 });
+    assert.deepEqual([e.itens, e.ocultos, e.proximo], [[3, 4, 5, 6], 2, "c6"]);
+    e = reduzirLista(e, { tipo: "iniciar", chave: "A#1" });
+    assert.equal(e.ocultos, 0);
+  });
+});

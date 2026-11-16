@@ -3,11 +3,14 @@ import { ErroDeRede, mensagemDoErro } from "../api/erros.ts";
 import { listaInicial, reduzirLista, type EstadoDeLista } from "../util/cursor.ts";
 import { criarVigencia } from "../util/vigencia.ts";
 
+export const MAXIMO_DE_ITENS_RENDERIZADOS = 300;
+
 export type PaginaDeCursor<T, E = never> = { dados: T[]; proximo: string | null; total: number; extra?: E };
 
 export type ListaComCursor<T> = {
   itens: T[];
   total: number | null;
+  ocultos: number;
   carregando: boolean;
   erro: string | null;
   haMais: boolean;
@@ -20,6 +23,7 @@ export function useListaComCursor<T, E = never>(
   chave: string,
   ativo = true,
   aoCarregarPagina?: (pagina: PaginaDeCursor<T, E>, primeira: boolean) => void,
+  maximoDeItens = MAXIMO_DE_ITENS_RENDERIZADOS,
 ): ListaComCursor<T> {
   const [estado, despachar] = useReducer(reduzirLista<T>, undefined, listaInicial<T>);
   const [versao, setVersao] = useState(0);
@@ -36,7 +40,7 @@ export function useListaComCursor<T, E = never>(
     funcao.current(cursor, pedido.sinal).then(
       (pagina) => {
         if (!pedido.vigente()) return;
-        despachar({ tipo: "sucesso", chave: chaveDoPedido, dados: pagina.dados, proximo: pagina.proximo, total: pagina.total, anexar: cursor !== undefined });
+        despachar({ tipo: "sucesso", chave: chaveDoPedido, dados: pagina.dados, proximo: pagina.proximo, total: pagina.total, anexar: cursor !== undefined, maximo: maximoDeItens });
         aoPagina.current?.(pagina, cursor === undefined);
       },
       (falha: unknown) => {
@@ -65,5 +69,5 @@ export function useListaComCursor<T, E = never>(
 
   const recarregar = useCallback(() => setVersao((v) => v + 1), []);
 
-  return { itens: estado.itens, total: estado.total, carregando: estado.carregando, erro: estado.erro, haMais: estado.proximo !== null, carregarMais, recarregar };
+  return { itens: estado.itens, total: estado.total, ocultos: estado.ocultos, carregando: estado.carregando, erro: estado.erro, haMais: estado.proximo !== null, carregarMais, recarregar };
 }
