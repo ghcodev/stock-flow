@@ -1,9 +1,17 @@
 import { query } from "express-validator";
-import { semNul, soEscalar } from "./comuns.ts";
+import { semNul, soEscalar, validarPaginacao } from "./comuns.ts";
 
 const MAX_ID = 2_147_483_647;
 
+const ID_BIGINT = /^[1-9]\d{0,17}$/;
+
 export const validarRastreabilidade = [
+  ...validarPaginacao,
+  soEscalar(query("depois_de_id").optional(), "Cursor").matches(ID_BIGINT).withMessage("Cursor inválido"),
+  query("depois_de_id")
+    .optional()
+    .custom((_valor: unknown, { req }) => (req.query as { pagina?: unknown } | undefined)?.pagina === undefined)
+    .withMessage("Use pagina ou depois_de_id, não os dois"),
   soEscalar(query("numero_lote").optional(), "Número do lote")
     .isString()
     .withMessage("Número do lote inválido")
