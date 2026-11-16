@@ -21,11 +21,10 @@ import { Saida } from "./paginas/Saida.tsx";
 import { Vencimentos } from "./paginas/Vencimentos.tsx";
 import { Transferencia } from "./paginas/Transferencia.tsx";
 import { Produtos } from "./paginas/Produtos.tsx";
-import { EmBreve } from "./paginas/EmBreve.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
 
-const PAGINAS: Partial<Record<Recurso, ComponentType>> = { perfil: Perfil, mapa: Mapa, ajuste: Ajuste, inventario: Inventario, usuarios: Usuarios, auditoria: Auditoria, historico: Historico, rastreabilidade: Rastreabilidade, dashboard: Dashboard, vencimentos: Vencimentos, produtos: Produtos, lotes: Lotes, entrada: Entrada, saida: Saida, transferencia: Transferencia };
+const PAGINAS: Record<Recurso, ComponentType> = { perfil: Perfil, mapa: Mapa, ajuste: Ajuste, inventario: Inventario, usuarios: Usuarios, auditoria: Auditoria, historico: Historico, rastreabilidade: Rastreabilidade, dashboard: Dashboard, vencimentos: Vencimentos, produtos: Produtos, lotes: Lotes, entrada: Entrada, saida: Saida, transferencia: Transferencia };
 
 export function App() {
   return (
@@ -37,7 +36,7 @@ export function App() {
           <Route element={<ExigeSessao />}>
             <Route element={<Layout />}>
               {ITENS_DE_MENU.map((item) => {
-                const Pagina = PAGINAS[item.recurso] ?? EmBreve;
+                const Pagina = PAGINAS[item.recurso];
                 return (
                   <Route
                     key={item.recurso}

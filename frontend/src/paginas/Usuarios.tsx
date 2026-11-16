@@ -132,9 +132,9 @@ export function Usuarios() {
     { valor: "todos", rotulo: "Todos", contagem: contagens.dados ? contagens.dados.ativos + contagens.dados.inativos : null },
   ];
   const opcoesDePerfil: OpcaoDeFiltro<FiltroDePerfil>[] = [
-    { valor: "todos", rotulo: "Todos os perfis", contagem: null },
-    { valor: "administrador", rotulo: "Administradores", contagem: null },
-    { valor: "operador", rotulo: "Operadores", contagem: null },
+    { valor: "todos", rotulo: "Todos os perfis" },
+    { valor: "administrador", rotulo: "Administradores" },
+    { valor: "operador", rotulo: "Operadores" },
   ];
 
   const total = contagens.dados ? contagens.dados.ativos + contagens.dados.inativos : null;
