@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent as EventoDeTeclado } from "react";
+import { useEffect, useId, useReducer, useRef, type KeyboardEvent as EventoDeTeclado } from "react";
 import { ErroDeRede } from "../api/erros.ts";
+import { estadoInicialDoSeletor, opcaoEscolhivel, opcoesVigentes, reduzirSeletor, type OpcaoDeBusca } from "../util/seletorEstado.ts";
 import { Icone } from "./Icone.tsx";
 
-export type OpcaoDeBusca = { valor: string; rotulo: string };
+export type { OpcaoDeBusca } from "../util/seletorEstado.ts";
 
 type Propriedades = {
   rotulo: string;
@@ -19,8 +20,6 @@ type Propriedades = {
   largo?: boolean;
   atrasoMs?: number;
 };
-
-type Situacao = "ocioso" | "carregando" | "erro";
 
 export function SeletorComBusca({
   rotulo,
@@ -41,47 +40,39 @@ export function SeletorComBusca({
   const idLista = `${id}-lista`;
   const idErro = `${id}-erro`;
   const idAjuda = `${id}-ajuda`;
-  const [texto, setTexto] = useState(rotuloInicial);
-  const [aberto, setAberto] = useState(false);
-  const [opcoes, setOpcoes] = useState<OpcaoDeBusca[]>([]);
-  const [ativa, setAtiva] = useState(-1);
-  const [situacao, setSituacao] = useState<Situacao>("ocioso");
-  const [consulta, setConsulta] = useState("");
+  const [estado, despachar] = useReducer(reduzirSeletor, rotuloInicial, estadoInicialDoSeletor);
   const editando = useRef(false);
   const funcaoDeBusca = useRef(buscar);
   funcaoDeBusca.current = buscar;
+  const { texto, aberto, ativa, situacao, consulta } = estado;
+  const opcoes = opcoesVigentes(estado);
 
   useEffect(() => {
     if (editando.current) {
       editando.current = false;
       return;
     }
-    if (valor === "") setTexto("");
+    if (valor === "") despachar({ tipo: "definirTexto", texto: "" });
   }, [valor]);
 
   useEffect(() => {
     if (!aberto) return;
     const controle = new AbortController();
+    const textoDaConsulta = texto.trim();
     const temporizador = window.setTimeout(
       () => {
-        setSituacao("carregando");
-        funcaoDeBusca.current(consulta, controle.signal).then(
+        funcaoDeBusca.current(textoDaConsulta, controle.signal).then(
           (resultado) => {
-            if (controle.signal.aborted) return;
-            setOpcoes(resultado);
-            setAtiva(resultado.length > 0 ? 0 : -1);
-            setSituacao("ocioso");
+            if (!controle.signal.aborted) despachar({ tipo: "resposta", consulta, opcoes: resultado });
           },
           (falha: unknown) => {
             if (controle.signal.aborted) return;
             if (falha instanceof ErroDeRede && falha.motivo === "CANCELADO") return;
-            setOpcoes([]);
-            setAtiva(-1);
-            setSituacao("erro");
+            despachar({ tipo: "falha", consulta });
           },
         );
       },
-      consulta === "" ? 0 : atrasoMs,
+      textoDaConsulta === "" ? 0 : atrasoMs,
     );
     return () => {
       window.clearTimeout(temporizador);
@@ -91,45 +82,43 @@ export function SeletorComBusca({
 
   const escolher = (opcao: OpcaoDeBusca) => {
     editando.current = true;
-    setTexto(opcao.rotulo);
-    setAberto(false);
+    despachar({ tipo: "definirTexto", texto: opcao.rotulo });
     aoMudar(opcao.valor, opcao.rotulo);
   };
 
   const limpar = () => {
     editando.current = false;
-    setTexto("");
-    setConsulta("");
+    despachar({ tipo: "definirTexto", texto: "" });
     aoMudar("", "");
   };
 
   const aoTeclar = (evento: EventoDeTeclado<HTMLInputElement>) => {
     if (evento.key === "ArrowDown") {
       evento.preventDefault();
-      if (!aberto) setAberto(true);
-      else if (opcoes.length > 0) setAtiva((atual) => (atual + 1) % opcoes.length);
+      if (!aberto) despachar({ tipo: "abrir", textoDaConsulta: texto });
+      else despachar({ tipo: "mover", delta: 1 });
     } else if (evento.key === "ArrowUp") {
       evento.preventDefault();
-      if (aberto && opcoes.length > 0) setAtiva((atual) => (atual - 1 + opcoes.length) % opcoes.length);
+      if (aberto) despachar({ tipo: "mover", delta: -1 });
     } else if (evento.key === "Enter") {
       if (aberto) {
         evento.preventDefault();
-        const opcao = opcoes[ativa];
+        const opcao = opcaoEscolhivel(estado);
         if (opcao) escolher(opcao);
       }
     } else if (evento.key === "Escape") {
       if (aberto) {
         evento.preventDefault();
         evento.stopPropagation();
-        setAberto(false);
+        despachar({ tipo: "fechar" });
       }
     } else if (evento.key === "Tab") {
-      setAberto(false);
+      despachar({ tipo: "fechar" });
     }
   };
 
   const descricao = [erro ? idErro : undefined, ajuda ? idAjuda : undefined].filter((v) => v !== undefined).join(" ");
-  const idDaOpcaoAtiva = aberto && ativa >= 0 ? `${id}-opcao-${ativa}` : undefined;
+  const idDaOpcaoAtiva = aberto && ativa >= 0 && opcoes.length > 0 ? `${id}-opcao-${ativa}` : undefined;
 
   return (
     <div className={largo ? "campo campo--largo" : "campo"}>
@@ -162,20 +151,14 @@ export function SeletorComBusca({
           value={texto}
           disabled={desabilitado}
           onChange={(evento) => {
-            const digitado = evento.target.value;
-            setTexto(digitado);
-            setConsulta(digitado.trim());
-            setAberto(true);
+            despachar({ tipo: "digitar", texto: evento.target.value });
             if (valor !== "") {
               editando.current = true;
               aoMudar("", "");
             }
           }}
-          onFocus={() => {
-            setConsulta(valor === "" ? texto.trim() : "");
-            setAberto(true);
-          }}
-          onBlur={() => setAberto(false)}
+          onFocus={() => despachar({ tipo: "abrir", textoDaConsulta: texto })}
+          onBlur={() => despachar({ tipo: "fechar" })}
           onKeyDown={aoTeclar}
         />
         {texto !== "" && !desabilitado ? (
@@ -194,16 +177,29 @@ export function SeletorComBusca({
                 className={indice === ativa ? "seletor-busca-opcao seletor-busca-opcao--ativa" : "seletor-busca-opcao"}
                 onMouseDown={(evento) => {
                   evento.preventDefault();
-                  escolher(opcao);
+                  const vigente = opcaoEscolhivel(estado, indice);
+                  if (vigente) escolher(vigente);
                 }}
-                onMouseEnter={() => setAtiva(indice)}
+                onMouseEnter={() => despachar({ tipo: "apontar", indice })}
               >
                 {opcao.rotulo}
               </li>
             ))}
-            {situacao === "carregando" ? <li className="seletor-busca-aviso" role="presentation">Buscando…</li> : null}
-            {situacao === "erro" ? <li className="seletor-busca-aviso seletor-busca-aviso--erro" role="presentation">Não foi possível buscar. Tente de novo.</li> : null}
-            {situacao === "ocioso" && opcoes.length === 0 ? <li className="seletor-busca-aviso" role="presentation">Nenhum resultado</li> : null}
+            {situacao === "carregando" ? (
+              <li className="seletor-busca-aviso" role="presentation">
+                Buscando…
+              </li>
+            ) : null}
+            {situacao === "erro" ? (
+              <li className="seletor-busca-aviso seletor-busca-aviso--erro" role="presentation">
+                Não foi possível buscar. Tente de novo.
+              </li>
+            ) : null}
+            {situacao === "ocioso" && opcoes.length === 0 ? (
+              <li className="seletor-busca-aviso" role="presentation">
+                Nenhum resultado
+              </li>
+            ) : null}
           </ul>
         ) : null}
       </div>
