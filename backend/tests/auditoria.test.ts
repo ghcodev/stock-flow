@@ -197,7 +197,8 @@ describe("auditoria somente leitura (A18, RF13)", () => {
     const ids = pagina.dados.map((d) => BigInt(d.id_log));
     assert.ok((ids[0] ?? 0n) >= antes && (ids[0] ?? 0n) <= depois, `primeiro id ${ids[0]} fora de [${antes}, ${depois}]`);
     for (let i = 1; i < ids.length; i++) assert.ok((ids[i - 1] ?? 0n) > (ids[i] ?? 0n), `ordem numérica quebrada na posição ${i}`);
-    assert.equal(pagina.proximo_antes_de_id, ids.at(-1)?.toString() ?? null);
+    const haMais = pagina.total > pagina.dados.length;
+    assert.equal(pagina.proximo_antes_de_id, haMais ? (ids.at(-1)?.toString() ?? null) : null);
   });
 
   it("G7: a ordem é a mesma ao atravessar 99999 e 100000 (5 e 6 dígitos)", async () => {
