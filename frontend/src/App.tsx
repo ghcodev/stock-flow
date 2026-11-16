@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ProvedorDeAutenticacao } from "./autenticacao/ContextoDeAutenticacao.tsx";
+import { Layout } from "./componentes/Layout.tsx";
 import { ExigePermissao, ExigeSessao } from "./autenticacao/RotaProtegida.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import { EmBreve } from "./paginas/EmBreve.tsx";
@@ -13,11 +14,13 @@ export function App() {
         <Routes>
           <Route path="/entrar" element={<Entrar />} />
           <Route element={<ExigeSessao />}>
-            <Route element={<ExigePermissao />}>
-              {ITENS_DE_MENU.map((item) => (
-                <Route key={item.recurso} path={item.caminho} element={<EmBreve />} />
-              ))}
-              <Route path="*" element={<NaoEncontrada />} />
+            <Route element={<Layout />}>
+              <Route element={<ExigePermissao />}>
+                {ITENS_DE_MENU.map((item) => (
+                  <Route key={item.recurso} path={item.caminho} element={<EmBreve />} />
+                ))}
+                <Route path="*" element={<NaoEncontrada />} />
+              </Route>
             </Route>
           </Route>
         </Routes>
