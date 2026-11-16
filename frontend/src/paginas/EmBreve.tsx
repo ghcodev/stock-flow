@@ -5,9 +5,15 @@ export function EmBreve() {
   const local = useLocation();
   const titulo = itemDoCaminho(local.pathname)?.rotulo ?? "Tela";
   return (
-    <section>
-      <h1>{titulo}</h1>
-      <p>Esta tela será entregue em uma etapa seguinte.</p>
-    </section>
+    <>
+      <div className="pagina-cabecalho">
+        <h1>{titulo}</h1>
+        <p>Esta tela será entregue em uma etapa seguinte.</p>
+      </div>
+      <div className="estado-vazio">
+        <strong>Em construção</strong>
+        <span>O conteúdo de {titulo} ainda não está disponível nesta versão.</span>
+      </div>
+    </>
   );
 }
