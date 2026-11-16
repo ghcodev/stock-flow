@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, useLocation } from "react-router";
 import "../estilos/entrar.css";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
@@ -25,15 +25,22 @@ export function Entrar() {
   const [enviando, setEnviando] = useState(false);
   const campoEmail = useRef<HTMLInputElement>(null);
   const campoSenha = useRef<HTMLInputElement>(null);
+  const [foco, setFoco] = useState<"email" | "senha" | null>(null);
+
+  useEffect(() => {
+    if (foco === null || enviando) return;
+    (foco === "email" ? campoEmail : campoSenha).current?.focus();
+    setFoco(null);
+  }, [foco, enviando]);
 
   if (sessao) {
     const origem = (local.state as { de?: unknown } | null)?.de;
     return <Navigate to={destinoAposLogin(origem)} replace />;
   }
 
-  const focarPrimeiroComErro = (campos: ErrosDoLogin) => {
-    if (campos.email !== undefined) campoEmail.current?.focus();
-    else if (campos.senha !== undefined) campoSenha.current?.focus();
+  const campoComErro = (campos: ErrosDoLogin): "email" | "senha" | null => {
+    if (campos.email !== undefined) return "email";
+    return campos.senha !== undefined ? "senha" : null;
   };
 
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
@@ -43,7 +50,7 @@ export function Entrar() {
     setErros(invalidos);
     setGeral(null);
     if (temErros(invalidos)) {
-      focarPrimeiroComErro(invalidos);
+      setFoco(campoComErro(invalidos));
       return;
     }
     limparAviso();
@@ -56,9 +63,9 @@ export function Entrar() {
       setGeral(falha.geral);
       if (falha.geral === MENSAGEM_DE_CREDENCIAIS_INVALIDAS) {
         setSenha("");
-        campoSenha.current?.focus();
+        setFoco("senha");
       } else {
-        focarPrimeiroComErro(falha.campos);
+        setFoco(campoComErro(falha.campos));
       }
       setEnviando(false);
     }
@@ -163,7 +170,7 @@ export function Entrar() {
                 />
               </div>
               {erros.email !== undefined ? (
-                <div id="entrar-email-erro" className="form-error">
+                <div id="entrar-email-erro" className="form-error" role="alert">
                   <Icone nome="alert-triangle" />
                   <span>{erros.email}</span>
                 </div>
@@ -206,7 +213,7 @@ export function Entrar() {
                 </button>
               </div>
               {erros.senha !== undefined ? (
-                <div id="entrar-senha-erro" className="form-error">
+                <div id="entrar-senha-erro" className="form-error" role="alert">
                   <Icone nome="alert-triangle" />
                   <span>{erros.senha}</span>
                 </div>
