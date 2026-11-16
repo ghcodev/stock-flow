@@ -42,7 +42,7 @@ export function Layout() {
 
   const fecharGaveta = useCallback(() => {
     setAberto(false);
-    botaoDoMenu.current?.focus();
+    window.setTimeout(() => botaoDoMenu.current?.focus(), 0);
   }, []);
 
   useEffect(() => {
