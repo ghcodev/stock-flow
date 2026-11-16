@@ -38,8 +38,8 @@ export function podeExecutar(perfil: Perfil | null, acao: Acao): boolean {
 
 export type DecisaoDeAcesso = "login" | "negado" | "permitido";
 
-export function decidirAcesso(perfil: Perfil | null, recurso?: Recurso): DecisaoDeAcesso {
+export function decidirAcesso(perfil: Perfil | null, recurso: Recurso | undefined): DecisaoDeAcesso {
   if (perfil === null) return "login";
-  if (recurso !== undefined && !podeAcessar(perfil, recurso)) return "negado";
+  if (recurso === undefined || !podeAcessar(perfil, recurso)) return "negado";
   return "permitido";
 }

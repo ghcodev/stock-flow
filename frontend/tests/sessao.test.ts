@@ -11,6 +11,7 @@ import {
   type Sessao,
 } from "../src/sessao/sessao.ts";
 import { decidirAcesso, podeAcessar, podeExecutar, type Recurso } from "../src/sessao/permissoes.ts";
+import { recursoDoCaminho } from "../src/sessao/rotas.ts";
 import { ITENS_DE_MENU, itemDoCaminho, menuDoPerfil } from "../src/sessao/navegacao.ts";
 
 const base64url = (texto: string): string => Buffer.from(texto, "utf8").toString("base64url");
@@ -130,11 +131,12 @@ describe("permissões por perfil (seção 17.2; o backend é a autoridade)", () 
   });
 
   it("decisão de acesso: login sem sessão, negado sem permissão, permitido caso contrário", () => {
-    assert.equal(decidirAcesso(null), "login");
+    assert.equal(decidirAcesso(null, undefined), "login");
     assert.equal(decidirAcesso(null, "dashboard"), "login");
     assert.equal(decidirAcesso("operador", "auditoria"), "negado");
     assert.equal(decidirAcesso("operador", "lotes"), "permitido");
-    assert.equal(decidirAcesso("operador"), "permitido");
+    assert.equal(decidirAcesso("operador", undefined), "negado");
+    assert.equal(decidirAcesso("administrador", undefined), "negado");
     assert.equal(decidirAcesso("administrador", "usuarios"), "permitido");
   });
 });
@@ -164,5 +166,33 @@ describe("menu por perfil", () => {
     assert.equal(itemDoCaminho("/")?.recurso, "dashboard");
     assert.equal(itemDoCaminho("/lotes/")?.recurso, "lotes");
     assert.equal(itemDoCaminho("/nao-existe"), undefined);
+  });
+});
+
+describe("recurso associado à rota, com caixa e barras (R3)", () => {
+  it("caminhos exatos resolvem o recurso declarado", () => {
+    for (const item of ITENS_DE_MENU) assert.equal(recursoDoCaminho(item.caminho), item.recurso, item.caminho);
+  });
+
+  it("variações de caixa não casam com nenhum recurso", () => {
+    for (const caminho of ["/USUARIOS", "/Usuarios", "/AUDITORIA", "/Auditoria", "/AJUSTE", "/aJuste", "/LOTES", "/Produtos"]) {
+      assert.equal(recursoDoCaminho(caminho), undefined, caminho);
+    }
+  });
+
+  it("barra final é aceita, barras duplas, subcaminhos e pontos não", () => {
+    assert.equal(recursoDoCaminho("/usuarios/"), "usuarios");
+    assert.equal(recursoDoCaminho("/usuarios//"), "usuarios");
+    for (const caminho of ["//usuarios", "/usuarios/1", "/usuarios/../auditoria", "/./usuarios", "/usuarios%2F", "usuarios", "/inexistente"]) {
+      assert.equal(recursoDoCaminho(caminho), undefined, caminho);
+    }
+  });
+
+  it("operador é negado em toda variação de rota administrativa e administrador só nas exatas", () => {
+    for (const caminho of ["/USUARIOS", "/Auditoria", "/AJUSTE", "/usuarios", "/auditoria", "/ajuste"]) {
+      assert.equal(decidirAcesso("operador", recursoDoCaminho(caminho)), "negado", caminho);
+    }
+    assert.equal(decidirAcesso("administrador", recursoDoCaminho("/usuarios")), "permitido");
+    assert.equal(decidirAcesso("administrador", recursoDoCaminho("/USUARIOS")), "negado");
   });
 });

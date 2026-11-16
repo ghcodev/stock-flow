@@ -1,26 +1,40 @@
+import type { ComponentType } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ProvedorDeAutenticacao } from "./autenticacao/ContextoDeAutenticacao.tsx";
+import { ExigeSessao, Protegida } from "./autenticacao/RotaProtegida.tsx";
 import { Layout } from "./componentes/Layout.tsx";
-import { ExigePermissao, ExigeSessao } from "./autenticacao/RotaProtegida.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
+import type { Recurso } from "./sessao/permissoes.ts";
 import { EmBreve } from "./paginas/EmBreve.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
+
+const PAGINAS: Partial<Record<Recurso, ComponentType>> = {};
 
 export function App() {
   return (
     <BrowserRouter>
       <ProvedorDeAutenticacao>
         <Routes>
-          <Route path="/entrar" element={<Entrar />} />
+          <Route path="/entrar" element={<Entrar />} caseSensitive />
           <Route element={<ExigeSessao />}>
             <Route element={<Layout />}>
-              <Route element={<ExigePermissao />}>
-                {ITENS_DE_MENU.map((item) => (
-                  <Route key={item.recurso} path={item.caminho} element={<EmBreve />} />
-                ))}
-                <Route path="*" element={<NaoEncontrada />} />
-              </Route>
+              {ITENS_DE_MENU.map((item) => {
+                const Pagina = PAGINAS[item.recurso] ?? EmBreve;
+                return (
+                  <Route
+                    key={item.recurso}
+                    path={item.caminho}
+                    caseSensitive
+                    element={
+                      <Protegida recurso={item.recurso}>
+                        <Pagina />
+                      </Protegida>
+                    }
+                  />
+                );
+              })}
+              <Route path="*" element={<NaoEncontrada />} />
             </Route>
           </Route>
         </Routes>
