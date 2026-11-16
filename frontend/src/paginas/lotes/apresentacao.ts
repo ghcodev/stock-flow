@@ -14,11 +14,16 @@ export function rotuloDaLocalizacao(localizacao: Pick<Localizacao, "corredor" | 
 
 export type SituacaoDeValidade = { texto: string; tom: "normal" | "alerta" | "perigo" };
 
-export function situacaoDeValidade(lote: Pick<Lote, "data_validade" | "status_lote">, hoje: string): SituacaoDeValidade | null {
+export function situacaoDeValidade(lote: Pick<Lote, "data_validade" | "status_lote" | "validade_expirada">, hoje: string): SituacaoDeValidade | null {
   if (lote.data_validade === null) return null;
   const dias = diasAte(lote.data_validade, hoje);
+  if (lote.validade_expirada === true) {
+    if (dias === null || dias >= 0) return { texto: "validade expirada", tom: "perigo" };
+    return { texto: dias === -1 ? "venceu há 1 dia" : `venceu há ${-dias} dias`, tom: "perigo" };
+  }
   if (dias === null) return null;
-  if (dias < 0) return { texto: dias === -1 ? "venceu há 1 dia" : `venceu há ${-dias} dias`, tom: "perigo" };
+  if (dias < 0 && lote.validade_expirada === undefined) return { texto: dias === -1 ? "venceu há 1 dia" : `venceu há ${-dias} dias`, tom: "perigo" };
+  if (dias < 0) return null;
   if (lote.status_lote !== "ativo") return null;
   if (dias === 0) return { texto: "vence hoje", tom: "alerta" };
   if (dias <= 30) return { texto: dias === 1 ? "vence em 1 dia" : `vence em ${dias} dias`, tom: "alerta" };

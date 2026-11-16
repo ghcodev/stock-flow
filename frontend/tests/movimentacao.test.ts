@@ -17,6 +17,7 @@ import { ErroDaApi, ErroDeRede } from "../src/api/erros.ts";
 const lote = (extras: Record<string, unknown> = {}) => ({
   status_lote: "ativo" as const,
   data_validade: "2026-12-31",
+  validade_expirada: false,
   quantidade: "10.500",
   id_localizacao: 5,
   produto: { id_produto: 1, nome: "Leite", unidade_medida: "L" },
@@ -62,12 +63,17 @@ describe("avaliação da quantidade em tempo real", () => {
 
 describe("regras de bloqueio por status e validade", () => {
   it("saída bloqueada para bloqueado, vencido e validade expirada", () => {
-    assert.equal(bloqueioDaSaida(lote(), "2026-11-16"), null);
-    assert.match(bloqueioDaSaida(lote({ status_lote: "bloqueado" }), "2026-11-16") ?? "", /bloqueado/);
-    assert.match(bloqueioDaSaida(lote({ status_lote: "vencido" }), "2026-11-16") ?? "", /vencido/);
-    assert.match(bloqueioDaSaida(lote({ data_validade: "2026-11-15" }), "2026-11-16") ?? "", /expirada/);
-    assert.equal(bloqueioDaSaida(lote({ data_validade: "2026-11-16" }), "2026-11-16"), null);
-    assert.equal(bloqueioDaSaida(lote({ data_validade: null }), "2026-11-16"), null);
+    assert.equal(bloqueioDaSaida(lote()), null);
+    assert.match(bloqueioDaSaida(lote({ status_lote: "bloqueado" })) ?? "", /bloqueado/);
+    assert.match(bloqueioDaSaida(lote({ status_lote: "vencido" })) ?? "", /vencido/);
+    assert.match(bloqueioDaSaida(lote({ validade_expirada: true })) ?? "", /expirada/);
+    assert.equal(bloqueioDaSaida(lote({ data_validade: null, validade_expirada: false })), null);
+  });
+
+  it("U3: a decisão vem da API e não do dia do navegador (data antiga com validade_expirada false não bloqueia)", () => {
+    assert.equal(bloqueioDaSaida(lote({ data_validade: "2000-01-01", validade_expirada: false })), null);
+    assert.equal(bloqueioDaSaida(lote({ data_validade: "2099-01-01", validade_expirada: true }))?.includes("expirada"), true);
+    assert.equal(bloqueioDaSaida(lote({ validade_expirada: undefined })), null);
   });
 
   it("transferência só de lote ativo e com saldo", () => {
@@ -77,9 +83,9 @@ describe("regras de bloqueio por status e validade", () => {
   });
 
   it("entrada em lote bloqueado, vencido ou expirado avisa e não bloqueia", () => {
-    assert.equal(avisoDaEntrada(lote(), "2026-11-16"), null);
-    for (const extras of [{ status_lote: "bloqueado" }, { status_lote: "vencido" }, { data_validade: "2020-01-01" }]) {
-      assert.match(avisoDaEntrada(lote(extras), "2026-11-16") ?? "", /entrada é permitida/);
+    assert.equal(avisoDaEntrada(lote()), null);
+    for (const extras of [{ status_lote: "bloqueado" }, { status_lote: "vencido" }, { validade_expirada: true }]) {
+      assert.match(avisoDaEntrada(lote(extras)) ?? "", /entrada é permitida/);
     }
   });
 
@@ -121,6 +127,7 @@ describe("falhas da API em movimentações", () => {
     const ocupado = interpretarFalhaDeMovimentacao(api(503, "SERVICO_INDISPONIVEL", "x"));
     assert.match(ocupado.geral ?? "", /ocupado/);
     assert.equal(ocupado.incerta, false);
+    assert.equal(ocupado.atualizarLote, true);
     const interno = interpretarFalhaDeMovimentacao(api(500, "ERRO_INTERNO", "TypeError at /app/src"));
     assert.equal(interno.incerta, true);
     assert.doesNotMatch(interno.geral ?? "", /TypeError|\/app/);

@@ -12,14 +12,10 @@ export type AvaliacaoDeQuantidade = {
   saldoApos: string | null;
 };
 
-function validadeExpirada(lote: Pick<Lote, "data_validade">, hoje: string): boolean {
-  return lote.data_validade !== null && lote.data_validade < hoje;
-}
-
-export function bloqueioDaSaida(lote: Pick<Lote, "status_lote" | "data_validade">, hoje: string): string | null {
+export function bloqueioDaSaida(lote: Pick<Lote, "status_lote" | "validade_expirada">): string | null {
   if (lote.status_lote === "bloqueado") return "Lote bloqueado: a saída não é permitida. Desbloqueie o lote antes.";
   if (lote.status_lote === "vencido") return "Lote vencido: a saída não é permitida.";
-  if (validadeExpirada(lote, hoje)) return "Lote com validade expirada: a saída não é permitida.";
+  if (lote.validade_expirada === true) return "Lote com validade expirada: a saída não é permitida.";
   return null;
 }
 
@@ -29,10 +25,10 @@ export function bloqueioDaTransferencia(lote: Pick<Lote, "status_lote" | "quanti
   return null;
 }
 
-export function avisoDaEntrada(lote: Pick<Lote, "status_lote" | "data_validade">, hoje: string): string | null {
+export function avisoDaEntrada(lote: Pick<Lote, "status_lote" | "validade_expirada">): string | null {
   if (lote.status_lote === "bloqueado") return "Este lote está bloqueado. A entrada é permitida, mas confira o lote antes de registrar.";
   if (lote.status_lote === "vencido") return "Este lote está vencido. A entrada é permitida, mas confira o lote antes de registrar.";
-  if (validadeExpirada(lote, hoje)) return "A validade deste lote já passou. A entrada é permitida, mas confira o lote antes de registrar.";
+  if (lote.validade_expirada === true) return "A validade deste lote já passou. A entrada é permitida, mas confira o lote antes de registrar.";
   return null;
 }
 
@@ -105,7 +101,7 @@ export function interpretarFalhaDeMovimentacao(erro: unknown): FalhaDeMovimentac
   }
   if (erro.status === 409 || erro.status === 422) return { ...base, atualizarLote: true, geral: erro.message };
   if (erro.status === 404) return { ...base, atualizarLote: true, geral: "Lote não encontrado." };
-  if (erro.status === 503) return { ...base, geral: "O servidor está ocupado. Tente novamente em instantes." };
+  if (erro.status === 503) return { ...base, atualizarLote: true, geral: "O servidor está ocupado. Tente novamente em instantes; o saldo e o status do lote foram recarregados." };
   if (erro.status >= 500) {
     return { ...base, incerta: true, geral: "O servidor não conseguiu concluir. Confira o histórico de movimentações antes de repetir." };
   }

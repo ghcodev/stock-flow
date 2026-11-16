@@ -11,7 +11,7 @@ import { CabecalhoDePagina } from "../../componentes/CabecalhoDePagina.tsx";
 import { AvisoDoFormulario, CampoDeAreaDeTexto, CampoDeTexto, focarPrimeiroInvalido } from "../../componentes/Campo.tsx";
 import { Icone } from "../../componentes/Icone.tsx";
 import { SeletorComBusca } from "../../componentes/SeletorComBusca.tsx";
-import { diaDeHoje, formatarDataHora } from "../../util/datas.ts";
+import { formatarDataHora } from "../../util/datas.ts";
 import { formatarQuantidade } from "../../util/decimal.ts";
 import { criarEnvioUnico } from "../../util/envio.ts";
 import { criarVigencia } from "../../util/vigencia.ts";
@@ -85,13 +85,12 @@ export function TelaDeMovimentacao({ modo }: { modo: ModoDeMovimentacao }) {
     return () => atual.invalidar();
   }, []);
 
-  const hoje = diaDeHoje();
   const avaliacao = useMemo(
     () => (lote !== null && modo !== "transferencia" ? avaliarQuantidade(quantidade, lote, modo) : { erro: null, saldoApos: null }),
     [lote, quantidade, modo],
   );
-  const bloqueio = lote === null ? null : modo === "saida" ? bloqueioDaSaida(lote, hoje) : modo === "transferencia" ? bloqueioDaTransferencia(lote) : null;
-  const avisoDeEntrada = lote !== null && modo === "entrada" ? avisoDaEntrada(lote, hoje) : null;
+  const bloqueio = lote === null ? null : modo === "saida" ? bloqueioDaSaida(lote) : modo === "transferencia" ? bloqueioDaTransferencia(lote) : null;
+  const avisoDeEntrada = lote !== null && modo === "entrada" ? avisoDaEntrada(lote) : null;
   const aviso = bloqueio !== null ? { tom: "perigo" as const, texto: bloqueio } : avisoDeEntrada !== null ? { tom: "alerta" as const, texto: avisoDeEntrada } : null;
 
   const limparFormulario = () => {

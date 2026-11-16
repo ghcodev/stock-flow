@@ -77,6 +77,7 @@ export type Lote = {
   motivo_bloqueio: string | null;
   id_produto: number;
   id_localizacao: number;
+  validade_expirada?: boolean | undefined;
   produto: { id_produto: number; nome: string; unidade_medida: string };
   localizacao: { id_localizacao: number; corredor: string; nivel: string; posicao: string };
   identificacao: Etiqueta | null;

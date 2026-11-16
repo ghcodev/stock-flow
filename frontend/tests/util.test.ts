@@ -245,6 +245,9 @@ describe("apresentação de lotes", () => {
     assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-26" }, "2026-05-27"), { texto: "venceu há 1 dia", tom: "perigo" });
     assert.deepEqual(situacaoDeValidade({ status_lote: "vencido", data_validade: "2026-05-20" }, "2026-05-27"), { texto: "venceu há 7 dias", tom: "perigo" });
     assert.equal(situacaoDeValidade({ status_lote: "bloqueado", data_validade: "2026-05-28" }, "2026-05-27"), null);
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-26", validade_expirada: true }, "2026-05-27"), { texto: "venceu há 1 dia", tom: "perigo" });
+    assert.deepEqual(situacaoDeValidade({ ...base, data_validade: "2026-05-28", validade_expirada: true }, "2026-05-27"), { texto: "validade expirada", tom: "perigo" });
+    assert.equal(situacaoDeValidade({ ...base, data_validade: "2026-05-26", validade_expirada: false }, "2026-05-27"), null);
   });
 });
 
