@@ -152,3 +152,34 @@ export async function obterMovimentacao(id: string): Promise<MovimentacaoPublica
   if (!movimentacao) throw new HttpError(404, "NAO_ENCONTRADO", "Movimentação não encontrada");
   return movimentacao;
 }
+
+export type DadosAjuste = {
+  id_lote: number;
+  saldo_exibido: string;
+  novo_saldo: string;
+  motivo: string;
+};
+
+export function registrarAjuste(contexto: ContextoDeEscrita, dados: DadosAjuste): Promise<MovimentacaoPublica> {
+  const saldoExibido = new Prisma.Decimal(dados.saldo_exibido);
+  const novoSaldo = new Prisma.Decimal(dados.novo_saldo);
+  return alterarSaldo(contexto, dados.id_lote, async (lote) => {
+    if (!lote.quantidade.eq(saldoExibido)) {
+      throw new HttpError(409, "SALDO_DESATUALIZADO", "O saldo do lote mudou desde que foi exibido");
+    }
+    const diferenca = novoSaldo.minus(lote.quantidade);
+    if (diferenca.isZero()) {
+      throw new HttpError(422, "AJUSTE_SEM_ALTERACAO", "O novo saldo é igual ao saldo atual do lote");
+    }
+    return {
+      tipo: "ajuste",
+      quantidade: diferenca.abs(),
+      saldoPosterior: novoSaldo,
+      origem: null,
+      destino: null,
+      motivo: dados.motivo,
+      observacao: null,
+      noLote: { quantidade: novoSaldo },
+    };
+  });
+}

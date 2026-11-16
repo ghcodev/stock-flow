@@ -5,6 +5,8 @@ import {
   registrarEntrada,
   registrarSaida,
   registrarTransferencia,
+  registrarAjuste,
+  type DadosAjuste,
   type DadosSaldo,
   type DadosTransferencia,
   type FiltroHistorico,
@@ -30,4 +32,8 @@ export async function historico(req: Request, res: Response): Promise<void> {
 
 export async function obter(req: Request, res: Response): Promise<void> {
   res.json(await obterMovimentacao(dadosValidados<{ id: string }>(req, ["params"]).id));
+}
+
+export async function ajuste(req: Request, res: Response): Promise<void> {
+  res.status(201).json(await registrarAjuste(contextoDe(req), dadosValidados<DadosAjuste>(req, ["body"])));
 }

@@ -1,6 +1,7 @@
 import { param, query } from "express-validator";
 import { lerInstante, periodoValido } from "../periodo.ts";
 import {
+  decimal,
   idNoCorpo,
   quantidadePositiva,
   soEscalar,
@@ -62,4 +63,11 @@ export const validarHistorico = [
 
 export const validarIdMovimentacao = [
   soEscalar(param("id"), "Identificador").matches(ID_BIGINT).withMessage("Identificador inválido"),
+];
+
+export const validarAjuste = [
+  idNoCorpo("id_lote", "Lote"),
+  decimal("saldo_exibido", "Saldo exibido", true),
+  decimal("novo_saldo", "Novo saldo", true),
+  texto("motivo", "Justificativa", 255, true, 10),
 ];
