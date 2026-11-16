@@ -68,6 +68,7 @@ export type OpcoesDeConexao = {
   baudRate?: number;
   aoLer: (leitura: Leitura) => void;
   aoEncerrar: (erro: unknown) => void;
+  cancelado?: () => boolean;
 };
 
 function obterApi(ambiente: AmbienteSerial): ApiSerial | null {
@@ -77,8 +78,14 @@ function obterApi(ambiente: AmbienteSerial): ApiSerial | null {
 export async function conectarSerial(ambiente: AmbienteSerial, opcoes: OpcoesDeConexao): Promise<ConexaoSerial> {
   const api = obterApi(ambiente);
   if (api === null) throw new Error("Web Serial indisponível neste navegador ou sem HTTPS");
+  const cancelado = opcoes.cancelado ?? (() => false);
   const porta = await api.requestPort();
+  if (cancelado()) throw new DOMException("Conexão cancelada", "AbortError");
   await porta.open({ baudRate: opcoes.baudRate ?? 9600 });
+  if (cancelado()) {
+    await porta.close().catch(() => undefined);
+    throw new DOMException("Conexão cancelada", "AbortError");
+  }
   const fluxo = porta.readable;
   if (fluxo === null) {
     await porta.close();
@@ -96,6 +103,7 @@ export async function conectarSerial(ambiente: AmbienteSerial, opcoes: OpcoesDeC
         if (done) break;
         if (value === undefined) continue;
         for (const codigo of montador.alimentar(decodificador.decode(value, { stream: true }))) {
+          if (cancelado()) break;
           opcoes.aoLer({ codigo, origem: "serial", intervaloMedioMs: null });
         }
       }

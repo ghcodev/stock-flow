@@ -52,7 +52,10 @@ export function criarGerenciadorSerial(dependencias: Dependencias): GerenciadorS
       const minha = ++geracao;
       mudar({ conectando: true, erro: null });
       conectarPorta(dependencias.ambiente(), {
-        aoLer: dependencias.emitir,
+        aoLer: (leitura) => {
+          if (minha === geracao) dependencias.emitir(leitura);
+        },
+        cancelado: () => minha !== geracao,
         aoEncerrar: (falha) => {
           if (minha !== geracao) return;
           conexao = null;

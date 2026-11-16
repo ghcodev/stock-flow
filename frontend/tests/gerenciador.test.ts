@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { criarGerenciadorSerial } from "../src/leitor/gerenciador.ts";
 import type { Leitura } from "../src/leitor/detector.ts";
-import type { ConexaoSerial, OpcoesDeConexao } from "../src/leitor/serial.ts";
+import { conectarSerial, type ConexaoSerial, type OpcoesDeConexao, type PortaSerial } from "../src/leitor/serial.ts";
 
 const ambienteSeguro = { isSecureContext: true, navigator: { serial: { requestPort: () => Promise.reject(new Error("não usado")) } } };
 
@@ -116,5 +116,72 @@ describe("gerenciador único da conexão serial (S4)", () => {
     assert.equal(queda.gerenciador.estado().conectado, false);
     queda.gerenciador.conectar();
     assert.equal(queda.aberturas.length, 2);
+  });
+
+  it("leitura de uma conexão que já foi trocada ou desconectada não chega ao barramento (T2)", async () => {
+    const t = montar();
+    t.gerenciador.conectar();
+    t.abrir();
+    await aguardar();
+    t.gerenciador.desconectar();
+    t.aberturas[0]?.aoLer({ codigo: "TARDIA-1", origem: "serial", intervaloMedioMs: null });
+    assert.deepEqual(t.emitidas, []);
+    assert.equal(t.aberturas[0]?.cancelado?.(), true);
+  });
+});
+
+describe("abertura pendente da porta serial (T2)", () => {
+  function portaControlada() {
+    const fluxo = new ReadableStream<Uint8Array>({ start() {} });
+    const estado = { abriu: 0, fechou: 0, resolverPorta: null as ((porta: PortaSerial) => void) | null, resolverAbertura: null as (() => void) | null };
+    const porta: PortaSerial = {
+      open: () => {
+        estado.abriu += 1;
+        return new Promise<void>((resolver) => {
+          estado.resolverAbertura = resolver;
+        });
+      },
+      close: () => {
+        estado.fechou += 1;
+        return Promise.resolve();
+      },
+      readable: fluxo,
+    };
+    const ambiente = {
+      isSecureContext: true,
+      navigator: {
+        serial: {
+          requestPort: () =>
+            new Promise<PortaSerial>((resolver) => {
+              estado.resolverPorta = resolver;
+            }),
+        },
+      },
+    };
+    return { estado, porta, ambiente };
+  }
+
+  it("cancelada enquanto o usuário escolhe a porta: não abre nem lê", async () => {
+    const c = portaControlada();
+    let cancelado = false;
+    const tentativa = conectarSerial(c.ambiente, { aoLer: () => undefined, aoEncerrar: () => undefined, cancelado: () => cancelado });
+    cancelado = true;
+    c.estado.resolverPorta?.(c.porta);
+    await assert.rejects(tentativa, (erro: unknown) => erro instanceof DOMException && erro.name === "AbortError");
+    assert.equal(c.estado.abriu, 0);
+  });
+
+  it("cancelada enquanto a porta abre: fecha na hora e não publica conexão", async () => {
+    const c = portaControlada();
+    let cancelado = false;
+    const lidas: string[] = [];
+    const tentativa = conectarSerial(c.ambiente, { aoLer: (l) => lidas.push(l.codigo), aoEncerrar: () => undefined, cancelado: () => cancelado });
+    c.estado.resolverPorta?.(c.porta);
+    await aguardar();
+    cancelado = true;
+    c.estado.resolverAbertura?.();
+    await assert.rejects(tentativa, (erro: unknown) => erro instanceof DOMException && erro.name === "AbortError");
+    assert.equal(c.estado.fechou, 1);
+    assert.deepEqual(lidas, []);
   });
 });
