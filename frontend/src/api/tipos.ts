@@ -142,3 +142,62 @@ export type AlertaDeVencimento = {
   nivel: string;
   posicao: string;
 };
+
+export type ValorJson = string | number | boolean | null | ValorJson[] | { [chave: string]: ValorJson };
+
+export type RegistroDeAuditoria = {
+  id_log: string;
+  tabela_afetada: string;
+  operacao: "INSERT" | "UPDATE" | "DELETE";
+  valor_anterior: ValorJson | null;
+  valor_novo: ValorJson | null;
+  id_usuario: number | null;
+  nome_usuario: string | null;
+  data_hora: string;
+  ip_usuario: string | null;
+  observacao: string | null;
+};
+
+export type MovimentacaoDoHistorico = Movimentacao & {
+  numero_lote: string;
+  nome_usuario: string;
+};
+
+export type PosicaoDoEvento = {
+  id_localizacao: number;
+  corredor: string;
+  nivel: string;
+  posicao: string;
+};
+
+export type EventoDaLinhaDoTempo = {
+  id_movimentacao: string;
+  data_movimentacao: string;
+  tipo_movimentacao: TipoMovimentacao;
+  status_movimentacao: string;
+  quantidade: string;
+  saldo_anterior: string;
+  saldo_posterior: string;
+  usuario: { id_usuario: number; nome: string };
+  origem: PosicaoDoEvento | null;
+  destino: PosicaoDoEvento | null;
+  motivo_movimentacao: string | null;
+  observacao: string | null;
+};
+
+export type Rastreabilidade = {
+  lote: Lote;
+  linha_do_tempo: EventoDaLinhaDoTempo[];
+  pagina: number;
+  limite: number;
+  total: number;
+  proximo_depois_de_id: string | null;
+};
+
+export type Usuario = {
+  id_usuario: number;
+  nome: string;
+  email: string;
+  perfil: Perfil;
+  ativo: boolean;
+};

@@ -6,6 +6,9 @@ import { ProvedorDeAvisos } from "./componentes/Avisos.tsx";
 import { Layout } from "./componentes/Layout.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import type { Recurso } from "./sessao/permissoes.ts";
+import { Auditoria } from "./paginas/Auditoria.tsx";
+import { Historico } from "./paginas/Historico.tsx";
+import { Rastreabilidade } from "./paginas/Rastreabilidade.tsx";
 import { Dashboard } from "./paginas/Dashboard.tsx";
 import { Entrada } from "./paginas/Entrada.tsx";
 import { Lotes } from "./paginas/Lotes.tsx";
@@ -17,7 +20,7 @@ import { EmBreve } from "./paginas/EmBreve.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
 
-const PAGINAS: Partial<Record<Recurso, ComponentType>> = { dashboard: Dashboard, vencimentos: Vencimentos, produtos: Produtos, lotes: Lotes, entrada: Entrada, saida: Saida, transferencia: Transferencia };
+const PAGINAS: Partial<Record<Recurso, ComponentType>> = { auditoria: Auditoria, historico: Historico, rastreabilidade: Rastreabilidade, dashboard: Dashboard, vencimentos: Vencimentos, produtos: Produtos, lotes: Lotes, entrada: Entrada, saida: Saida, transferencia: Transferencia };
 
 export function App() {
   return (

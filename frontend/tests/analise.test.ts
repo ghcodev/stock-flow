@@ -120,3 +120,27 @@ describe("lista com cursor: filtro novo reinicia e respostas velhas são ignorad
     assert.deepEqual(e.itens, []);
   });
 });
+
+describe("o que altera o saldo na linha do tempo (F7)", () => {
+  const evento = (tipo: string, status: string, posterior: string) =>
+    ({ tipo_movimentacao: tipo, status_movimentacao: status, saldo_anterior: "0", saldo_posterior: posterior }) as unknown as import("../src/api/tipos.ts").EventoDaLinhaDoTempo;
+
+  it("só entrada, saída e ajuste concluídos alteram; transferência e contagem não", async () => {
+    const { alteraSaldo } = await import("../src/util/linhaDoTempo.ts");
+    assert.equal(alteraSaldo(evento("entrada", "concluida", "1")), true);
+    assert.equal(alteraSaldo(evento("saida", "concluida", "1")), true);
+    assert.equal(alteraSaldo(evento("ajuste", "concluida", "1")), true);
+    assert.equal(alteraSaldo(evento("transferencia", "concluida", "1")), false);
+    assert.equal(alteraSaldo(evento("inventario", "concluida", "1")), false);
+    assert.equal(alteraSaldo(evento("inventario", "pendente", "1")), false);
+    assert.equal(alteraSaldo(evento("entrada", "cancelada", "1")), false);
+  });
+
+  it("o saldo corrente é o saldo posterior do último evento que altera saldo, ignorando contagens", async () => {
+    const { saldoCorrenteDaLinha } = await import("../src/util/linhaDoTempo.ts");
+    const linha = [evento("entrada", "concluida", "10"), evento("saida", "concluida", "4"), evento("inventario", "pendente", "4"), evento("transferencia", "concluida", "4")];
+    assert.equal(saldoCorrenteDaLinha(linha), "4");
+    assert.equal(saldoCorrenteDaLinha([evento("inventario", "pendente", "9")]), null);
+    assert.equal(saldoCorrenteDaLinha([]), null);
+  });
+});
