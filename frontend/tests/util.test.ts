@@ -323,3 +323,29 @@ describe("página válida depois de esvaziar a última página (T8)", () => {
     assert.equal(paginaCorrigida(9, 21, 20), 2);
   });
 });
+
+describe("mensagens da exportação e prazo dos vencimentos (F6)", () => {
+  it("403, 422 do teto, timeout e cancelamento viram mensagens certas; 401 e cancelamento ficam em silêncio", async () => {
+    const { mensagemDaExportacao } = await import("../src/util/exportacao.ts");
+    const { ErroDaApi, ErroDeRede } = await import("../src/api/erros.ts");
+    assert.match(mensagemDaExportacao(new ErroDaApi(403, "PERFIL_INSUFICIENTE", "x")) ?? "", /administradores/);
+    assert.equal(mensagemDaExportacao(new ErroDaApi(422, "EXPORTACAO_MUITO_GRANDE", "A exportação excede o limite de 10000 linhas")), "A exportação excede o limite de 10000 linhas");
+    assert.match(mensagemDaExportacao(new ErroDeRede("TEMPO_ESGOTADO", "x")) ?? "", /demorou/);
+    assert.match(mensagemDaExportacao(new ErroDeRede("SEM_CONEXAO", "x")) ?? "", /Sem conexão/);
+    assert.equal(mensagemDaExportacao(new ErroDeRede("CANCELADO", "x")), null);
+    assert.equal(mensagemDaExportacao(new ErroDaApi(401, "NAO_AUTORIZADO", "x")), null);
+    assert.doesNotMatch(mensagemDaExportacao(new ErroDaApi(500, "ERRO_INTERNO", "TypeError at /app")) ?? "", /TypeError|\/app/);
+  });
+
+  it("prazo: até 3 dias é perigo, até 7 alerta, depois informativo", async () => {
+    const { tomDoPrazo, textoDoPrazo } = await import("../src/paginas/vencimentos/prazo.ts");
+    assert.equal(tomDoPrazo(0), "perigo");
+    assert.equal(tomDoPrazo(3), "perigo");
+    assert.equal(tomDoPrazo(4), "alerta");
+    assert.equal(tomDoPrazo(7), "alerta");
+    assert.equal(tomDoPrazo(8), "info");
+    assert.equal(textoDoPrazo(0), "vence hoje");
+    assert.equal(textoDoPrazo(1), "1 dia");
+    assert.equal(textoDoPrazo(12), "12 dias");
+  });
+});
