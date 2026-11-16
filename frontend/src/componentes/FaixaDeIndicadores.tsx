@@ -1,3 +1,4 @@
+import { formatarInteiro } from "../util/decimal.ts";
 import { Icone } from "./Icone.tsx";
 
 export type Indicador = {
@@ -21,7 +22,7 @@ export function FaixaDeIndicadores({ rotulo, itens }: { rotulo: string; itens: r
             {item.rotulo}
           </div>
           <div className={item.tom ? `indicador-valor indicador-valor--${item.tom}` : "indicador-valor"}>
-            {item.valor === null ? "–" : new Intl.NumberFormat("pt-BR").format(item.valor)}
+            {item.valor === null ? "–" : formatarInteiro(item.valor)}
           </div>
           <div className="indicador-detalhe">{item.detalhe}</div>
         </article>

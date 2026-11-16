@@ -6,11 +6,12 @@ import { ProvedorDeAvisos } from "./componentes/Avisos.tsx";
 import { Layout } from "./componentes/Layout.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import type { Recurso } from "./sessao/permissoes.ts";
+import { Produtos } from "./paginas/Produtos.tsx";
 import { EmBreve } from "./paginas/EmBreve.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
 
-const PAGINAS: Partial<Record<Recurso, ComponentType>> = {};
+const PAGINAS: Partial<Record<Recurso, ComponentType>> = { produtos: Produtos };
 
 export function App() {
   return (

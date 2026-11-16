@@ -148,3 +148,7 @@ export function AvisoDoFormulario({ mensagem }: { mensagem: string | null }) {
     </div>
   );
 }
+
+export function focarPrimeiroInvalido(formulario: HTMLFormElement): void {
+  window.requestAnimationFrame(() => formulario.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+}

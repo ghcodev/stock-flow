@@ -42,3 +42,7 @@ export function formatarQuantidade(texto: string): string {
   const sinal = partes.negativo && !ehZero(texto) ? "-" : "";
   return fracao === "" ? `${sinal}${inteira}` : `${sinal}${inteira},${fracao}`;
 }
+
+export function formatarInteiro(valor: number): string {
+  return FORMATO_INTEIRO.format(valor);
+}
