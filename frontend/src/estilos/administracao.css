@@ -25,3 +25,41 @@
 .campo-senha-alternar:hover:not(:disabled) {
   color: var(--color-text-primary);
 }
+
+.inventario-lado {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.contagem-resumo {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+}
+
+.contagem-resumo > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.contagem-resumo dt {
+  color: var(--color-text-tertiary);
+}
+
+.contagem-resumo dd {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .movimentacao-grade {
+    grid-template-columns: 1fr;
+  }
+}

@@ -202,3 +202,14 @@ export type Usuario = {
   perfil: Perfil;
   ativo: boolean;
 };
+
+export type StatusDeContagem = "pendente" | "concluida" | "cancelada";
+
+export type Contagem = MovimentacaoDoHistorico & { divergencia: string };
+
+export type ResultadoDeFinalizacao = {
+  contagem: Contagem;
+  ajuste: Movimentacao | null;
+  divergencia: string;
+  saldo_final: string;
+};

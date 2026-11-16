@@ -1,6 +1,17 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ErroDaApi } from "../src/api/erros.ts";
+import {
+  corpoDeContagem,
+  divergenciaDaContagem,
+  idDeContagemValido,
+  interpretarFalhaDeContagem,
+  interpretarFalhaDeDecisao,
+  preverFinalizacao,
+  textoDaDivergencia,
+  tomDaDivergencia,
+  validarContagem,
+} from "../src/util/inventario.ts";
 import { interpretarFalhaDeMovimentacao } from "../src/util/movimentacao.ts";
 import {
   VALORES_DE_USUARIO_VAZIOS,
@@ -104,5 +115,50 @@ describe("W5: mensagem neutra no 503", () => {
     const falha = interpretarFalhaDeMovimentacao(new ErroDaApi(503, "SERVICO_OCUPADO", "x"));
     assert.equal(falha.atualizarLote, true);
     assert.doesNotMatch(falha.geral ?? "", /recarregad/);
+  });
+});
+
+describe("inventário rotativo (F8b)", () => {
+  it("divergência em decimal exato, sem Number", () => {
+    assert.equal(divergenciaDaContagem("10.3", "10.1"), "0.2");
+    assert.equal(divergenciaDaContagem("0", "5"), "-5");
+    assert.equal(divergenciaDaContagem("999999999.999", "999999999.998"), "0.001");
+    assert.equal(divergenciaDaContagem("1", "1"), "0");
+    assert.equal(tomDaDivergencia("0.001"), "sobra");
+    assert.equal(tomDaDivergencia("-0.001"), "falta");
+    assert.equal(tomDaDivergencia("0"), "zero");
+    assert.equal(textoDaDivergencia("2.5", (v) => v), "+2.5");
+    assert.equal(textoDaDivergencia("-2.5", (v) => v), "-2.5");
+  });
+
+  it("a divergência é somada ao saldo ATUAL, não ao da contagem", () => {
+    assert.deepEqual(preverFinalizacao("12", "-5"), { saldoFinal: "7", problema: null });
+    assert.deepEqual(preverFinalizacao("3", "-5"), { saldoFinal: "-2", problema: "negativo" });
+    assert.deepEqual(preverFinalizacao("999999999.999", "0.001"), { saldoFinal: "1000000000", problema: "excede" });
+  });
+
+  it("contagem: zero permitido, 3 casas, sem negativo, observação limitada", () => {
+    assert.deepEqual(validarContagem("0", ""), {});
+    assert.deepEqual(validarContagem("12,345", ""), {});
+    assert.ok(validarContagem("", "")["quantidade"]);
+    assert.ok(validarContagem("1,2345", "")["quantidade"]);
+    assert.ok(validarContagem("-1", "")["quantidade"]);
+    assert.ok(validarContagem("1", "x".repeat(5001))["observacao"]);
+    assert.deepEqual(corpoDeContagem(7, "12,5", "  ok "), { id_lote: 7, quantidade_contada: "12.5", observacao: "ok" });
+    assert.deepEqual(corpoDeContagem(7, "0", " "), { id_lote: 7, quantidade_contada: "0" });
+  });
+
+  it("falhas: segunda contagem pendente, já finalizada, saldo negativo, excede limite", () => {
+    assert.equal(interpretarFalhaDeContagem(new ErroDaApi(409, "CONTAGEM_PENDENTE_EXISTENTE", "O lote já tem uma contagem pendente de finalização")).geral, "O lote já tem uma contagem pendente de finalização");
+    const ja = interpretarFalhaDeDecisao(new ErroDaApi(409, "CONTAGEM_JA_FINALIZADA", "x"));
+    assert.equal(ja.atualizarLista, true);
+    assert.match(interpretarFalhaDeDecisao(new ErroDaApi(409, "SALDO_FINAL_NEGATIVO", "x")).geral, /negativo/);
+    assert.match(interpretarFalhaDeDecisao(new ErroDaApi(422, "SALDO_EXCEDE_LIMITE", "x")).geral, /limite/);
+    assert.equal(interpretarFalhaDeDecisao(new ErroDaApi(500, "ERRO_DO_SERVIDOR", "x")).incerta, true);
+  });
+
+  it("id de contagem só aceita inteiro positivo", () => {
+    assert.equal(idDeContagemValido("123"), true);
+    for (const ruim of ["", "0", "01", "1/../2", "1%2f", "a", "1".repeat(19)]) assert.equal(idDeContagemValido(ruim), false, ruim);
   });
 });
