@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { cancelar } from "../controllers/cancelamento.controller.ts";
 import { finalizar } from "../controllers/finalizacao.controller.ts";
 import { contagem, contagens, contar } from "../controllers/inventario.controller.ts";
 import { exigirAdministrador, exigirOperacional } from "../middlewares/perfil.middleware.ts";
@@ -13,5 +14,6 @@ export function criarRotasInventario(): Router {
   router.post("/contagens", validarContagem, validar, contar);
   router.get("/contagens/:id", validarIdMovimentacao, validar, contagem);
   router.post("/contagens/:id/finalizar", exigirAdministrador, validarIdMovimentacao, validar, finalizar);
+  router.post("/contagens/:id/cancelar", exigirAdministrador, validarIdMovimentacao, validar, cancelar);
   return router;
 }
