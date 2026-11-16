@@ -18,7 +18,7 @@ export function recursoDoCaminho(caminho: string): Recurso | undefined {
   return id !== undefined && RECURSOS.has(id) ? (id as Recurso) : undefined;
 }
 
-const RECURSOS_COM_LEITOR: ReadonlySet<Recurso> = new Set<Recurso>(["lotes", "entrada", "saida", "transferencia"]);
+const RECURSOS_COM_LEITOR: ReadonlySet<Recurso> = new Set<Recurso>(["lotes", "entrada", "saida", "transferencia", "inventario", "ajuste", "rastreabilidade"]);
 
 export function rotaUsaLeitor(caminho: string): boolean {
   const recurso = recursoDoCaminho(caminho);

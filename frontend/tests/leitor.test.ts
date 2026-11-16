@@ -394,8 +394,8 @@ describe("captura só na sessão autenticada e nas rotas do leitor (T7)", () => 
     const token = (exp: number) => `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.s`;
     assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora), false);
     salvarSessao(armazenamento, { token: token(Math.floor(agora / 1000) + 3600), usuario: { id_usuario: 1, nome: "A", email: "a@b.co", perfil: "operador" } });
-    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), true, rota);
-    for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
+    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia", "/inventario", "/ajuste", "/rastreabilidade"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), true, rota);
+    for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1", "/mapa", "/historico"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
     assert.equal(rotaUsaLeitor("/saida/"), true);
     assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora + 4 * 3600 * 1000), false);
   });
