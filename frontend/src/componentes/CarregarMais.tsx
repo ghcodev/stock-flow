@@ -9,9 +9,10 @@ type Propriedades = {
   carregando: boolean;
   erro: string | null;
   aoCarregarMais: () => void;
+  aoVoltarAoInicio: () => void;
 };
 
-export function CarregarMais({ exibidos, total, ocultos = 0, haMais, carregando, erro, aoCarregarMais }: Propriedades) {
+export function CarregarMais({ exibidos, total, ocultos = 0, haMais, carregando, erro, aoCarregarMais, aoVoltarAoInicio }: Propriedades) {
   return (
     <div className="carregar-mais">
       <span aria-live="polite">
@@ -25,7 +26,10 @@ export function CarregarMais({ exibidos, total, ocultos = 0, haMais, carregando,
       </span>
       {ocultos > 0 ? (
         <span className="carregar-mais-erro carregar-mais-nota">
-          {formatarInteiro(ocultos)} registro(s) mais antigos já lidos foram ocultados para manter a tela rápida. Use Atualizar para voltar ao início.
+          {formatarInteiro(ocultos)} dos primeiros registros carregados foram ocultados para manter a tela rápida.
+          <button type="button" className="btn btn-outline btn-sm" onClick={aoVoltarAoInicio}>
+            Voltar ao início
+          </button>
         </span>
       ) : null}
       {erro && exibidos > 0 ? (

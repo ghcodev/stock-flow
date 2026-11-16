@@ -253,3 +253,10 @@
 .carregar-mais-nota {
   color: var(--color-text-secondary);
 }
+
+.carregar-mais-nota {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

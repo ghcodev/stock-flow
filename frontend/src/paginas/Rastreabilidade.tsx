@@ -245,7 +245,7 @@ export function Rastreabilidade() {
                 </ol>
               )}
             </div>
-            <CarregarMais exibidos={lista.itens.length} ocultos={lista.ocultos} total={lista.total} haMais={lista.haMais} carregando={lista.carregando && lista.itens.length > 0} erro={lista.erro} aoCarregarMais={lista.carregarMais} />
+            <CarregarMais exibidos={lista.itens.length} ocultos={lista.ocultos} total={lista.total} haMais={lista.haMais} carregando={lista.carregando && lista.itens.length > 0} erro={lista.erro} aoCarregarMais={lista.carregarMais} aoVoltarAoInicio={lista.recarregar} />
           </section>
         </div>
       )}
