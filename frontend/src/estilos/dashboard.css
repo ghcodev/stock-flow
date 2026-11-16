@@ -135,3 +135,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+.aviso-de-atualizacao {
+  align-items: center;
+}
+
+.aviso-de-atualizacao span {
+  flex: 1;
+}

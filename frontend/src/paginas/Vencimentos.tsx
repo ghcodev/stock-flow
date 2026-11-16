@@ -9,6 +9,7 @@ import { Icone } from "../componentes/Icone.tsx";
 import { Paginacao } from "../componentes/Paginacao.tsx";
 import { Tabela, type Coluna } from "../componentes/Tabela.tsx";
 import { useCarregar } from "../hooks/useCarregar.ts";
+import { useHorarioDoSucesso } from "../hooks/useHorarioDoSucesso.ts";
 import { podeExecutar } from "../sessao/permissoes.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
 import { compararDias, formatarDia } from "../util/datas.ts";
@@ -38,6 +39,7 @@ export function Vencimentos() {
 
   const lista = useCarregar((sinal) => listarAlertasDeVencimento(cliente, pagina, LIMITE, sinal), [cliente, pagina]);
 
+  const atualizadoEm = useHorarioDoSucesso(lista.dados);
   const totalDaLista = lista.dados?.total;
   const vaziaNaPagina = lista.dados !== null && lista.dados.dados.length === 0;
   useEffect(() => {
@@ -110,6 +112,7 @@ export function Vencimentos() {
         resumo={[
           { texto: lista.dados ? <><strong>{formatarInteiro(lista.dados.total)}</strong> lote(s) vencem nos próximos 30 dias</> : "Carregando…", tom: lista.dados && lista.dados.total > 0 ? "alerta" : undefined },
           { texto: "Somente lotes ativos, ordenados pela validade" },
+          { texto: atualizadoEm ? `Atualizado às ${atualizadoEm}` : "Carregando…" },
         ]}
         acoes={
           <>
@@ -134,7 +137,7 @@ export function Vencimentos() {
           linhas={lista.dados?.dados ?? []}
           chave={(alerta) => alerta.id_lote}
           carregando={lista.carregando}
-          erro={lista.erro}
+          erro={lista.erro !== null && atualizadoEm !== null && lista.dados !== null ? `${lista.erro} Os dados exibidos são de ${atualizadoEm}.` : lista.erro}
           aoTentarNovamente={lista.recarregar}
           vazio={{ titulo: "Nenhum lote vence nos próximos 30 dias", descricao: "Os lotes ativos com validade na janela aparecem aqui." }}
         />

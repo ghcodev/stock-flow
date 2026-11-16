@@ -3,12 +3,14 @@ import { Link } from "react-router";
 import { listarAlertasDeVencimento, obterDashboard } from "../api/dashboard.ts";
 import type { AlertaDeEstoqueMinimo, AlertaDeVencimento, Indicadores } from "../api/tipos.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
+import { AvisoDeAtualizacao } from "../componentes/AvisoDeAtualizacao.tsx";
 import { Badge } from "../componentes/Badge.tsx";
 import { CabecalhoDePagina } from "../componentes/CabecalhoDePagina.tsx";
 import { EstadoDeErro, EstadoVazio } from "../componentes/Estados.tsx";
 import { FaixaDeIndicadores, type Indicador } from "../componentes/FaixaDeIndicadores.tsx";
 import { Icone } from "../componentes/Icone.tsx";
 import { useCarregar } from "../hooks/useCarregar.ts";
+import { useHorarioDoSucesso } from "../hooks/useHorarioDoSucesso.ts";
 import { ehDiaValido, formatarDia } from "../util/datas.ts";
 import { formatarInteiro, formatarQuantidade, subtrairDecimais } from "../util/decimal.ts";
 import { montarDias } from "../util/grafico.ts";
@@ -54,7 +56,11 @@ export function Dashboard() {
   const vencimentos = useCarregar((sinal) => listarAlertasDeVencimento(cliente, 1, ITENS_DE_VENCIMENTO, sinal), [cliente]);
 
   const dias = useMemo(() => (painel.dados && ehDiaValido(painel.dados.data_referencia) ? montarDias(painel.dados.grafico, painel.dados.data_referencia) : null), [painel.dados]);
-  const atualizadoEm = painel.dados ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date()) : null;
+  const atualizadoEm = useHorarioDoSucesso(painel.dados);
+  const horarioDosVencimentos = useHorarioDoSucesso(vencimentos.dados);
+  const falhaDoPainel = painel.erro !== null && painel.dados !== null ? painel.erro : null;
+  const falhaDosVencimentos = vencimentos.erro !== null && vencimentos.dados !== null ? vencimentos.erro : null;
+  const avisoDoPainel = falhaDoPainel !== null ? <AvisoDeAtualizacao mensagem={falhaDoPainel} horario={atualizadoEm} aoTentarNovamente={painel.recarregar} /> : null;
 
   const recarregar = () => {
     painel.recarregar();
@@ -84,7 +90,10 @@ export function Dashboard() {
           <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
         </div>
       ) : (
-        <FaixaDeIndicadores rotulo="Indicadores principais" itens={faixa} />
+        <>
+          {avisoDoPainel}
+          <FaixaDeIndicadores rotulo="Indicadores principais" itens={faixa} />
+        </>
       )}
 
       <div className="dashboard-grade">
@@ -95,6 +104,11 @@ export function Dashboard() {
             <div className="grafico-carregando">
               <span className="esqueleto" />
             </div>
+          ) : falhaDoPainel !== null ? (
+            <>
+              {avisoDoPainel}
+              {dias.every((d) => d.total === 0) ? <EstadoVazio titulo="Sem movimentações no período" /> : <GraficoDeMovimentacoes dias={dias} />}
+            </>
           ) : dias.every((d) => d.total === 0) ? (
             <EstadoVazio titulo="Sem movimentações no período" descricao="Registre entradas, saídas ou transferências para ver o gráfico." />
           ) : (
@@ -117,6 +131,7 @@ export function Dashboard() {
             <EstadoVazio titulo="Nenhum produto abaixo do mínimo" descricao="A soma dos lotes ativos cobre o estoque mínimo de todos os produtos." />
           ) : (
             <>
+              {avisoDoPainel}
               <div className="tabela-rolagem tabela-rolagem--curta">
                 <table className="tabela tabela--compacta" aria-label="Produtos abaixo do estoque mínimo">
                   <thead>
@@ -177,6 +192,8 @@ export function Dashboard() {
         ) : vencimentos.dados.dados.length === 0 ? (
           <EstadoVazio titulo="Nenhum lote vence nos próximos 30 dias" descricao="Os lotes ativos com validade na janela aparecem aqui." />
         ) : (
+          <>
+          {falhaDosVencimentos !== null ? <AvisoDeAtualizacao mensagem={falhaDosVencimentos} horario={horarioDosVencimentos} aoTentarNovamente={vencimentos.recarregar} /> : null}
           <div className="tabela-rolagem tabela-rolagem--curta">
             <table className="tabela tabela--compacta" aria-label="Lotes a vencer">
               <thead>
@@ -205,6 +222,7 @@ export function Dashboard() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Bloco>
     </>
