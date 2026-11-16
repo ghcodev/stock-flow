@@ -147,7 +147,7 @@
   height: 32px;
   padding: 0 30px 0 30px;
   background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   font-size: 12.5px;
 }
