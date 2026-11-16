@@ -261,3 +261,43 @@ describe("busca por termos de localização", () => {
     assert.equal(casaComTodosOsTermos("Ação-1", ["ação"]), true);
   });
 });
+
+describe("carga ligada à chave do pedido (T5)", () => {
+  it("carga A, troca para B e falha de B: nada de A aparece sob B e o erro fica visível", async () => {
+    const { aplicarFalha, aplicarSucesso, estadoInicial, visivel } = await import("../src/util/carga.ts");
+    let estado = estadoInicial<string[]>();
+    estado = aplicarSucesso(estado, 1, ["a1", "a2"]);
+    assert.deepEqual(visivel(estado, 1), { dados: ["a1", "a2"], erro: null });
+    assert.deepEqual(visivel(estado, 2), { dados: null, erro: null });
+    estado = aplicarFalha(estado, 2, "Sem conexão");
+    assert.deepEqual(visivel(estado, 2), { dados: null, erro: "Sem conexão" });
+    assert.deepEqual(visivel(estado, 1), { dados: ["a1", "a2"], erro: null });
+  });
+
+  it("atualização malsucedida de A mantém os dados de A e mostra o erro; novo sucesso limpa o erro", async () => {
+    const { aplicarFalha, aplicarSucesso, estadoInicial, visivel } = await import("../src/util/carga.ts");
+    let estado = aplicarSucesso(estadoInicial<number>(), 1, 10);
+    estado = aplicarFalha(estado, 1, "Tempo esgotado");
+    assert.deepEqual(visivel(estado, 1), { dados: 10, erro: "Tempo esgotado" });
+    estado = aplicarSucesso(estado, 1, 11);
+    assert.deepEqual(visivel(estado, 1), { dados: 11, erro: null });
+  });
+
+  it("sucesso de B depois de falha de B limpa o erro; erro de consulta antiga não aparece na nova", async () => {
+    const { aplicarFalha, aplicarSucesso, estadoInicial, visivel } = await import("../src/util/carga.ts");
+    let estado = aplicarFalha(estadoInicial<string>(), 2, "falhou");
+    estado = aplicarSucesso(estado, 2, "ok");
+    assert.deepEqual(visivel(estado, 2), { dados: "ok", erro: null });
+    estado = aplicarFalha(estado, 2, "outra");
+    assert.deepEqual(visivel(estado, 3), { dados: null, erro: null });
+  });
+
+  it("compara dependências por identidade, elemento a elemento", async () => {
+    const { mesmasDependencias } = await import("../src/util/carga.ts");
+    const objeto = {};
+    assert.equal(mesmasDependencias(null, []), false);
+    assert.equal(mesmasDependencias([1, objeto], [1, objeto]), true);
+    assert.equal(mesmasDependencias([1, objeto], [1, {}]), false);
+    assert.equal(mesmasDependencias([1], [1, 2]), false);
+  });
+});

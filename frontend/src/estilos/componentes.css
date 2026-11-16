@@ -1177,3 +1177,25 @@
   height: 32px;
   font-size: 12.5px;
 }
+
+.tabela-erro {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+  background: var(--color-danger-50);
+  border-bottom: 1px solid var(--color-danger-200);
+  font-size: 13px;
+  color: var(--color-danger-700);
+}
+
+.tabela-erro .icone {
+  width: 15px;
+  height: 15px;
+}
+
+.tabela-erro span {
+  flex: 1;
+  min-width: 160px;
+}

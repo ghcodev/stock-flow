@@ -60,6 +60,16 @@ export function Tabela<T>({
   const primeiraCarga = carregando && linhas.length === 0 && erro === null;
 
   return (
+    <>
+      {erro !== null && linhas.length > 0 ? (
+        <div className="tabela-erro" role="alert">
+          <Icone nome="alert-triangle" />
+          <span>{erro}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={aoTentarNovamente}>
+            Tentar novamente
+          </button>
+        </div>
+      ) : null}
     <div className="tabela-rolagem">
       <table className={carregando && !primeiraCarga ? "tabela tabela--ocupada" : "tabela"} aria-label={rotulo} aria-busy={carregando}>
         <thead>
@@ -130,5 +140,6 @@ export function Tabela<T>({
         </tbody>
       </table>
     </div>
+    </>
   );
 }
