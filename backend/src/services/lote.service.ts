@@ -52,6 +52,7 @@ export type FiltroLotes = Paginacao & {
   id_produto?: number;
   id_localizacao?: number;
   numero_lote?: string;
+  codigo_etiqueta?: string;
   status?: status_lote;
 };
 
@@ -136,6 +137,7 @@ export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LotePubli
     ...(filtro.id_produto === undefined ? {} : { id_produto: filtro.id_produto }),
     ...(filtro.id_localizacao === undefined ? {} : { id_localizacao: filtro.id_localizacao }),
     ...(filtro.status === undefined ? {} : { status_lote: filtro.status }),
+    ...(filtro.codigo_etiqueta === undefined ? {} : { identificacao: { is: { codigo: filtro.codigo_etiqueta } } }),
     ...(filtro.numero_lote ? { numero_lote: { contains: literalParaLike(filtro.numero_lote), mode: "insensitive" } } : {}),
   };
   const [lotes, total] = await Promise.all([

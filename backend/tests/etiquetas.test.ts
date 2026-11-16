@@ -99,6 +99,53 @@ describe("etiquetas (A8)", () => {
     assert.equal(await prisma.identificacao.count({ where: { id_lote: lote } }), 0);
   });
 
+  it("H1: GET /lotes?codigo_etiqueta casa só o código exato, combina com outros filtros e nunca dá 5xx", async () => {
+    const codigo = `QR-${prefixo}-h1`;
+    const lote = await novoLote("h1", { etiqueta: { tipo: "qr_code", codigo } });
+    const outro = await novoLote("h2");
+    const buscar = (consulta: string, token = operador) => chamarApi(servidor, "GET", `/lotes?${consulta}`, token);
+    type Lista = { dados: { id_lote: number; identificacao: { tipo_identificacao: string; codigo: string } | null }[]; total: number };
+    for (const token of [operador, admin]) {
+      const r = await buscar(`codigo_etiqueta=${encodeURIComponent(codigo)}`, token);
+      assert.equal(r.status, 200);
+      const lista = r.corpo as Lista;
+      assert.equal(lista.total, 1);
+      assert.equal(lista.dados[0]?.id_lote, lote);
+      assert.deepEqual({ ...lista.dados[0]?.identificacao, id_identificacao: 0 }, { id_identificacao: 0, tipo_identificacao: "qr_code", codigo });
+    }
+    const vazios = [codigo.slice(0, -1), codigo.toLowerCase(), `${codigo}%`, `QR-${prefixo}-%`, `QR-${prefixo}-h_`, `${codigo}'`, "' OR '1'='1", `QR-${prefixo}-nao-existe`];
+    for (const valor of vazios) {
+      const r = await buscar(`codigo_etiqueta=${encodeURIComponent(valor)}`);
+      assert.equal(r.status, 200, valor);
+      assert.equal((r.corpo as Lista).total, 0, valor);
+      assert.deepEqual((r.corpo as Lista).dados, [], valor);
+    }
+    const combinado = await buscar(`codigo_etiqueta=${encodeURIComponent(codigo)}&id_produto=${idProduto}&status=ativo&numero_lote=${prefixo}-h1`);
+    assert.equal((combinado.corpo as Lista).total, 1);
+    const outroStatus = await buscar(`codigo_etiqueta=${encodeURIComponent(codigo)}&status=bloqueado`);
+    assert.equal((outroStatus.corpo as Lista).total, 0);
+    const semEtiqueta = await buscar(`numero_lote=${prefixo}-h2`);
+    assert.equal((semEtiqueta.corpo as Lista).dados[0]?.id_lote, outro);
+    assert.equal((semEtiqueta.corpo as Lista).dados[0]?.identificacao, null);
+  });
+
+  it("H1: codigo_etiqueta com NUL, array, vazio ou acima de 128 caracteres é 400", async () => {
+    for (const consulta of [
+      "codigo_etiqueta=%00",
+      `codigo_etiqueta=a%00b`,
+      "codigo_etiqueta=a&codigo_etiqueta=b",
+      "codigo_etiqueta=",
+      "codigo_etiqueta=%20%20",
+      `codigo_etiqueta=${"x".repeat(129)}`,
+    ]) {
+      const r = await chamarApi(servidor, "GET", `/lotes?${consulta}`, operador);
+      assert.equal(r.status, 400, consulta);
+    }
+    const limite = await chamarApi(servidor, "GET", `/lotes?codigo_etiqueta=${"x".repeat(128)}`, operador);
+    assert.equal(limite.status, 200);
+    assert.equal((await chamarApi(servidor, "GET", "/lotes?codigo_etiqueta=x")).status, 401);
+  });
+
   it("sem token 401; não há rota para alterar ou remover etiqueta", async () => {
     const lote = await novoLote("g");
     assert.equal((await chamarApi(servidor, "POST", `/lotes/${lote}/etiqueta`, undefined, { tipo: "rfid", codigo: "x" })).status, 401);

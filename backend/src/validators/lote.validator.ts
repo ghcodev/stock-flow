@@ -40,5 +40,6 @@ export const validarListarLotes = [
   soEscalar(query("id_produto").optional(), "Produto").isInt({ min: 1, max: MAX_ID }).withMessage("Produto inválido").toInt(),
   soEscalar(query("id_localizacao").optional(), "Localização").isInt({ min: 1, max: MAX_ID }).withMessage("Localização inválida").toInt(),
   campoBusca("numero_lote", "Número do lote", 50),
+  campoBusca("codigo_etiqueta", "Código da etiqueta", 128).isLength({ min: 1 }).withMessage("Código da etiqueta não pode ser vazio"),
   soEscalar(query("status").optional(), "Status").isIn(STATUS_LOTE).withMessage("Status inválido"),
 ];
