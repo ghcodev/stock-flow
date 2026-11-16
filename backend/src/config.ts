@@ -22,4 +22,5 @@ export const config = {
   databaseUrl: obrigatoria("DATABASE_URL"),
   jwtSecret,
   port,
+  agendadorAtivo: process.env.AGENDADOR_ATIVO === "true",
 };
