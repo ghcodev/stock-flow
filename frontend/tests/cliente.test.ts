@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { criarCliente, lerSegundosParaRepetir, montarConsulta, type DependenciasDoCliente } from "../src/api/cliente.ts";
+import { caminhoDeApiValido, criarCliente, lerSegundosParaRepetir, montarConsulta, montarUrl, segmento, type DependenciasDoCliente } from "../src/api/cliente.ts";
 import { ErroDaApi, ErroDeRede, mensagemDoErro } from "../src/api/erros.ts";
 import { entrar } from "../src/api/autenticacao.ts";
 
@@ -268,5 +268,57 @@ describe("tempo limite e cancelamento valem até o fim da leitura do corpo (R2)"
   it("corpo que não é JSON continua sendo erro de resposta, não de rede", async () => {
     const t = simular(() => new Response("não é json", { status: 200 }));
     await assert.rejects(t.cliente.get("/x"), (e: unknown) => e instanceof ErroDaApi && e.codigo === "RESPOSTA_INVALIDA");
+  });
+});
+
+describe("construção de URL e validação do caminho (R6)", () => {
+  it("aceita só caminho relativo à API com barra inicial", () => {
+    for (const bom of ["/produtos", "/lotes/12", "/inventario/contagens/9/finalizar", "/auth/me", "/rastreabilidade", "/lotes/a%20b"]) {
+      assert.equal(caminhoDeApiValido(bom), true, bom);
+    }
+  });
+
+  it("recusa esquema, barras duplas, barra invertida, controle e segmentos de ponto, inclusive codificados", () => {
+    const ruins = [
+      "", "produtos", "http://evil.example/x", "https://evil.example", "//evil.example/x", "/a//b", "/\\evil", "/a\\b",
+      "/a\nb", "/a\tb", "/a\u0000b", "/a\u007fb", "/../x", "/a/../b", "/a/./b", "/a/..", "/%2e%2e/x", "/%2E%2E/x", "/.%2e/x",
+      "/a/%2e%2e%2fb", "/%252e%252e/x", "/a%5cb", "/a%0ab", "/a%00b", "/a%", "/a?x=1", "/a#x", "javascript:alert(1)",
+    ];
+    for (const ruim of ruins) assert.equal(caminhoDeApiValido(ruim), false, JSON.stringify(ruim));
+  });
+
+  it("monta origem e prefixo fixos e manda a consulta por URLSearchParams", () => {
+    assert.equal(montarUrl("/api", "/lotes", { q: "a b&c=d", pagina: 2, vazio: "" }), "/api/lotes?q=a+b%26c%3Dd&pagina=2");
+    assert.equal(montarUrl("/api", `/lotes/${segmento("a/b?c#d")}`, undefined), "/api/lotes/a%2Fb%3Fc%23d");
+    assert.equal(segmento(42), "42");
+  });
+
+  it("valor de usuário em segmento codificado nunca vira travessia", () => {
+    for (const valor of ["..", ".", "../x", "a/../b", "%2e%2e"]) {
+      const url = (() => {
+        try {
+          return montarUrl("/api", `/lotes/${segmento(valor)}`, undefined);
+        } catch {
+          return null;
+        }
+      })();
+      if (valor === "..") assert.equal(url, null, valor);
+      else assert.ok(url === null || !url.slice("/api/lotes/".length).includes("/"), valor);
+    }
+  });
+
+  it("o cliente não chama a rede com caminho inválido e rejeita a promessa", async () => {
+    let chamadas = 0;
+    const cliente = criarCliente({
+      buscar: (() => {
+        chamadas += 1;
+        return Promise.resolve(new Response("{}"));
+      }) as unknown as typeof fetch,
+      obterToken: () => "t",
+      aoNaoAutorizado: () => undefined,
+    });
+    await assert.rejects(cliente.get("//evil.example/x"), /Caminho de API inválido/);
+    await assert.rejects(cliente.get("http://evil.example"), /Caminho de API inválido/);
+    assert.equal(chamadas, 0);
   });
 });

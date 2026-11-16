@@ -39,6 +39,35 @@ export function montarConsulta(consulta: Consulta | undefined): string {
   return texto === "" ? "" : `?${texto}`;
 }
 
+const CONTROLE_OU_BARRA_INVERTIDA = /[\u0000-\u001f\u007f\\]/;
+
+export function caminhoDeApiValido(caminho: string): boolean {
+  if (!caminho.startsWith("/") || caminho.includes("//") || /[?#]/.test(caminho)) return false;
+  if (CONTROLE_OU_BARRA_INVERTIDA.test(caminho)) return false;
+  let atual = caminho;
+  for (let volta = 0; volta < 4; volta++) {
+    let decodificado: string;
+    try {
+      decodificado = decodeURIComponent(atual);
+    } catch {
+      return false;
+    }
+    if (decodificado === atual) break;
+    if (CONTROLE_OU_BARRA_INVERTIDA.test(decodificado)) return false;
+    atual = decodificado;
+  }
+  return !atual.split("/").some((segmento) => segmento === ".." || segmento === ".");
+}
+
+export function segmento(valor: string | number): string {
+  return encodeURIComponent(String(valor));
+}
+
+export function montarUrl(base: string, caminho: string, consulta: Consulta | undefined): string {
+  if (!caminhoDeApiValido(caminho)) throw new Error("Caminho de API inválido");
+  return `${base}${caminho}${montarConsulta(consulta)}`;
+}
+
 export function lerSegundosParaRepetir(valor: string | null, agoraMs: number): number | null {
   if (valor === null) return null;
   const texto = valor.trim();
@@ -95,6 +124,7 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
   const agora = dependencias.agora ?? Date.now;
 
   async function requisitar<T>(metodo: Metodo, caminho: string, opcoes: OpcoesDeRequisicao = {}): Promise<T> {
+    const url = montarUrl(base, caminho, opcoes.consulta);
     const token = dependencias.obterToken();
     const cabecalhos: Record<string, string> = { Accept: "application/json" };
     if (token !== null) cabecalhos["Authorization"] = `Bearer ${token}`;
@@ -118,7 +148,7 @@ export function criarCliente(dependencias: DependenciasDoCliente): Cliente {
     try {
       let resposta: Response;
       try {
-        resposta = await dependencias.buscar(`${base}${caminho}${montarConsulta(opcoes.consulta)}`, {
+        resposta = await dependencias.buscar(url, {
           method: metodo,
           headers: cabecalhos,
           body: temCorpo ? JSON.stringify(opcoes.corpo) : null,
