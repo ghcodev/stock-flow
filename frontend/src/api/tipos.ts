@@ -17,14 +17,6 @@ export type CampoInvalido = {
   mensagem: string;
 };
 
-export type CorpoDeErro = {
-  erro: {
-    codigo: string;
-    mensagem: string;
-    campos?: CampoInvalido[];
-  };
-};
-
 export type Pagina<T> = {
   dados: T[];
   pagina: number;

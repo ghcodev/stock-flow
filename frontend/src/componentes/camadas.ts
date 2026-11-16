@@ -75,10 +75,6 @@ export function empilharCamada(camada: Camada): () => void {
   };
 }
 
-export function profundidadeDeCamadas(): number {
-  return pilha.length;
-}
-
 export function useCamada(aberto: boolean, aoFechar: () => void, elemento: RefObject<HTMLElement | null>): void {
   const fechar = useRef(aoFechar);
   fechar.current = aoFechar;

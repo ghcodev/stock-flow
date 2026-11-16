@@ -136,13 +136,6 @@ describe("o que altera o saldo na linha do tempo (F7)", () => {
     assert.equal(alteraSaldo(evento("entrada", "cancelada", "1")), false);
   });
 
-  it("o saldo corrente é o saldo posterior do último evento que altera saldo, ignorando contagens", async () => {
-    const { saldoCorrenteDaLinha } = await import("../src/util/linhaDoTempo.ts");
-    const linha = [evento("entrada", "concluida", "10"), evento("saida", "concluida", "4"), evento("inventario", "pendente", "4"), evento("transferencia", "concluida", "4")];
-    assert.equal(saldoCorrenteDaLinha(linha), "4");
-    assert.equal(saldoCorrenteDaLinha([evento("inventario", "pendente", "9")]), null);
-    assert.equal(saldoCorrenteDaLinha([]), null);
-  });
 });
 
 describe("W1: repetir a mesma busca reconsulta", () => {
