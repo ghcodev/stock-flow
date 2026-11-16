@@ -4,9 +4,9 @@ import type { CampoInvalido, Consulta } from "./tipos.ts";
 export type Metodo = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 export type OpcoesDeRequisicao = {
-  consulta?: Consulta;
+  consulta?: Consulta | undefined;
   corpo?: unknown;
-  sinal?: AbortSignal;
+  sinal?: AbortSignal | undefined;
 };
 
 export type DependenciasDoCliente = {

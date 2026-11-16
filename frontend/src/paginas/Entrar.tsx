@@ -162,7 +162,7 @@ export function Entrar() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (erros.email !== undefined) setErros((atuais) => ({ ...atuais, email: undefined }));
+                    if (erros.email !== undefined) setErros(({ email: _removido, ...resto }) => resto);
                   }}
                   aria-invalid={erros.email !== undefined}
                   aria-describedby={erros.email !== undefined ? "entrar-email-erro" : undefined}
@@ -196,7 +196,7 @@ export function Entrar() {
                   value={senha}
                   onChange={(e) => {
                     setSenha(e.target.value);
-                    if (erros.senha !== undefined) setErros((atuais) => ({ ...atuais, senha: undefined }));
+                    if (erros.senha !== undefined) setErros(({ senha: _removido, ...resto }) => resto);
                   }}
                   aria-invalid={erros.senha !== undefined}
                   aria-describedby={erros.senha !== undefined ? "entrar-senha-erro" : undefined}
