@@ -182,6 +182,46 @@ describe("auditoria somente leitura (A18, RF13)", () => {
     }
   });
 
+  it("G7: a ordenação é numérica por id_log (não pelo texto do alias): primeira página sem filtro traz o maior id do banco", async () => {
+    const maximo = async (): Promise<bigint> => {
+      const [linha] = await prisma.$queryRaw<{ m: bigint }[]>`SELECT max(id_log) AS m FROM auditoria_log`;
+      return linha?.m ?? 0n;
+    };
+    const antes = await maximo();
+    const pagina = await consultar("limite=100");
+    const depois = await maximo();
+    const ids = pagina.dados.map((d) => BigInt(d.id_log));
+    assert.ok((ids[0] ?? 0n) >= antes && (ids[0] ?? 0n) <= depois, `primeiro id ${ids[0]} fora de [${antes}, ${depois}]`);
+    for (let i = 1; i < ids.length; i++) assert.ok((ids[i - 1] ?? 0n) > (ids[i] ?? 0n), `ordem numérica quebrada na posição ${i}`);
+    assert.equal(pagina.proximo_antes_de_id, ids.at(-1)?.toString() ?? null);
+  });
+
+  it("G7: a ordem é a mesma ao atravessar 99999 e 100000 (5 e 6 dígitos)", async () => {
+    const [alvo] = await prisma.$queryRaw<{ m: bigint | null }[]>`SELECT max(id_log) AS m FROM auditoria_log WHERE id_log < 100005`;
+    if (alvo?.m === null || alvo?.m === undefined || alvo.m < 99000n) return;
+    const pagina = await consultar("limite=10&antes_de_id=100005");
+    assert.equal(pagina.dados[0]?.id_log, alvo.m.toString());
+    const ids = pagina.dados.map((d) => BigInt(d.id_log));
+    for (let i = 1; i < ids.length; i++) assert.ok((ids[i - 1] ?? 0n) > (ids[i] ?? 0n));
+  });
+
+  it("G7: o plano da consulta ordena por id_log numérico, nunca por (id_log)::text", async () => {
+    const plano = JSON.stringify(
+      await prisma.$queryRaw(Prisma.sql`EXPLAIN (FORMAT JSON) ${consultaDeAuditoria({}, 0, 20)}`),
+    );
+    assert.doesNotMatch(plano, /::text/);
+    assert.match(plano, /auditoria_log_pkey|"Node Type":"Sort"/);
+  });
+
+  it("G7, mecanismo com valores constantes (sem tocar nos dados): alias de texto com o mesmo nome ordena como texto; qualificar a coluna ordena como número", async () => {
+    const comAlias = await prisma.$queryRaw<{ id_log: string }[]>`
+      SELECT v.id_log::text AS id_log FROM (VALUES (99999::bigint), (100000::bigint), (7::bigint)) AS v(id_log) ORDER BY id_log DESC`;
+    assert.equal(comAlias[0]?.id_log, "99999");
+    const qualificada = await prisma.$queryRaw<{ id_log: string }[]>`
+      SELECT v.id_log::text AS id_log FROM (VALUES (99999::bigint), (100000::bigint), (7::bigint)) AS v(id_log) ORDER BY v.id_log DESC`;
+    assert.deepEqual(qualificada.map((l) => l.id_log), ["100000", "99999", "7"]);
+  });
+
   it("plano: o conteúdo @> usa o GIN jsonb_path_ops e o período usa o B-tree de data_hora", async () => {
     const plano = async (filtro: Parameters<typeof consultaDeAuditoria>[0]): Promise<string> =>
       prisma.$transaction(async (tx) => {

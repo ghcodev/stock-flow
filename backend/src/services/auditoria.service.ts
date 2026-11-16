@@ -80,7 +80,7 @@ export function consultaDeAuditoria(filtro: FiltroAuditoria, skip: number, take:
     SELECT id_log::text AS id_log, tabela_afetada, operacao::text AS operacao, valor_anterior, valor_novo,
            id_usuario, data_hora, host(ip_usuario) AS ip_usuario, observacao
     FROM auditoria_log ${onde(condicoes)}
-    ORDER BY id_log DESC LIMIT ${take} OFFSET ${skip}`;
+    ORDER BY auditoria_log.id_log DESC LIMIT ${take} OFFSET ${skip}`;
 }
 
 export async function listarAuditoria(filtro: FiltroAuditoria): Promise<PaginaDeAuditoria> {
