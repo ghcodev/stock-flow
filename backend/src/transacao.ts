@@ -35,7 +35,8 @@ export function executarComoUsuario<T>(
 
 export async function instanteDoBanco(tx: Tx): Promise<Date> {
   const [linha] = await tx.$queryRaw<{ agora: Date | string }[]>`SELECT clock_timestamp() AS agora`;
-  return new Date(linha?.agora ?? Date.now());
+  if (!linha) throw new Error("O banco não devolveu o instante atual");
+  return new Date(linha.agora);
 }
 
 export function executarComoSistema<T>(operacao: (tx: Tx) => Promise<T>, opcoes: OpcoesTransacao = {}): Promise<T> {

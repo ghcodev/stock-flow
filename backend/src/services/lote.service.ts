@@ -3,6 +3,7 @@ import { HttpError } from "../errors.ts";
 import { Prisma } from "../generated/prisma/client.ts";
 import type { status_lote, tipo_identificacao } from "../generated/prisma/enums.ts";
 import { executarComoUsuario, instanteDoBanco, type ContextoDeEscrita, type Tx } from "../transacao.ts";
+import { LOCK_TIMEOUT_MS, travarLote } from "./saldo.service.ts";
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 import { literalParaLike } from "../busca.ts";
 
@@ -145,34 +146,39 @@ export async function listarLotes(filtro: FiltroLotes): Promise<Pagina<LotePubli
 }
 
 export function bloquearLote(contexto: ContextoDeEscrita, id: number, motivo: string): Promise<LotePublico> {
-  return executarComoUsuario(contexto, async (tx) => {
-    const atualizados = await tx.lote.updateMany({
-      where: { id_lote: id, status_lote: "ativo" },
-      data: { status_lote: "bloqueado", data_bloqueio: new Date(), motivo_bloqueio: motivo },
-    });
-    if (atualizados.count === 0) {
-      await buscarNaTransacao(tx, id);
-      throw new HttpError(409, "LOTE_NAO_ATIVO", "Somente lote ativo pode ser bloqueado");
-    }
-    return buscarNaTransacao(tx, id);
-  });
+  return executarComoUsuario(
+    contexto,
+    async (tx) => {
+      const lote = await travarLote(tx, id);
+      if (lote.status_lote !== "ativo") {
+        throw new HttpError(409, "LOTE_NAO_ATIVO", "Somente lote ativo pode ser bloqueado");
+      }
+      await tx.lote.update({
+        where: { id_lote: id },
+        data: { status_lote: "bloqueado", data_bloqueio: await instanteDoBanco(tx), motivo_bloqueio: motivo },
+        select: { id_lote: true },
+      });
+      return buscarNaTransacao(tx, id);
+    },
+    { lockTimeoutMs: LOCK_TIMEOUT_MS },
+  );
 }
 
 export function desbloquearLote(contexto: ContextoDeEscrita, id: number): Promise<LotePublico> {
-  return executarComoUsuario(contexto, async (tx) => {
-    const atual = await buscarNaTransacao(tx, id);
-    if (atual.status_lote !== "bloqueado") {
-      throw new HttpError(409, "LOTE_NAO_BLOQUEADO", "Somente lote bloqueado pode ser desbloqueado");
-    }
-    const hoje = new Date().toISOString().slice(0, 10);
-    const expirado = atual.data_validade !== null && atual.data_validade < hoje;
-    const atualizados = await tx.lote.updateMany({
-      where: { id_lote: id, status_lote: "bloqueado" },
-      data: { status_lote: expirado ? "vencido" : "ativo", data_bloqueio: null, motivo_bloqueio: null },
-    });
-    if (atualizados.count === 0) {
-      throw new HttpError(409, "LOTE_NAO_BLOQUEADO", "Somente lote bloqueado pode ser desbloqueado");
-    }
-    return buscarNaTransacao(tx, id);
-  });
+  return executarComoUsuario(
+    contexto,
+    async (tx) => {
+      const lote = await travarLote(tx, id);
+      if (lote.status_lote !== "bloqueado") {
+        throw new HttpError(409, "LOTE_NAO_BLOQUEADO", "Somente lote bloqueado pode ser desbloqueado");
+      }
+      await tx.lote.update({
+        where: { id_lote: id },
+        data: { status_lote: lote.validade_expirada ? "vencido" : "ativo", data_bloqueio: null, motivo_bloqueio: null },
+        select: { id_lote: true },
+      });
+      return buscarNaTransacao(tx, id);
+    },
+    { lockTimeoutMs: LOCK_TIMEOUT_MS },
+  );
 }
