@@ -84,6 +84,10 @@ export async function contarLotesAVencer(cliente: Cliente, sinal?: AbortSignal):
   return pagina.total;
 }
 
+export function obterLocalizacao(cliente: Cliente, id: number, sinal?: AbortSignal): Promise<Localizacao> {
+  return cliente.get<Localizacao>(`/localizacoes/${segmento(id)}`, undefined, sinal);
+}
+
 export function listarLocalizacoes(cliente: Cliente, sinal?: AbortSignal): Promise<Pagina<Localizacao>> {
   return cliente.get<Pagina<Localizacao>>("/localizacoes", { limite: 100 }, sinal);
 }

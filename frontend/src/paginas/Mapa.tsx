@@ -80,7 +80,7 @@ function DetalheDaPosicao({ posicao, aoFechar }: { posicao: PosicaoDoMapa; aoFec
       {haMaisLotesQueOsListados(posicao) ? (
         <p className="bloco-nota">
           Mostrando {formatarInteiro(posicao.lotes.length)} de {formatarInteiro(posicao.total_lotes)} lotes.{" "}
-          <Link to={ligacaoParaLotesDaLocalizacao(posicao.id_localizacao, rotulo)}>Ver todos em Lotes</Link>
+          <Link to={ligacaoParaLotesDaLocalizacao(posicao.id_localizacao)}>Ver todos em Lotes</Link>
         </p>
       ) : null}
     </Gaveta>

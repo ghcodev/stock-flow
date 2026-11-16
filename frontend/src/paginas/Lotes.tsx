@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLotes, obterLote } from "../api/lotes.ts";
+import { buscarLotePorEtiqueta, obterLocalizacao, contarLotes, contarLotesAVencer, desbloquearLote, listarLotes, obterLote } from "../api/lotes.ts";
 import { buscarLocalizacoesParaSeletor, buscarProdutosParaSeletor } from "../api/buscas.ts";
 import type { Lote, StatusLote } from "../api/tipos.ts";
 import { mensagemDoErro } from "../api/erros.ts";
@@ -21,7 +21,7 @@ import { normalizarCodigoLido } from "../leitor/captura.ts";
 import type { Leitura } from "../leitor/detector.ts";
 import { IndicadorDeLeitura } from "../leitor/IndicadorDeLeitura.tsx";
 import { useLeitor } from "../leitor/useLeitor.ts";
-import { localizacaoDaUrl } from "../util/filtroDeUrl.ts";
+import { idDaLocalizacaoNaUrl, rotuloDaLocalizacaoDaUrl } from "../util/filtroDeUrl.ts";
 import { criarVigencia } from "../util/vigencia.ts";
 import { compararDias, diaDeHoje, formatarDia } from "../util/datas.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
@@ -46,8 +46,10 @@ export function Lotes() {
   const [status, setStatus] = useState<FiltroDeStatus>("todos");
   const [idProduto, setIdProduto] = useState("");
   const [parametrosDaUrl] = useSearchParams();
-  const localizacaoInicial = useMemo(() => localizacaoDaUrl(parametrosDaUrl.toString()), [parametrosDaUrl]);
-  const [idLocalizacao, setIdLocalizacao] = useState(localizacaoInicial?.id ?? "");
+  const [idDaUrl] = useState(() => idDaLocalizacaoNaUrl(parametrosDaUrl.toString()));
+  const [idLocalizacao, setIdLocalizacao] = useState(idDaUrl ?? "");
+  const localizacaoDaUrl = useCarregar((sinal) => obterLocalizacao(cliente, Number(idDaUrl), sinal), [cliente, idDaUrl], idDaUrl !== null);
+  const rotuloDaUrl = idDaUrl === null ? "" : rotuloDaLocalizacaoDaUrl(idDaUrl, localizacaoDaUrl.dados);
   const [pagina, setPagina] = useState(1);
   const [painel, setPainelBruto] = useState<Painel>(null);
   const vigencia = useRef(criarVigencia());
@@ -340,7 +342,8 @@ export function Lotes() {
             rotulo="Filtrar por localização"
             placeholder="Todas as localizações"
             valor={idLocalizacao}
-            rotuloInicial={localizacaoInicial?.rotulo ?? ""}
+            key={rotuloDaUrl}
+            rotuloInicial={rotuloDaUrl}
             aoMudar={(valor) => {
               setIdLocalizacao(valor);
               setPagina(1);

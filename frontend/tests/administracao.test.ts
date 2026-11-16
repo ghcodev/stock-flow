@@ -203,14 +203,20 @@ describe("ajuste de estoque (F8c)", () => {
   });
 });
 
-describe("filtro de localização vindo da URL (F9a)", () => {
-  it("aceita id válido e rótulo seguro; rejeita o resto sem quebrar", async () => {
-    const { localizacaoDaUrl, ligacaoParaLotesDaLocalizacao } = await import("../src/util/filtroDeUrl.ts");
-    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12&rotulo=A-1-02"), { id: "12", rotulo: "A-1-02" });
-    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12&rotulo=%3Cimg%20src%3Dx%3E"), { id: "12", rotulo: "Localização 12" });
-    assert.deepEqual(localizacaoDaUrl("?id_localizacao=12"), { id: "12", rotulo: "Localização 12" });
-    for (const ruim of ["", "?id_localizacao=0", "?id_localizacao=abc", "?id_localizacao=1%2F..", "?id_localizacao=99999999999", "?rotulo=A"]) assert.equal(localizacaoDaUrl(ruim), null, ruim);
-    assert.equal(ligacaoParaLotesDaLocalizacao(5, "A-1-02"), "/lotes?id_localizacao=5&rotulo=A-1-02");
+describe("X2: localização da URL resolvida pelo id, sem confiar no rótulo da URL", () => {
+  it("só o id vale; id inválido é ignorado", async () => {
+    const { idDaLocalizacaoNaUrl, ligacaoParaLotesDaLocalizacao } = await import("../src/util/filtroDeUrl.ts");
+    assert.equal(idDaLocalizacaoNaUrl("?id_localizacao=12&rotulo=Z-9-99"), "12");
+    for (const ruim of ["", "?id_localizacao=0", "?id_localizacao=abc", "?id_localizacao=1%2F..", "?id_localizacao=99999999999", "?rotulo=A"]) assert.equal(idDaLocalizacaoNaUrl(ruim), null, ruim);
+    assert.equal(ligacaoParaLotesDaLocalizacao(5), "/lotes?id_localizacao=5");
+  });
+
+  it("rótulo real depois da leitura; 'Localização N' enquanto carrega, em 404 ou se o id não bate", async () => {
+    const { rotuloDaLocalizacaoDaUrl } = await import("../src/util/filtroDeUrl.ts");
+    const real = { id_localizacao: 12, corredor: "A", nivel: "1", posicao: "02" };
+    assert.equal(rotuloDaLocalizacaoDaUrl("12", real), "A-1-02");
+    assert.equal(rotuloDaLocalizacaoDaUrl("12", null), "Localização 12");
+    assert.equal(rotuloDaLocalizacaoDaUrl("13", real), "Localização 13");
   });
 });
 
