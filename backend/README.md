@@ -99,3 +99,9 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 `GET /alertas/vencimento` (operador e administrador, paginado como as demais listas) devolve os lotes com **status ativo** e `data_validade` entre hoje e hoje + 30 dias, inclusive. Lotes sem validade, vencidos e bloqueados ficam fora, e a quantidade não filtra (lote com saldo 0 aparece). "Hoje" é o `current_date` do banco, a mesma fonte do agendador. Ordem: validade e id.
 
 `GET /alertas/vencimento/exportacao` (só administrador; operador recebe 403) devolve o mesmo conjunto, sem paginação, como CSV. Decisões de projeto: gerado sem biblioteca; UTF-8 com BOM, separador ponto e vírgula, linhas terminadas em CRLF; colunas número do lote, produto, validade, quantidade, unidade e localização (`corredor-nível-posição`); células com aspas, ponto e vírgula ou quebra de linha vão entre aspas, com aspas duplicadas; proteção contra fórmulas: célula iniciada por `=`, `+`, `-`, `@`, tabulação ou CR recebe um apóstrofo na frente; `Content-Type: text/csv; charset=utf-8` e `Content-Disposition: attachment`.
+
+## Mapa do armazém (RF12)
+
+`GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. São duas consultas por página, sem N+1.
+
+Decisões de projeto: só entram lotes com quantidade maior que zero, de qualquer status (bloqueado e vencido ocupam espaço e aparecem com o status); **não há percentual de ocupação**, porque a unidade da capacidade não é definida; a resposta é paginada por localização (`pagina`, `limite` padrão 100 e máximo 100) e aceita o filtro `corredor`.

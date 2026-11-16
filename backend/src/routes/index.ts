@@ -11,6 +11,7 @@ import { criarRotasAuditoria } from "./auditoria.routes.ts";
 import { criarRotasRastreabilidade } from "./rastreabilidade.routes.ts";
 import { criarRotasDashboard } from "./dashboard.routes.ts";
 import { criarRotasAlertas } from "./alertas.routes.ts";
+import { criarRotasMapa } from "./mapa.routes.ts";
 
 export function criarRotasPublicas(): Router {
   const router = Router();
@@ -32,5 +33,6 @@ export function criarRotasProtegidas(): Router {
   router.use("/rastreabilidade", criarRotasRastreabilidade());
   router.use("/dashboard", criarRotasDashboard());
   router.use("/alertas", criarRotasAlertas());
+  router.use("/mapa", criarRotasMapa());
   return router;
 }
