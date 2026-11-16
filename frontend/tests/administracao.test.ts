@@ -269,3 +269,20 @@ describe("X1: finalizar só com leitura atual bem-sucedida e previsão válida",
     assert.equal(interpretarFalhaDeDecisao(new ErroDaApi(409, "CONTAGEM_JA_FINALIZADA", "x")).reler, false);
   });
 });
+
+describe("Y1: tela sob demanda recriável", () => {
+  it("a instância lazy é estável e renovar cria outra, que importa de novo", async () => {
+    const { criarTelaSobDemanda } = await import("../src/util/telaSobDemanda.ts");
+    let chamadas = 0;
+    const tela = criarTelaSobDemanda(() => {
+      chamadas += 1;
+      return Promise.reject(new Error("chunk"));
+    }, "Pagina");
+    const primeira = tela.obter();
+    assert.equal(tela.obter(), primeira);
+    tela.renovar();
+    const segunda = tela.obter();
+    assert.notEqual(segunda, primeira);
+    assert.equal(chamadas, 0);
+  });
+});

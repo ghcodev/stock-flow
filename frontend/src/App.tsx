@@ -1,21 +1,21 @@
-import { Suspense, lazy, type ComponentType } from "react";
+import { Suspense, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ProvedorDeAutenticacao } from "./autenticacao/ContextoDeAutenticacao.tsx";
 import { ExigeSessao, Protegida } from "./autenticacao/RotaProtegida.tsx";
 import { ProvedorDeAvisos } from "./componentes/Avisos.tsx";
+import { BarreiraDeErros } from "./componentes/BarreiraDeErros.tsx";
 import { Layout } from "./componentes/Layout.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import type { Recurso } from "./sessao/permissoes.ts";
 import { Dashboard } from "./paginas/Dashboard.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
+import { criarTelaSobDemanda, type TelaSobDemanda } from "./util/telaSobDemanda.ts";
 
-function sobDemanda<N extends string>(importar: () => Promise<Record<N, ComponentType>>, nome: N): ComponentType {
-  return lazy<ComponentType>(() => importar().then((modulo) => ({ default: modulo[nome] })));
-}
+const sobDemanda = criarTelaSobDemanda;
 
-const PAGINAS: Record<Recurso, ComponentType> = {
-  dashboard: Dashboard,
+const PAGINAS: Record<Recurso, TelaSobDemanda> = {
+  dashboard: { obter: () => Dashboard, renovar: () => undefined },
   produtos: sobDemanda(() => import("./paginas/Produtos.tsx"), "Produtos"),
   lotes: sobDemanda(() => import("./paginas/Lotes.tsx"), "Lotes"),
   mapa: sobDemanda(() => import("./paginas/Mapa.tsx"), "Mapa"),
@@ -31,6 +31,23 @@ const PAGINAS: Record<Recurso, ComponentType> = {
   auditoria: sobDemanda(() => import("./paginas/Auditoria.tsx"), "Auditoria"),
   perfil: sobDemanda(() => import("./paginas/Perfil.tsx"), "Perfil"),
 };
+
+function TelaDaRota({ tela }: { tela: TelaSobDemanda }) {
+  const [versao, setVersao] = useState(0);
+  const Pagina = tela.obter();
+  return (
+    <BarreiraDeErros
+      aoTentarDeNovo={() => {
+        tela.renovar();
+        setVersao((atual) => atual + 1);
+      }}
+    >
+      <Suspense fallback={<CarregandoTela />}>
+        <Pagina key={versao} />
+      </Suspense>
+    </BarreiraDeErros>
+  );
+}
 
 function CarregandoTela() {
   return (
@@ -51,7 +68,7 @@ export function App() {
             <Route element={<ExigeSessao />}>
               <Route element={<Layout />}>
                 {ITENS_DE_MENU.map((item) => {
-                  const Pagina = PAGINAS[item.recurso];
+                  const tela = PAGINAS[item.recurso];
                   return (
                     <Route
                       key={item.recurso}
@@ -59,9 +76,7 @@ export function App() {
                       caseSensitive
                       element={
                         <Protegida recurso={item.recurso}>
-                          <Suspense fallback={<CarregandoTela />}>
-                            <Pagina />
-                          </Suspense>
+                          <TelaDaRota tela={tela} />
                         </Protegida>
                       }
                     />
