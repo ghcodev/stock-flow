@@ -84,7 +84,27 @@ describe("detector de leitor em modo teclado (Código 4, E10)", () => {
   it("buffer limitado: sequência enorme não cresce sem fim", () => {
     const detector = criarDetector();
     for (let i = 0; i < 1000; i++) detector.tecla("a", i * 5);
-    assert.ok(detector.pendentes() <= 256);
+    assert.ok(detector.pendentes() <= 128);
+  });
+
+  it("estouro do limite invalida a sequência inteira até o Enter: o resto não vira outra etiqueta (T1)", () => {
+    const detector = criarDetector();
+    const longa = "x".repeat(256) + "VALID";
+    assert.equal(digitar(detector, longa, 0, 5, 5, aleatorio), null);
+    assert.equal(detector.pendentes(), 0);
+    assert.equal(digitar(detector, "PROXIMA-1", 100_000, 5, 5, aleatorio)?.codigo, "PROXIMA-1");
+  });
+
+  it("128 caracteres ainda valem; 129 invalidam a sequência", () => {
+    const detector = criarDetector();
+    assert.equal(digitar(detector, "a".repeat(128), 0, 5, 5, aleatorio)?.codigo, "a".repeat(128));
+    assert.equal(digitar(detector, "a".repeat(129), 0, 5, 5, aleatorio), null);
+  });
+
+  it("pausa longa sai do estado inválido: uma leitura nova depois da pausa vale", () => {
+    const detector = criarDetector();
+    for (let i = 0; i < 200; i++) detector.tecla("z", i * 5);
+    assert.equal(digitar(detector, "NOVO-123", 50_000, 5, 5, aleatorio)?.codigo, "NOVO-123");
   });
 });
 
@@ -191,6 +211,16 @@ describe("captura global antes do React, sem perder o primeiro caractere e sem d
       captura.processar(evento("Enter", instante, extras));
     }
     assert.deepEqual(recebidas, []);
+  });
+
+  it("leitura gigante seguida de uma etiqueta curta não emite nada nem chama o ouvinte (T1)", () => {
+    const captura = criarCaptura();
+    const recebidas: string[] = [];
+    captura.assinar((leitura) => recebidas.push(leitura.codigo));
+    leitorFisico(captura, "x".repeat(256) + "VALID", 0);
+    assert.deepEqual(recebidas, []);
+    leitorFisico(captura, "CERTA-1", 100_000);
+    assert.deepEqual(recebidas, ["CERTA-1"]);
   });
 
   it("ouvinte que cancela a assinatura deixa de receber", () => {
