@@ -87,9 +87,12 @@ describe("regras de bloqueio por status e validade", () => {
     assert.ok(validarDestino(lote(), ""));
     assert.ok(validarDestino(lote(), "5"));
     assert.equal(validarDestino(lote(), "6"), null);
+    assert.ok(validarDestino(lote(), "abc"));
+    assert.ok(validarDestino(lote(), "2147483648"));
     assert.ok(validarJustificativa("   "));
     assert.ok(validarJustificativa("x".repeat(256)));
     assert.equal(validarJustificativa("Reposição"), null);
+    assert.ok(validarJustificativa("Repo\u0000sição"));
   });
 });
 

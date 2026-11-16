@@ -12,6 +12,16 @@ export type FalhaDeFormulario = {
 const NUMERIC_12_3 = /^\d{1,9}(\.\d{1,3})?$/;
 const CONTROLE = /[\u0000-\u001f\u007f]/;
 
+export const MAX_ID = 2_147_483_647;
+
+export function contemNul(texto: string): boolean {
+  return texto.includes("\u0000");
+}
+
+export function idValido(texto: string): boolean {
+  return /^[1-9]\d{0,9}$/.test(texto) && Number(texto) <= MAX_ID;
+}
+
 export function normalizarDecimal(texto: string): string {
   return texto.trim().replace(",", ".");
 }
@@ -59,11 +69,15 @@ export function validarProduto(valores: ValoresDeProduto): ErrosDeCampos {
   const nome = valores.nome.trim();
   if (nome === "") erros["nome"] = "Informe o nome do produto.";
   else if (nome.length > 120) erros["nome"] = "O nome deve ter até 120 caracteres.";
+  else if (contemNul(nome)) erros["nome"] = "O nome contém caractere inválido.";
   if (valores.categoria.trim().length > 60) erros["categoria"] = "A categoria deve ter até 60 caracteres.";
+  else if (contemNul(valores.categoria)) erros["categoria"] = "A categoria contém caractere inválido.";
   if (valores.descricao.trim().length > 5000) erros["descricao"] = "A descrição deve ter até 5000 caracteres.";
+  else if (contemNul(valores.descricao)) erros["descricao"] = "A descrição contém caractere inválido.";
   const unidade = valores.unidade_medida.trim();
   if (unidade === "") erros["unidade_medida"] = "Informe a unidade de medida.";
   else if (unidade.length > 10) erros["unidade_medida"] = "A unidade deve ter até 10 caracteres.";
+  else if (contemNul(unidade)) erros["unidade_medida"] = "A unidade contém caractere inválido.";
   if (valores.estoque_minimo.trim() !== "" && !decimalValido(valores.estoque_minimo)) {
     erros["estoque_minimo"] = "Use um número não negativo com até 9 inteiros e 3 decimais.";
   }
@@ -86,8 +100,11 @@ export function validarLote(valores: ValoresDeLote): ErrosDeCampos {
   const numero = valores.numero_lote.trim();
   if (numero === "") erros["numero_lote"] = "Informe o número do lote.";
   else if (numero.length > 50) erros["numero_lote"] = "O número do lote deve ter até 50 caracteres.";
+  else if (contemNul(numero)) erros["numero_lote"] = "O número do lote contém caractere inválido.";
   if (valores.id_produto === "") erros["id_produto"] = "Selecione o produto.";
+  else if (!idValido(valores.id_produto)) erros["id_produto"] = "Produto inválido.";
   if (valores.id_localizacao === "") erros["id_localizacao"] = "Selecione a localização.";
+  else if (!idValido(valores.id_localizacao)) erros["id_localizacao"] = "Localização inválida.";
   if (valores.quantidade.trim() !== "" && !decimalValido(valores.quantidade)) {
     erros["quantidade"] = "Use um número não negativo com até 9 inteiros e 3 decimais.";
   }
@@ -114,6 +131,7 @@ export function validarMotivo(motivo: string): string | null {
   const limpo = motivo.trim();
   if (limpo === "") return "Informe o motivo do bloqueio.";
   if (limpo.length > 500) return "O motivo deve ter até 500 caracteres.";
+  if (contemNul(limpo)) return "O motivo contém caractere inválido.";
   return null;
 }
 

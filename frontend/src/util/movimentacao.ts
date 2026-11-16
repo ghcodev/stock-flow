@@ -1,7 +1,7 @@
 import { ErroDaApi, ErroDeRede, mensagemDoErro } from "../api/erros.ts";
 import type { Lote } from "../api/tipos.ts";
 import { compararDecimais, ehZero, formatarQuantidade, SALDO_MAXIMO, somarDecimais, subtrairDecimais } from "./decimal.ts";
-import { decimalValido, normalizarDecimal, type ErrosDeCampos } from "./formularios.ts";
+import { contemNul, decimalValido, idValido, normalizarDecimal, type ErrosDeCampos } from "./formularios.ts";
 
 type DadosDoLote = Pick<Lote, "status_lote" | "data_validade" | "quantidade" | "id_localizacao" | "produto">;
 
@@ -55,17 +55,20 @@ export function avaliarQuantidade(texto: string, lote: DadosDoLote, modo: ModoDe
 
 export function validarDestino(lote: Pick<Lote, "id_localizacao">, idDestino: string): string | null {
   if (idDestino === "") return "Selecione a localização de destino.";
+  if (!idValido(idDestino)) return "Localização de destino inválida.";
   if (Number(idDestino) === lote.id_localizacao) return "O destino deve ser diferente da localização atual do lote.";
   return null;
 }
 
 export function validarTextoOpcional(texto: string, maximo: number, rotulo: string): string | null {
+  if (contemNul(texto)) return `${rotulo} contém caractere inválido.`;
   return texto.trim().length > maximo ? `${rotulo} deve ter até ${maximo} caracteres.` : null;
 }
 
 export function validarJustificativa(texto: string): string | null {
   const limpo = texto.trim();
   if (limpo === "") return "Informe a justificativa da transferência.";
+  if (contemNul(limpo)) return "A justificativa contém caractere inválido.";
   return limpo.length > 255 ? "A justificativa deve ter até 255 caracteres." : null;
 }
 

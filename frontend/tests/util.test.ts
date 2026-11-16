@@ -301,3 +301,25 @@ describe("carga ligada à chave do pedido (T5)", () => {
     assert.equal(mesmasDependencias([1], [1, 2]), false);
   });
 });
+
+describe("NUL e ids como no backend (T6)", () => {
+  it("campos de texto recusam NUL", () => {
+    const base = { nome: "Farinha", categoria: "", descricao: "", unidade_medida: "kg", estoque_minimo: "" };
+    for (const campo of ["nome", "categoria", "descricao", "unidade_medida"] as const) {
+      assert.ok(validarProduto({ ...base, [campo]: "a\u0000b" })[campo], campo);
+    }
+    const lote: ValoresDeLote = { numero_lote: "L-1", id_produto: "3", id_localizacao: "2", quantidade: "", data_fabricacao: "", data_validade: "", etiqueta_tipo: "", etiqueta_codigo: "" };
+    assert.ok(validarLote({ ...lote, numero_lote: "L\u0000" })["numero_lote"]);
+    assert.ok(validarMotivo("av\u0000aria"));
+  });
+
+  it("ids aceitam só inteiros de 1 a 2147483647 em texto", async () => {
+    const { idValido } = await import("../src/util/formularios.ts");
+    for (const bom of ["1", "42", "2147483647"]) assert.equal(idValido(bom), true, bom);
+    for (const ruim of ["", "0", "-1", "01", "1.5", "abc", "2147483648", "99999999999", "1e3", " 1", "1 ", "1\u0000"]) assert.equal(idValido(ruim), false, ruim);
+    const lote: ValoresDeLote = { numero_lote: "L-1", id_produto: "abc", id_localizacao: "0", quantidade: "", data_fabricacao: "", data_validade: "", etiqueta_tipo: "", etiqueta_codigo: "" };
+    const erros = validarLote(lote);
+    assert.ok(erros["id_produto"]);
+    assert.ok(erros["id_localizacao"]);
+  });
+});
