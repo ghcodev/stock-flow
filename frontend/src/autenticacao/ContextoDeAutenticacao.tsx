@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { consultarUsuarioAtual, entrar as entrarNaApi } from "../api/autenticacao.ts";
 import { criarCliente, type Cliente } from "../api/cliente.ts";
-import { carregarSessao, expiracaoDoToken, limparSessao, salvarSessao, tokenVigente, type Armazenamento, type Sessao } from "../sessao/sessao.ts";
+import { MENSAGEM_DE_SESSAO_EXPIRADA, expiracaoDoToken, lerSessaoSalva, limparSessao, salvarSessao, tokenVigente, type Armazenamento, type Sessao } from "../sessao/sessao.ts";
 
 type Valor = {
   sessao: Sessao | null;
@@ -12,7 +12,6 @@ type Valor = {
   limparAviso: () => void;
 };
 
-const MENSAGEM_DE_SESSAO_EXPIRADA = "Sua sessão expirou. Entre novamente.";
 const LIMITE_DO_TEMPORIZADOR_MS = 2_147_483_000;
 
 const Contexto = createContext<Valor | null>(null);
@@ -32,8 +31,9 @@ function armazenamentoDaAba(): Armazenamento {
 
 export function ProvedorDeAutenticacao({ children, armazenamento }: { children: ReactNode; armazenamento?: Armazenamento }) {
   const memoria = useMemo(() => armazenamento ?? armazenamentoDaAba(), [armazenamento]);
-  const [sessao, setSessao] = useState<Sessao | null>(() => carregarSessao(memoria, Date.now()));
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [inicial] = useState(() => lerSessaoSalva(memoria, Date.now()));
+  const [sessao, setSessao] = useState<Sessao | null>(inicial.sessao);
+  const [aviso, setAviso] = useState<string | null>(inicial.expirada ? MENSAGEM_DE_SESSAO_EXPIRADA : null);
   const sessaoAtual = useRef<Sessao | null>(sessao);
 
   const definir = useCallback(

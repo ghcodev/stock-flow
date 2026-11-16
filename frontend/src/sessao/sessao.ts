@@ -13,6 +13,8 @@ export type Sessao = {
 
 export const CHAVE_DA_SESSAO = "sf.sessao";
 
+export const MENSAGEM_DE_SESSAO_EXPIRADA = "Sua sessão expirou. Entre novamente.";
+
 const PERFIS: readonly Perfil[] = ["administrador", "operador"];
 
 function ehObjeto(valor: unknown): valor is Record<string, unknown> {
@@ -67,24 +69,37 @@ export function salvarSessao(armazenamento: Armazenamento, sessao: Sessao): void
   }
 }
 
-export function carregarSessao(armazenamento: Armazenamento, agoraMs: number): Sessao | null {
+export type SessaoSalva = {
+  sessao: Sessao | null;
+  expirada: boolean;
+};
+
+export function lerSessaoSalva(armazenamento: Armazenamento, agoraMs: number): SessaoSalva {
   let bruto: string | null;
   try {
     bruto = armazenamento.getItem(CHAVE_DA_SESSAO);
   } catch {
-    return null;
+    return { sessao: null, expirada: false };
   }
-  if (bruto === null) return null;
+  if (bruto === null) return { sessao: null, expirada: false };
+  let expirada = false;
   try {
     const dados: unknown = JSON.parse(bruto);
     if (ehObjeto(dados) && typeof dados["token"] === "string") {
       const usuario = lerUsuario(dados["usuario"]);
-      if (usuario && tokenVigente(dados["token"], agoraMs)) return { token: dados["token"], usuario };
+      const expiracao = expiracaoDoToken(dados["token"]);
+      if (usuario && expiracao !== null) {
+        if (expiracao > agoraMs) return { sessao: { token: dados["token"], usuario }, expirada: false };
+        expirada = true;
+      }
     }
   } catch {
-    limparSessao(armazenamento);
-    return null;
+    expirada = false;
   }
   limparSessao(armazenamento);
-  return null;
+  return { sessao: null, expirada };
+}
+
+export function carregarSessao(armazenamento: Armazenamento, agoraMs: number): Sessao | null {
+  return lerSessaoSalva(armazenamento, agoraMs).sessao;
 }

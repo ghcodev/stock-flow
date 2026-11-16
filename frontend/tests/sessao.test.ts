@@ -2,7 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   CHAVE_DA_SESSAO,
+  MENSAGEM_DE_SESSAO_EXPIRADA,
   carregarSessao,
+  lerSessaoSalva,
   expiracaoDoToken,
   limparSessao,
   salvarSessao,
@@ -194,5 +196,36 @@ describe("recurso associado à rota, com caixa e barras (R3)", () => {
     }
     assert.equal(decidirAcesso("administrador", recursoDoCaminho("/usuarios")), "permitido");
     assert.equal(decidirAcesso("administrador", recursoDoCaminho("/USUARIOS")), "negado");
+  });
+});
+
+describe("sessão expirada ao carregar avisa o usuário (R8)", () => {
+  it("exp já passado: descarta, apaga e marca expirada", () => {
+    const arm = memoria();
+    salvarSessao(arm, sessaoDe("operador", Math.floor(AGORA / 1000) - 60));
+    const lida = lerSessaoSalva(arm, AGORA);
+    assert.deepEqual(lida, { sessao: null, expirada: true });
+    assert.equal(arm.dados.has(CHAVE_DA_SESSAO), false);
+    assert.equal(MENSAGEM_DE_SESSAO_EXPIRADA, "Sua sessão expirou. Entre novamente.");
+  });
+
+  it("exp exatamente agora também conta como expirada", () => {
+    const arm = memoria();
+    salvarSessao(arm, sessaoDe("administrador", Math.floor(AGORA / 1000)));
+    assert.equal(lerSessaoSalva(arm, AGORA).expirada, true);
+  });
+
+  it("sessão vigente, ausente ou corrompida não marca expirada", () => {
+    const vigente = memoria();
+    salvarSessao(vigente, sessaoDe("operador"));
+    assert.equal(lerSessaoSalva(vigente, AGORA).expirada, false);
+    assert.notEqual(lerSessaoSalva(vigente, AGORA).sessao, null);
+    assert.deepEqual(lerSessaoSalva(memoria(), AGORA), { sessao: null, expirada: false });
+    const corrompida = memoria();
+    corrompida.setItem(CHAVE_DA_SESSAO, "{lixo");
+    assert.deepEqual(lerSessaoSalva(corrompida, AGORA), { sessao: null, expirada: false });
+    const semExp = memoria();
+    semExp.setItem(CHAVE_DA_SESSAO, JSON.stringify({ token: "a.b.c", usuario: sessaoDe("operador").usuario }));
+    assert.equal(lerSessaoSalva(semExp, AGORA).expirada, false);
   });
 });
