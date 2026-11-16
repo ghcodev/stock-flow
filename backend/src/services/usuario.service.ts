@@ -7,7 +7,7 @@ import { executarComoUsuario, type ContextoDeEscrita, type Tx } from "../transac
 import { intervaloDe, type Pagina, type Paginacao } from "../validators/comuns.ts";
 import { literalParaLike } from "../busca.ts";
 
-const CUSTO_BCRYPT = 12;
+export const CUSTO_BCRYPT = 12;
 
 const SELECAO = {
   id_usuario: true,

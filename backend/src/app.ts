@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
 import { criarRotasProtegidas, criarRotasPublicas } from "./routes/index.ts";
-import { criarLimiteLogin } from "./middlewares/rate-limit.middleware.ts";
+import { criarLimiteLogin, criarLimiteTrocaDeSenha } from "./middlewares/rate-limit.middleware.ts";
 import { autenticar } from "./middlewares/auth.middleware.ts";
 import { jsonReplacer } from "./serialization.ts";
 import { rotaNaoEncontrada, tratadorDeErros } from "./middlewares/error.middleware.ts";
@@ -11,6 +11,7 @@ export function createApp(registrarRotasExtras?: (app: Express) => void): Expres
   app.disable("x-powered-by");
   app.set("json replacer", jsonReplacer);
   app.post("/auth/login", criarLimiteLogin());
+  app.post("/auth/senha", criarLimiteTrocaDeSenha());
   app.use(express.json({ limit: "100kb" }));
   app.use(criarRotasPublicas());
   app.use(autenticar);

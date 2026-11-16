@@ -105,3 +105,9 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 `GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. São duas consultas por página, sem N+1.
 
 Decisões de projeto: só entram lotes com quantidade maior que zero, de qualquer status (bloqueado e vencido ocupam espaço e aparecem com o status); **não há percentual de ocupação**, porque a unidade da capacidade não é definida; a resposta é paginada por localização (`pagina`, `limite` padrão 100 e máximo 100) e aceita o filtro `corredor`.
+
+## Perfil e troca da própria senha
+
+`GET /auth/me` devolve o usuário autenticado. `POST /auth/senha` (qualquer usuário autenticado) recebe `senha_atual` e `nova_senha` e responde 204. Regras (decisões de projeto): exige a senha atual (errada = 422 `SENHA_ATUAL_INCORRETA`, mensagem fixa); a nova senha tem de 8 a 72 bytes e não pode conter NUL (a mesma validação do cadastro); o hash é bcrypt com custo 12 e a troca passa por `executarComoUsuario`, então é auditada (UPDATE em `usuario` com o próprio usuário e sem `senha_hash`). A rota tem limitador de tentativas em memória, igual ao do login (10 por 15 minutos por IP, contado antes do parser de JSON).
+
+Limite conhecido: a troca de senha **não invalida os tokens já emitidos**. A especificação não pede isso e não há coluna para versionar sessões sem migração; cada token continua valendo até expirar (8 h) ou até o usuário ser inativado.

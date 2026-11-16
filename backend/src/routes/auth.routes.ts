@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { entrar, eu } from "../controllers/auth.controller.ts";
+import { alterarSenha, entrar, eu } from "../controllers/auth.controller.ts";
 import { validar } from "../middlewares/validation.middleware.ts";
-import { validarLogin } from "../validators/auth.validator.ts";
+import { validarLogin, validarTrocaDeSenha } from "../validators/auth.validator.ts";
 
 export function criarRotasAuthPublicas(): Router {
   const router = Router();
@@ -12,5 +12,6 @@ export function criarRotasAuthPublicas(): Router {
 export function criarRotasAuthProtegidas(): Router {
   const router = Router();
   router.get("/me", eu);
+  router.post("/senha", validarTrocaDeSenha, validar, alterarSenha);
   return router;
 }
