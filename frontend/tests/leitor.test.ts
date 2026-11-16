@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { criarDetector, type Leitura } from "../src/leitor/detector.ts";
 import { criarCaptura, ehCampoEditavel, normalizarCodigoLido, type EventoDeTecla } from "../src/leitor/captura.ts";
 import { deveHabilitarNoInicio } from "../src/leitor/inicio.ts";
-import { rotaUsaLeitor } from "../src/sessao/rotas.ts";
+import { capturaPermitida } from "../src/sessao/rotas.ts";
 import { salvarSessao, type Armazenamento } from "../src/sessao/sessao.ts";
 import { conectarSerial, criarMontadorDeCodigos, serialDisponivel, type PortaSerial } from "../src/leitor/serial.ts";
 
@@ -394,9 +394,9 @@ describe("captura só na sessão autenticada e nas rotas do leitor (T7)", () => 
     const token = (exp: number) => `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.s`;
     assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora), false);
     salvarSessao(armazenamento, { token: token(Math.floor(agora / 1000) + 3600), usuario: { id_usuario: 1, nome: "A", email: "a@b.co", perfil: "operador" } });
-    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia", "/inventario", "/ajuste", "/rastreabilidade"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), true, rota);
-    for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1", "/mapa", "/historico"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
-    assert.equal(rotaUsaLeitor("/saida/"), true);
+    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia", "/inventario", "/rastreabilidade"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), true, rota);
+    for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1", "/mapa", "/historico", "/ajuste"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
+    assert.equal(capturaPermitida("operador", "/saida/"), true);
     assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora + 4 * 3600 * 1000), false);
   });
 });
@@ -456,5 +456,30 @@ describe("buffer parcial expira por inatividade (U4)", () => {
     captura.habilitar(false);
     assert.equal(tarefas.every((t) => t.cancelada), true);
     assert.equal(detector.pendentes(), 0);
+  });
+});
+
+describe("Y3: política única da captura (sessão, rota e permissão do perfil)", () => {
+  it("liga só com sessão, rota do leitor e permissão; operador nunca em /ajuste", () => {
+    for (const rota of ["/lotes", "/entrada", "/saida", "/transferencia", "/inventario", "/rastreabilidade"]) {
+      assert.equal(capturaPermitida("operador", rota), true, rota);
+      assert.equal(capturaPermitida("administrador", rota), true, rota);
+    }
+    assert.equal(capturaPermitida("administrador", "/ajuste"), true);
+    assert.equal(capturaPermitida("operador", "/ajuste"), false);
+    assert.equal(capturaPermitida(null, "/entrada"), false);
+    for (const rota of ["/perfil", "/", "/mapa", "/usuarios", "/entrar", "/ENTRADA", "/entrada/1"]) assert.equal(capturaPermitida("administrador", rota), false, rota);
+  });
+
+  it("no bootstrap, operador abrindo /ajuste direto não liga a captura", () => {
+    const dados = new Map<string, string>();
+    const arm: Armazenamento = { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => void dados.set(c, v), removeItem: (c) => void dados.delete(c) };
+    const agora = Date.parse("2026-11-16T12:00:00Z");
+    const token = `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp: Math.floor(agora / 1000) + 3600 })).toString("base64url")}.s`;
+    salvarSessao(arm, { token, usuario: { id_usuario: 1, nome: "A", email: "a@b.co", perfil: "operador" } });
+    assert.equal(deveHabilitarNoInicio(arm, "/ajuste", agora), false);
+    assert.equal(deveHabilitarNoInicio(arm, "/entrada", agora), true);
+    salvarSessao(arm, { token, usuario: { id_usuario: 2, nome: "B", email: "b@b.co", perfil: "administrador" } });
+    assert.equal(deveHabilitarNoInicio(arm, "/ajuste", agora), true);
   });
 });

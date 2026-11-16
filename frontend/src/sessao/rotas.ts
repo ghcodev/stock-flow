@@ -1,6 +1,7 @@
 import { matchRoutes } from "react-router";
+import type { Perfil } from "../api/tipos.ts";
 import { ITENS_DE_MENU } from "./navegacao.ts";
-import type { Recurso } from "./permissoes.ts";
+import { podeAcessar, type Recurso } from "./permissoes.ts";
 
 type DefinicaoDeRota = { path: string; caseSensitive: boolean; id: string };
 
@@ -20,7 +21,8 @@ export function recursoDoCaminho(caminho: string): Recurso | undefined {
 
 const RECURSOS_COM_LEITOR: ReadonlySet<Recurso> = new Set<Recurso>(["lotes", "entrada", "saida", "transferencia", "inventario", "ajuste", "rastreabilidade"]);
 
-export function rotaUsaLeitor(caminho: string): boolean {
+export function capturaPermitida(perfil: Perfil | null, caminho: string): boolean {
+  if (perfil === null) return false;
   const recurso = recursoDoCaminho(caminho);
-  return recurso !== undefined && RECURSOS_COM_LEITOR.has(recurso);
+  return recurso !== undefined && RECURSOS_COM_LEITOR.has(recurso) && podeAcessar(perfil, recurso);
 }

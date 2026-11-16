@@ -5,6 +5,7 @@ import { ExigeSessao, Protegida } from "./autenticacao/RotaProtegida.tsx";
 import { ProvedorDeAvisos } from "./componentes/Avisos.tsx";
 import { BarreiraDeErros } from "./componentes/BarreiraDeErros.tsx";
 import { Layout } from "./componentes/Layout.tsx";
+import { ControladorDaCaptura } from "./leitor/ControladorDaCaptura.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import type { Recurso } from "./sessao/permissoes.ts";
 import { Dashboard } from "./paginas/Dashboard.tsx";
@@ -63,6 +64,7 @@ export function App() {
     <BrowserRouter>
       <ProvedorDeAutenticacao>
         <ProvedorDeAvisos>
+          <ControladorDaCaptura />
           <Routes>
             <Route path="/entrar" element={<Entrar />} caseSensitive />
             <Route element={<ExigeSessao />}>

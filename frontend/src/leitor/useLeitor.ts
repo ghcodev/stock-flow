@@ -26,13 +26,7 @@ export function useLeitor(aoLeitura: (leitura: Leitura) => void): EstadoDoLeitor
   const estado = useSyncExternalStore(gerenciador.assinar, gerenciador.estado);
 
   useEffect(() => {
-    const captura = capturaGlobal();
-    captura.habilitar(true);
-    const cancelar = captura.assinar((leitura) => funcao.current(leitura));
-    return () => {
-      cancelar();
-      captura.habilitar(false);
-    };
+    return capturaGlobal().assinar((leitura) => funcao.current(leitura));
   }, []);
 
   useEffect(() => {
