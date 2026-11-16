@@ -33,7 +33,7 @@ function filtroDeAtivo(situacao: Situacao): boolean | undefined {
 }
 
 export function Usuarios() {
-  const { cliente, sessao, atualizarUsuario } = useAutenticacao();
+  const { cliente, sessao, atualizarUsuario, sair } = useAutenticacao();
   const { mostrar } = useAvisos();
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState<Situacao>("ativos");
@@ -238,7 +238,15 @@ export function Usuarios() {
             mostrar("sucesso", criado ? "Usuário criado" : "Usuário atualizado", salvo.nome);
             recarregarTudo();
             if (salvo.id_usuario === meuId) {
-              atualizarUsuario().catch(() => undefined);
+              const perfilAnterior = sessao?.usuario.perfil ?? null;
+              atualizarUsuario().catch(() => {
+                if (perfilAnterior !== null && salvo.perfil !== perfilAnterior) {
+                  mostrar("erro", "Sessão encerrada", "Seu perfil mudou e não foi possível atualizar a sessão. Entre de novo.");
+                  sair();
+                  return;
+                }
+                mostrar("erro", "Sessão não atualizada", "Seus dados foram salvos, mas não foi possível atualizar a sessão. Entre de novo para ver as mudanças.");
+              });
             }
           }}
         />
