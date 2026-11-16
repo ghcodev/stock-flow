@@ -189,7 +189,7 @@
   max-width: 220px;
   padding: 0 var(--space-2);
   background: var(--color-bg-default);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   font-size: 12.5px;
   color: var(--color-text-secondary);
@@ -374,13 +374,16 @@
 }
 
 .celula-principal {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   font-weight: 600;
-  color: var(--color-brand-600);
+  color: var(--color-text-link);
   text-align: left;
 }
 
 .celula-principal:hover {
-  color: var(--color-brand-800);
+  color: var(--color-text-link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -807,12 +810,12 @@
 }
 
 .btn-perigo {
-  background: var(--color-danger-600);
+  background: var(--color-danger-solid);
   color: var(--color-white);
 }
 
 .btn-perigo:hover {
-  background: var(--color-danger-700);
+  background: var(--color-danger-solid-hover);
 }
 
 .detalhes {
@@ -1081,7 +1084,7 @@
   height: 32px;
   padding: 0 10px 0 30px;
   background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   font-size: 12.5px;
   font-family: var(--font-mono);
