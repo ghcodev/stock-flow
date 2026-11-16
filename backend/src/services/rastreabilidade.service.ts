@@ -54,18 +54,21 @@ export async function rastrearLote(filtro: FiltroRastreabilidade): Promise<Rastr
   const total = await prisma.movimentacao.count({ where: { id_lote: idLote } });
   let onde: Prisma.movimentacaoWhereInput = { id_lote: idLote };
   if (filtro.depois_de_id !== undefined) {
-    const referencia = await prisma.movimentacao.findFirst({
-      where: { id_movimentacao: BigInt(filtro.depois_de_id), id_lote: idLote },
-      select: { id_movimentacao: true, data_movimentacao: true },
+    const idDoCursor = BigInt(filtro.depois_de_id);
+    const existe = await prisma.movimentacao.findFirst({
+      where: { id_movimentacao: idDoCursor, id_lote: idLote },
+      select: { id_movimentacao: true },
     });
-    if (!referencia) throw new HttpError(400, "VALIDACAO", "Cursor não pertence a este lote");
-    onde = {
-      id_lote: idLote,
-      OR: [
-        { data_movimentacao: { gt: referencia.data_movimentacao } },
-        { data_movimentacao: referencia.data_movimentacao, id_movimentacao: { gt: referencia.id_movimentacao } },
-      ],
-    };
+    if (!existe) throw new HttpError(400, "VALIDACAO", "Cursor não pertence a este lote");
+    const seguintes = await prisma.$queryRaw<{ id_movimentacao: bigint }[]>`
+      SELECT m.id_movimentacao FROM movimentacao m
+      WHERE m.id_lote = ${idLote}
+        AND (m.data_movimentacao, m.id_movimentacao) > (
+          SELECT r.data_movimentacao, r.id_movimentacao FROM movimentacao r
+          WHERE r.id_movimentacao = ${idDoCursor} AND r.id_lote = ${idLote})
+      ORDER BY m.data_movimentacao, m.id_movimentacao
+      LIMIT ${limite + 1}`;
+    onde = { id_movimentacao: { in: seguintes.map((linha) => linha.id_movimentacao) } };
   }
   const pagina_lida = await prisma.movimentacao.findMany({
     where: onde,
