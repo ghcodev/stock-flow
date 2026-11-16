@@ -6,13 +6,16 @@ import { ProvedorDeAvisos } from "./componentes/Avisos.tsx";
 import { Layout } from "./componentes/Layout.tsx";
 import { ITENS_DE_MENU } from "./sessao/navegacao.ts";
 import type { Recurso } from "./sessao/permissoes.ts";
+import { Entrada } from "./paginas/Entrada.tsx";
 import { Lotes } from "./paginas/Lotes.tsx";
+import { Saida } from "./paginas/Saida.tsx";
+import { Transferencia } from "./paginas/Transferencia.tsx";
 import { Produtos } from "./paginas/Produtos.tsx";
 import { EmBreve } from "./paginas/EmBreve.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
 
-const PAGINAS: Partial<Record<Recurso, ComponentType>> = { produtos: Produtos, lotes: Lotes };
+const PAGINAS: Partial<Record<Recurso, ComponentType>> = { produtos: Produtos, lotes: Lotes, entrada: Entrada, saida: Saida, transferencia: Transferencia };
 
 export function App() {
   return (
