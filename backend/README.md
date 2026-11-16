@@ -104,7 +104,7 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 
 ## Mapa do armazém (RF12)
 
-`GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. 
+`GET /mapa` (operador e administrador) devolve as localizações em ordem de corredor, nível e posição, cada uma com `capacidade` como está no banco (texto ou `null`) e a lista `lotes` armazenados nela (número, produto, unidade, quantidade e status); uma posição pode ter vários lotes. O número de consultas por página é constante (três, independente da quantidade de posições e de lotes): a página de localizações, a contagem de localizações do filtro (as duas em paralelo) e uma única consulta de lotes com função de janela para todas as posições da página. Não há consulta por posição (sem N+1).
 
 Decisões de projeto: só entram lotes com quantidade maior que zero, de qualquer status (bloqueado e vencido ocupam espaço e aparecem com o status); **não há percentual de ocupação**, porque a unidade da capacidade não é definida; a resposta é paginada por localização (`pagina`, `limite` padrão 100 e máximo 100) e aceita o filtro `corredor`.
 
@@ -123,3 +123,7 @@ Decisões de projeto: a referência de data é sempre o `current_date` do banco 
 Teto da exportação (decisão de projeto): o CSV tem no máximo 10.000 linhas. O servidor confere por `COUNT` antes de ler as linhas e lê no máximo 10.001; acima do teto responde 422 `EXPORTACAO_MUITO_GRANDE` ("A exportação excede o limite de 10000 linhas. Reduza o conjunto de alertas e tente novamente"). Nunca trunca em silêncio. O documento é montado linha a linha, sem cópias intermediárias do conjunto.
 
 Limite por posição (decisão de projeto): cada posição traz no máximo 50 lotes (ordenados por número e id) e `total_lotes` com o total de lotes com saldo da posição; para ver o restante, use `GET /lotes?id_localizacao=<id>` (a listagem de lotes já filtra por localização e é paginada).
+
+## Cancelamento de contagem de inventário
+
+`POST /inventario/contagens/:id/cancelar` (só administrador; operador recebe 403) cancela uma contagem de inventário pendente. Decisão de projeto: a especificação (RN07) só diz que um registro "pode ser marcado como cancelado"; aqui o cancelamento existe porque uma contagem que não pode ser finalizada (por exemplo, saldo final negativo) travaria novas contagens do lote. Regras: roda numa transação que trava o lote e depois a linha da contagem; só a transição `pendente` para `cancelada` é aceita; se o estado já mudou (contagem concluída, cancelada ou finalizada por outra requisição) a resposta é 409 `CONTAGEM_NAO_PENDENTE`; vale só para movimentações do tipo inventário (outro tipo ou id inexistente é 404); não altera saldo nem cria movimentação; o UPDATE de `status_movimentacao` é auditado pela trigger com o autor; depois do cancelamento o lote aceita nova contagem. Cancelar e finalizar ao mesmo tempo: só um vence, o outro recebe 409.
