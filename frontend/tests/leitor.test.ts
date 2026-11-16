@@ -369,10 +369,10 @@ describe("captura só na sessão autenticada e nas rotas do leitor (T7)", () => 
       },
     });
     leitorFisico(captura, "EXPIRA-1", 0);
-    assert.equal(tarefas.length, 1);
-    assert.equal(tarefas[0]?.atraso, 3000);
+    const expiracoes = tarefas.filter((item) => item.atraso === 3000);
+    assert.equal(expiracoes.length, 1);
     agora = 3000;
-    tarefas[0]?.tarefa();
+    expiracoes[0]?.tarefa();
     const recebidas: string[] = [];
     captura.assinar((leitura) => recebidas.push(leitura.codigo));
     assert.deepEqual(recebidas, []);
@@ -398,5 +398,63 @@ describe("captura só na sessão autenticada e nas rotas do leitor (T7)", () => 
     for (const rota of ["/entrar", "/produtos", "/", "/LOTES", "/usuarios", "/lotes/1"]) assert.equal(deveHabilitarNoInicio(armazenamento, rota, agora), false, rota);
     assert.equal(rotaUsaLeitor("/saida/"), true);
     assert.equal(deveHabilitarNoInicio(armazenamento, "/lotes", agora + 4 * 3600 * 1000), false);
+  });
+});
+
+describe("buffer parcial expira por inatividade (U4)", () => {
+  it("ABCD rápido e Enter dez minutos depois não emite", () => {
+    const detector = criarDetector();
+    for (const [i, c] of ["A", "B", "C", "D"].entries()) detector.tecla(c, i * 5);
+    assert.equal(detector.tecla("Enter", 600_000), null);
+    assert.equal(detector.pendentes(), 0);
+    assert.equal(digitar(detector, "NOVA-1", 700_000, 5, 5, gerador(1))?.codigo, "NOVA-1");
+  });
+
+  it("Enter dentro da espera máxima ainda emite (1,5 s)", () => {
+    const detector = criarDetector();
+    for (const [i, c] of ["A", "B", "C", "D"].entries()) detector.tecla(c, i * 5);
+    assert.equal(detector.tecla("Enter", 15 + 1500)?.codigo, "ABCD");
+  });
+
+  it("a captura descarta o buffer parcial por temporizador, sem novas teclas", () => {
+    const tarefas: { tarefa: () => void; atraso: number; cancelada: boolean }[] = [];
+    const detector = criarDetector();
+    const captura = habilitada({
+      detector,
+      esperaDoBufferMs: 1500,
+      agendar: (tarefa, atraso) => {
+        const item = { tarefa, atraso, cancelada: false };
+        tarefas.push(item);
+        return () => {
+          item.cancelada = true;
+        };
+      },
+    });
+    for (const [i, c] of ["A", "B", "C", "D"].entries()) captura.processar(evento(c, i * 5));
+    assert.equal(detector.pendentes(), 4);
+    const vigentes = tarefas.filter((t) => !t.cancelada);
+    assert.equal(vigentes.length, 1);
+    assert.equal(vigentes[0]?.atraso, 1500);
+    vigentes[0]?.tarefa();
+    assert.equal(detector.pendentes(), 0);
+  });
+
+  it("desabilitar cancela o temporizador do buffer e limpa o que estava parcial", () => {
+    const tarefas: { cancelada: boolean }[] = [];
+    const detector = criarDetector();
+    const captura = habilitada({
+      detector,
+      agendar: () => {
+        const item = { cancelada: false };
+        tarefas.push(item);
+        return () => {
+          item.cancelada = true;
+        };
+      },
+    });
+    captura.processar(evento("A", 0));
+    captura.habilitar(false);
+    assert.equal(tarefas.every((t) => t.cancelada), true);
+    assert.equal(detector.pendentes(), 0);
   });
 });

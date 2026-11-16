@@ -46,6 +46,12 @@ export function criarDetector(opcoes: OpcoesDoDetector = OPCOES_PADRAO): Detecto
         teclas.push({ tecla, instante });
         return null;
       }
+      if (ultimoInstante !== null && instante - ultimoInstante > opcoes.esperaMaximaMs) {
+        teclas = [];
+        invalida = false;
+        ultimoInstante = null;
+        return null;
+      }
       if (invalida) {
         invalida = false;
         teclas = [];

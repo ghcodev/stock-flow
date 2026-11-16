@@ -46,6 +46,7 @@ type Dependencias = {
   detector?: Detector;
   agora?: () => number;
   agendar?: (tarefa: () => void, atrasoMs: number) => () => void;
+  esperaDoBufferMs?: number;
   validadeDaPendenteMs?: number;
 };
 
@@ -61,6 +62,8 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
     });
   let habilitada = false;
   let cancelarExpiracao: (() => void) | null = null;
+  let cancelarBuffer: (() => void) | null = null;
+  const esperaDoBufferMs = dependencias.esperaDoBufferMs ?? 1500;
   const ouvintes = new Set<Ouvinte>();
   let pendente: { leitura: Leitura; em: number } | null = null;
 
@@ -88,6 +91,8 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
     habilitar(valor) {
       habilitada = valor;
       if (!valor) {
+        cancelarBuffer?.();
+        cancelarBuffer = null;
         detector.reiniciar();
         descartarPendente();
       }
@@ -101,6 +106,14 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
         return;
       }
       const leitura = detector.tecla(evento.key, evento.timeStamp);
+      cancelarBuffer?.();
+      cancelarBuffer = null;
+      if (detector.pendentes() > 0) {
+        cancelarBuffer = agendar(() => {
+          cancelarBuffer = null;
+          detector.reiniciar();
+        }, esperaDoBufferMs);
+      }
       if (leitura === null || leitura.origem !== "leitor") return;
       evento.preventDefault();
       emitir(leitura);
@@ -118,6 +131,8 @@ export function criarCaptura(dependencias: Dependencias = {}): Captura {
     },
     emitir,
     reiniciar() {
+      cancelarBuffer?.();
+      cancelarBuffer = null;
       detector.reiniciar();
       descartarPendente();
     },
