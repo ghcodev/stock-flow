@@ -9,7 +9,8 @@ export function celulaCsv(valor: string): string {
   return precisaAspas ? `"${protegido.replaceAll('"', '""')}"` : protegido;
 }
 
-export function montarCsv(cabecalho: string[], linhas: string[][]): string {
-  const todas = [cabecalho, ...linhas].map((linha) => linha.map(celulaCsv).join(SEPARADOR));
-  return BOM + todas.join(QUEBRA) + QUEBRA;
+export function montarCsv(cabecalho: string[], linhas: Iterable<string[]>): string {
+  let saida = BOM + cabecalho.map(celulaCsv).join(SEPARADOR) + QUEBRA;
+  for (const linha of linhas) saida += linha.map(celulaCsv).join(SEPARADOR) + QUEBRA;
+  return saida;
 }
