@@ -67,3 +67,13 @@ Ordenação: `id_movimentacao` decrescente, a ordem de gravação. Dentro de cad
 Paginação: `pagina` e `limite` (padrão 20, máximo 100) usam deslocamento e `total` conta os registros do filtro. Se houver gravações enquanto o cliente percorre as páginas, o deslocamento repete linhas. Para percorrer o histórico sem repetir linhas e sem pular as que já eram visíveis, use o cursor: a resposta traz `proximo_antes_de_id` (o menor id da página, ou `null` quando não há mais) e a página seguinte é pedida com `?antes_de_id=<esse id>` (mantendo os demais filtros e usando sempre `pagina=1`, isto é, sem `pagina`). A paginação só por `pagina` (deslocamento) pode repetir ou pular linhas enquanto há gravações. Com `antes_de_id`, `total` conta só os registros restantes.
 
 Limite da garantia do cursor: ela vale para os registros já visíveis (confirmados) quando a primeira página foi lida. Como o id é atribuído na gravação e a confirmação (commit) pode ocorrer depois, uma gravação tardia em outro lote pode receber um id menor que o cursor e só ficar visível depois que o cliente já passou por ele; ela não aparece nas páginas seguintes dessa varredura. Para ver tudo o que foi confirmado, recarregue a primeira página (sem `antes_de_id`).
+
+## Auditoria (RF13)
+
+`GET /auditoria`, somente leitura e só para administrador. Não existe rota de escrita. Filtros: `id_usuario`, `tabela` (`lote`, `movimentacao`, `usuario`), `operacao`, `ip`, `de` e `ate` (mesmas regras do histórico; consulta `data_hora >= início` e `< fim` para usar o B-tree), `valor_novo` e `valor_anterior`, mais `pagina`, `limite` (máximo 100) e o cursor `antes_de_id` / `proximo_antes_de_id` (mesmo contrato e mesmas limitações do histórico).
+
+Decisões de projeto (a especificação não detalha):
+
+- `operacao` aceita `INSERT`, `UPDATE` e `DELETE`, os valores que os triggers gravam. Ajuste e bloqueio se acham combinando `tabela` e conteúdo (por exemplo `tabela=lote&operacao=UPDATE&valor_novo={"status_lote":"bloqueado"}`).
+- `valor_novo` e `valor_anterior` recebem um objeto JSON, aplicado com o operador `@>` (aproveita os índices GIN `jsonb_path_ops`). Limites: 512 caracteres, 3 níveis, 20 chaves, textos de até 100 caracteres, listas de até 10 itens; tipos contam (`{"id_lote":5}` casa número, `{"id_lote":"5"}` não). A chave `senha_hash` é recusada e removida das respostas.
+- Os filtros por `id_usuario`, `tabela` e `ip` não têm índice próprio; combinados com período ou conteúdo o plano usa os índices existentes. Com o log atual (cerca de 130 mil linhas) uma consulta só por usuário e tabela leva cerca de 10 ms.

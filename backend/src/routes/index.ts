@@ -7,6 +7,7 @@ import { criarRotasLote } from "./lote.routes.ts";
 import { criarRotasUsuario } from "./usuario.routes.ts";
 import { criarRotasMovimentacao } from "./movimentacao.routes.ts";
 import { criarRotasInventario } from "./inventario.routes.ts";
+import { criarRotasAuditoria } from "./auditoria.routes.ts";
 
 export function criarRotasPublicas(): Router {
   const router = Router();
@@ -24,5 +25,6 @@ export function criarRotasProtegidas(): Router {
   router.use("/usuarios", criarRotasUsuario());
   router.use("/movimentacoes", criarRotasMovimentacao());
   router.use("/inventario", criarRotasInventario());
+  router.use("/auditoria", criarRotasAuditoria());
   return router;
 }

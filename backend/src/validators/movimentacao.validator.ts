@@ -1,5 +1,5 @@
 import { param, query } from "express-validator";
-import { lerInstante, periodoValido } from "../periodo.ts";
+import { validarPeriodoDeConsulta } from "./periodo.validator.ts";
 import {
   decimal,
   idNoCorpo,
@@ -31,27 +31,9 @@ export const validarTransferencia = [
   texto("observacao", "Observação", 5000, false),
 ];
 
-const instante = (nome: string, rotulo: string) =>
-  soEscalar(query(nome).optional(), rotulo)
-    .isString()
-    .withMessage(`${rotulo} inválido`)
-    .bail()
-    .custom((valor: string) => lerInstante(valor) !== null)
-    .withMessage(`${rotulo} deve ser AAAA-MM-DD ou data e hora completas com Z ou deslocamento (+hh:mm)`);
-
 export const validarHistorico = [
   ...validarPaginacao,
-  instante("de", "Início do período"),
-  instante("ate", "Fim do período"),
-  query("ate")
-    .optional()
-    .custom((ate: string, { req }) => {
-      const de = (req.query as { de?: unknown } | undefined)?.de;
-      const inicio = typeof de === "string" ? lerInstante(de) : null;
-      const fim = typeof ate === "string" ? lerInstante(ate) : null;
-      return !inicio || !fim || periodoValido(inicio, fim);
-    })
-    .withMessage("O início do período deve ser anterior ao fim"),
+  ...validarPeriodoDeConsulta,
   soEscalar(query("antes_de_id").optional(), "Cursor").matches(ID_BIGINT).withMessage("Cursor inválido"),
   soEscalar(query("tipo").optional(), "Tipo").isIn(TIPOS_MOVIMENTACAO).withMessage("Tipo inválido"),
   soEscalar(query("id_lote").optional(), "Lote").isInt({ min: 1, max: MAX_ID }).withMessage("Lote inválido").toInt(),
