@@ -87,3 +87,8 @@ export async function contarLotesAVencer(cliente: Cliente, sinal?: AbortSignal):
 export function listarLocalizacoes(cliente: Cliente, sinal?: AbortSignal): Promise<Pagina<Localizacao>> {
   return cliente.get<Pagina<Localizacao>>("/localizacoes", { limite: 100 }, sinal);
 }
+
+export async function buscarLotePorEtiqueta(cliente: Cliente, codigo: string, sinal?: AbortSignal): Promise<Lote | null> {
+  const pagina = await listarLotes(cliente, { codigo_etiqueta: codigo, limite: 1 }, sinal);
+  return pagina.dados[0] ?? null;
+}

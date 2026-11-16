@@ -1008,3 +1008,88 @@
   font-family: var(--font-mono);
   font-size: 11px;
 }
+
+.leitor {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.leitor-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.leitor-estado--pronto {
+  border-color: var(--color-success-200);
+  background: var(--color-success-50);
+  color: var(--color-success-700);
+}
+
+.leitor-ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+}
+
+.leitor-estado--pronto .leitor-ponto {
+  background: var(--color-success-500);
+  box-shadow: 0 0 0 3px var(--color-ring-success);
+}
+
+.leitor-ajuda {
+  font-size: 11.5px;
+  color: var(--color-text-tertiary);
+  cursor: help;
+}
+
+.leitor-erro {
+  font-size: 12px;
+  color: var(--color-danger-700);
+}
+
+.campo-etiqueta {
+  position: relative;
+  min-width: 200px;
+  max-width: 240px;
+}
+
+.campo-etiqueta .icone {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.campo-etiqueta input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 30px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+}
+
+.campo-etiqueta input:focus {
+  outline: none;
+  background: var(--color-bg-default);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-ring-brand);
+}

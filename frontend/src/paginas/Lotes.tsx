@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { contarLotes, contarLotesAVencer, desbloquearLote, listarLocalizacoes, listarLotes, obterLote } from "../api/lotes.ts";
+import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLocalizacoes, listarLotes, obterLote } from "../api/lotes.ts";
 import { listarProdutos } from "../api/produtos.ts";
 import type { Lote, StatusLote } from "../api/tipos.ts";
+import { mensagemDoErro } from "../api/erros.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
 import { useAvisos } from "../componentes/Avisos.tsx";
 import { Badge } from "../componentes/Badge.tsx";
@@ -14,6 +15,10 @@ import { MenuDeAcoes, type ItemDeMenu } from "../componentes/MenuDeAcoes.tsx";
 import { Paginacao } from "../componentes/Paginacao.tsx";
 import { Tabela, type Coluna } from "../componentes/Tabela.tsx";
 import { useCarregar } from "../hooks/useCarregar.ts";
+import { normalizarCodigoLido } from "../leitor/captura.ts";
+import type { Leitura } from "../leitor/detector.ts";
+import { IndicadorDeLeitura } from "../leitor/IndicadorDeLeitura.tsx";
+import { useLeitor } from "../leitor/useLeitor.ts";
 import { compararDias, diaDeHoje, formatarDia } from "../util/datas.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
 import { interpretarFalhaDeFormulario } from "../util/formularios.ts";
@@ -73,6 +78,26 @@ export function Lotes() {
     ]);
     return { todos, ativos, bloqueados, vencidos, aVencer };
   }, [cliente]);
+
+  const procurarPorEtiqueta = async (codigoBruto: string) => {
+    const codigo = normalizarCodigoLido(codigoBruto);
+    if (codigo === null) {
+      mostrar("erro", "Código inválido", "A etiqueta deve ter de 1 a 128 caracteres, sem caracteres de controle.");
+      return;
+    }
+    const resumo = codigo.length > 40 ? `${codigo.slice(0, 40)}…` : codigo;
+    try {
+      const lote = await buscarLotePorEtiqueta(cliente, codigo);
+      if (lote === null) mostrar("info", "Etiqueta sem lote", resumo);
+      else setPainel({ tipo: "ver", lote });
+    } catch (falha) {
+      mostrar("erro", "Não foi possível buscar a etiqueta", mensagemDoErro(falha));
+    }
+  };
+
+  const leitor = useLeitor((leitura: Leitura) => {
+    void procurarPorEtiqueta(leitura.codigo);
+  });
 
   const recarregarTudo = () => {
     lista.recarregar();
@@ -203,6 +228,7 @@ export function Lotes() {
         ]}
         acoes={
           <>
+            <IndicadorDeLeitura leitor={leitor} />
             <button type="button" className="btn btn-outline btn-sm" onClick={recarregarTudo} disabled={lista.carregando}>
               <Icone nome="refresh" />
               Atualizar
@@ -237,6 +263,25 @@ export function Lotes() {
               setPagina(1);
             }}
           />
+          <div className="campo-etiqueta">
+            <Icone nome="scan" />
+            <input
+              type="text"
+              aria-label="Buscar lote pela etiqueta"
+              placeholder="Ler ou digitar etiqueta…"
+              maxLength={128}
+              autoComplete="off"
+              spellCheck={false}
+              onKeyDown={(evento) => {
+                if (evento.key !== "Enter") return;
+                evento.preventDefault();
+                const campo = evento.currentTarget;
+                void procurarPorEtiqueta(campo.value).then(() => {
+                  campo.value = "";
+                });
+              }}
+            />
+          </div>
           <FiltrosRapidos
             rotulo="Status do lote"
             opcoes={opcoes}
