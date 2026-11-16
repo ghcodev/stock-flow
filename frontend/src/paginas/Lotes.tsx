@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLotes, obterLote } from "../api/lotes.ts";
 import { buscarLocalizacoesParaSeletor, buscarProdutosParaSeletor } from "../api/buscas.ts";
 import type { Lote, StatusLote } from "../api/tipos.ts";
@@ -20,6 +20,7 @@ import { normalizarCodigoLido } from "../leitor/captura.ts";
 import type { Leitura } from "../leitor/detector.ts";
 import { IndicadorDeLeitura } from "../leitor/IndicadorDeLeitura.tsx";
 import { useLeitor } from "../leitor/useLeitor.ts";
+import { criarVigencia } from "../util/vigencia.ts";
 import { compararDias, diaDeHoje, formatarDia } from "../util/datas.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
 import { interpretarFalhaDeFormulario } from "../util/formularios.ts";
@@ -43,7 +44,18 @@ export function Lotes() {
   const [idProduto, setIdProduto] = useState("");
   const [idLocalizacao, setIdLocalizacao] = useState("");
   const [pagina, setPagina] = useState(1);
-  const [painel, setPainel] = useState<Painel>(null);
+  const [painel, setPainelBruto] = useState<Painel>(null);
+  const vigencia = useRef(criarVigencia());
+
+  useEffect(() => {
+    const atual = vigencia.current;
+    return () => atual.invalidar();
+  }, []);
+
+  const setPainel = (novo: Painel) => {
+    vigencia.current.invalidar();
+    setPainelBruto(novo);
+  };
   const [paraBloquear, setParaBloquear] = useState<Lote | null>(null);
   const [paraEtiquetar, setParaEtiquetar] = useState<Lote | null>(null);
 
@@ -82,11 +94,14 @@ export function Lotes() {
       return;
     }
     const resumo = codigo.length > 40 ? `${codigo.slice(0, 40)}…` : codigo;
+    const pedido = vigencia.current.iniciar();
     try {
-      const lote = await buscarLotePorEtiqueta(cliente, codigo);
+      const lote = await buscarLotePorEtiqueta(cliente, codigo, pedido.sinal);
+      if (!pedido.vigente()) return;
       if (lote === null) mostrar("info", "Etiqueta sem lote", resumo);
-      else setPainel({ tipo: "ver", lote });
+      else setPainelBruto({ tipo: "ver", lote });
     } catch (falha) {
+      if (!pedido.vigente()) return;
       mostrar("erro", "Não foi possível buscar a etiqueta", mensagemDoErro(falha));
     }
   };
@@ -103,10 +118,12 @@ export function Lotes() {
   const aposAcao = async (idLote: number, titulo: string, mensagem: string) => {
     mostrar("sucesso", titulo, mensagem);
     recarregarTudo();
+    const pedido = vigencia.current.iniciar();
     try {
-      setPainel({ tipo: "ver", lote: await obterLote(cliente, idLote) });
+      const atualizado = await obterLote(cliente, idLote, pedido.sinal);
+      if (pedido.vigente()) setPainelBruto({ tipo: "ver", lote: atualizado });
     } catch {
-      setPainel(null);
+      if (pedido.vigente()) setPainelBruto(null);
     }
   };
 
