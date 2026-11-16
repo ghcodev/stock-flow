@@ -133,6 +133,29 @@ describe("finalização do inventário (A16, RF15, E1 C3)", () => {
     await c.verificarInvariante(lote);
   });
 
+  it("estouro do limite NUMERIC na finalização: 422 SALDO_EXCEDE_LIMITE, saldo intacto, contagem pendente e nada gravado", async () => {
+    const lote = await c.novoLote("limite", { quantidade: "1" });
+    const contagem = await contar(lote, 2);
+    const entrada = await chamarApi(servidor, "POST", "/movimentacoes/entrada", c.operador, { id_lote: lote, quantidade: "999999998.999" });
+    assert.equal(entrada.status, 201);
+    assert.equal(await c.saldoDo(lote), "999999999.999");
+    const contarAuditoria = async (): Promise<number> => {
+      const [linha] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM auditoria_log WHERE (valor_novo->>'id_lote')::int = ${lote}`;
+      return Number(linha?.n ?? 0);
+    };
+    const movimentosAntes = (await c.movimentos(lote)).length;
+    const auditoriaAntes = await contarAuditoria();
+    const r = await finalizar(contagem.id_movimentacao);
+    assert.equal(r.status, 422);
+    assert.equal((r.corpo as ErroApi).erro.codigo, "SALDO_EXCEDE_LIMITE");
+    assert.equal(await c.saldoDo(lote), "999999999.999");
+    const atual = await prisma.movimentacao.findUniqueOrThrow({ where: { id_movimentacao: BigInt(contagem.id_movimentacao) } });
+    assert.equal(atual.status_movimentacao, "pendente");
+    assert.equal((await c.movimentos(lote)).length, movimentosAntes);
+    assert.equal(await contarAuditoria(), auditoriaAntes);
+    await c.verificarInvariante(lote);
+  });
+
   it("depois de finalizada, o lote aceita nova contagem; lote vencido e bloqueado também podem ser finalizados", async () => {
     const lote = await c.novoLote("f", { quantidade: "6" });
     const primeira = await contar(lote, 5);
