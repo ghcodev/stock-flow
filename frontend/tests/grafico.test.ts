@@ -27,18 +27,53 @@ describe("dados do gráfico de movimentações por dia e tipo (F6)", () => {
     assert.equal(dias.find((d) => d.dia === "2026-11-11")?.total, 0);
   });
 
-  it("estende o fim se o servidor tiver um dia mais novo que o do navegador e ignora tipo desconhecido, fora da janela e total inválido", () => {
+  it("a janela vem só do dia de referência do banco: dia futuro e fora da janela são ignorados, tipo e total inválidos também", () => {
     const pontos = [
       { dia: "2026-11-17", tipo: "ajuste", total: 4 },
-      { dia: "2026-11-17", tipo: "xpto", total: 9 },
+      { dia: "2026-11-16", tipo: "xpto", total: 9 },
       { dia: "2026-01-01", tipo: "entrada", total: 7 },
-      { dia: "2026-11-17", tipo: "entrada", total: -1 },
-      { dia: "2026-11-17", tipo: "saida", total: 1.5 },
+      { dia: "2026-11-16", tipo: "entrada", total: -1 },
+      { dia: "2026-11-16", tipo: "saida", total: 1.5 },
+      { dia: "2026-11-16", tipo: "saida", total: 2 },
     ] as unknown as PontoDoGrafico[];
     const dias = montarDias(pontos, "2026-11-16");
-    assert.equal(dias[29]?.dia, "2026-11-17");
-    assert.equal(dias[29]?.total, 4);
-    assert.equal(resumirDias(dias).total, 4);
+    assert.equal(dias[29]?.dia, "2026-11-16");
+    assert.equal(dias[29]?.total, 2);
+    assert.equal(resumirDias(dias).total, 2);
+  });
+
+  it("o resultado não depende do relógio ou do fuso do navegador (adiantado ou atrasado)", () => {
+    const pontos: PontoDoGrafico[] = [{ dia: "2026-11-16", tipo: "entrada", total: 3 }];
+    const original = Date;
+    try {
+      for (const deslocamentoMs of [-36 * 3600_000, 0, 36 * 3600_000]) {
+        const base = original.now() + deslocamentoMs;
+        globalThis.Date = class extends original {
+          constructor(...args: unknown[]) {
+            if (args.length === 0) super(base);
+            else super(...(args as [number]));
+          }
+          static override now(): number {
+            return base;
+          }
+        } as DateConstructor;
+        const dias = montarDias(pontos, "2026-11-16");
+        assert.equal(dias[0]?.dia, "2026-10-18");
+        assert.equal(dias[29]?.dia, "2026-11-16");
+        assert.equal(dias[29]?.total, 3);
+      }
+    } finally {
+      globalThis.Date = original;
+    }
+  });
+
+  it("período vazio e último movimento antigo: 30 dias zerados terminando na referência", () => {
+    for (const pontos of [[], [{ dia: "2026-06-01", tipo: "entrada", total: 5 }]] as PontoDoGrafico[][]) {
+      const dias = montarDias(pontos, "2026-11-16");
+      assert.equal(dias.length, 30);
+      assert.equal(dias[29]?.dia, "2026-11-16");
+      assert.equal(resumirDias(dias).total, 0);
+    }
   });
 
   it("escala em números redondos e marcas inteiras do eixo", () => {

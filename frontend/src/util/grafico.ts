@@ -29,8 +29,8 @@ function zerado(): Record<TipoMovimentacao, number> {
   return { entrada: 0, saida: 0, transferencia: 0, ajuste: 0, inventario: 0 };
 }
 
-export function montarDias(pontos: readonly PontoDoGrafico[], fim: string, quantidade = 30): DiaDoGrafico[] {
-  const ultimo = pontos.reduce((maior, ponto) => (ponto.dia > maior ? ponto.dia : maior), fim);
+export function montarDias(pontos: readonly PontoDoGrafico[], dataDeReferencia: string, quantidade = 30): DiaDoGrafico[] {
+  const ultimo = dataDeReferencia;
   const dias: DiaDoGrafico[] = Array.from({ length: quantidade }, (_, indice) => ({
     dia: adicionarDias(ultimo, indice - (quantidade - 1)),
     valores: zerado(),

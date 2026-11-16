@@ -125,6 +125,7 @@ export type AlertaDeEstoqueMinimo = {
 };
 
 export type Dashboard = {
+  data_referencia: string;
   indicadores: Indicadores;
   grafico: PontoDoGrafico[];
   alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };

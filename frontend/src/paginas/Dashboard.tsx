@@ -9,7 +9,7 @@ import { EstadoDeErro, EstadoVazio } from "../componentes/Estados.tsx";
 import { FaixaDeIndicadores, type Indicador } from "../componentes/FaixaDeIndicadores.tsx";
 import { Icone } from "../componentes/Icone.tsx";
 import { useCarregar } from "../hooks/useCarregar.ts";
-import { diaDeHoje, formatarDia } from "../util/datas.ts";
+import { ehDiaValido, formatarDia } from "../util/datas.ts";
 import { formatarInteiro, formatarQuantidade, subtrairDecimais } from "../util/decimal.ts";
 import { montarDias } from "../util/grafico.ts";
 import { GraficoDeMovimentacoes } from "./dashboard/GraficoDeMovimentacoes.tsx";
@@ -53,7 +53,7 @@ export function Dashboard() {
   const painel = useCarregar((sinal) => obterDashboard(cliente, sinal), [cliente]);
   const vencimentos = useCarregar((sinal) => listarAlertasDeVencimento(cliente, 1, ITENS_DE_VENCIMENTO, sinal), [cliente]);
 
-  const dias = useMemo(() => (painel.dados ? montarDias(painel.dados.grafico, diaDeHoje()) : null), [painel.dados]);
+  const dias = useMemo(() => (painel.dados && ehDiaValido(painel.dados.data_referencia) ? montarDias(painel.dados.grafico, painel.dados.data_referencia) : null), [painel.dados]);
   const atualizadoEm = painel.dados ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date()) : null;
 
   const recarregar = () => {
