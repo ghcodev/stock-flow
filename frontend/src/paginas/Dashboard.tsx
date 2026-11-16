@@ -98,17 +98,13 @@ export function Dashboard() {
 
       <div className="dashboard-grade">
         <Bloco titulo="Movimentações dos últimos 30 dias" subtitulo="Concluídas, por dia e por tipo" rotulo="Gráfico de movimentações">
+          {dias !== null ? avisoDoPainel : null}
           {painel.erro && !dias ? (
             <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
           ) : dias === null ? (
             <div className="grafico-carregando">
               <span className="esqueleto" />
             </div>
-          ) : falhaDoPainel !== null ? (
-            <>
-              {avisoDoPainel}
-              {dias.every((d) => d.total === 0) ? <EstadoVazio titulo="Sem movimentações no período" /> : <GraficoDeMovimentacoes dias={dias} />}
-            </>
           ) : dias.every((d) => d.total === 0) ? (
             <EstadoVazio titulo="Sem movimentações no período" descricao="Registre entradas, saídas ou transferências para ver o gráfico." />
           ) : (
@@ -121,6 +117,7 @@ export function Dashboard() {
           subtitulo={painel.dados ? `${formatarInteiro(painel.dados.alertas_estoque_minimo.total)} produto(s) em alerta` : undefined}
           rotulo="Alertas de estoque mínimo"
         >
+          {painel.dados !== null ? avisoDoPainel : null}
           {painel.erro && !painel.dados ? (
             <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
           ) : painel.dados === null ? (
@@ -131,7 +128,6 @@ export function Dashboard() {
             <EstadoVazio titulo="Nenhum produto abaixo do mínimo" descricao="A soma dos lotes ativos cobre o estoque mínimo de todos os produtos." />
           ) : (
             <>
-              {avisoDoPainel}
               <div className="tabela-rolagem tabela-rolagem--curta">
                 <table className="tabela tabela--compacta" aria-label="Produtos abaixo do estoque mínimo">
                   <thead>
@@ -183,6 +179,7 @@ export function Dashboard() {
           </Link>
         }
       >
+        {falhaDosVencimentos !== null ? <AvisoDeAtualizacao mensagem={falhaDosVencimentos} horario={horarioDosVencimentos} aoTentarNovamente={vencimentos.recarregar} /> : null}
         {vencimentos.erro && !vencimentos.dados ? (
           <EstadoDeErro mensagem={vencimentos.erro} aoTentarNovamente={vencimentos.recarregar} />
         ) : vencimentos.dados === null ? (
@@ -192,8 +189,6 @@ export function Dashboard() {
         ) : vencimentos.dados.dados.length === 0 ? (
           <EstadoVazio titulo="Nenhum lote vence nos próximos 30 dias" descricao="Os lotes ativos com validade na janela aparecem aqui." />
         ) : (
-          <>
-          {falhaDosVencimentos !== null ? <AvisoDeAtualizacao mensagem={falhaDosVencimentos} horario={horarioDosVencimentos} aoTentarNovamente={vencimentos.recarregar} /> : null}
           <div className="tabela-rolagem tabela-rolagem--curta">
             <table className="tabela tabela--compacta" aria-label="Lotes a vencer">
               <thead>
@@ -222,7 +217,6 @@ export function Dashboard() {
               </tbody>
             </table>
           </div>
-          </>
         )}
       </Bloco>
     </>
