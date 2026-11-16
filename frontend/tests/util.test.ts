@@ -241,3 +241,17 @@ describe("apresentação de lotes", () => {
     assert.equal(situacaoDeValidade({ status_lote: "bloqueado", data_validade: "2026-05-28" }, "2026-05-27"), null);
   });
 });
+
+describe("busca por termos de localização", () => {
+  it("separa por espaço, hífen e barra e escolhe o termo mais seletivo", async () => {
+    const { termosDeBusca, termoMaisSeletivo, casaComTodosOsTermos } = await import("../src/util/busca.ts");
+    assert.deepEqual(termosDeBusca("A-1-01"), ["A", "1", "01"]);
+    assert.deepEqual(termosDeBusca("  corredor  b / 2 "), ["corredor", "b", "2"]);
+    assert.deepEqual(termosDeBusca(" - "), []);
+    assert.equal(termoMaisSeletivo(["A", "1", "01"]), "01");
+    assert.equal(termoMaisSeletivo([]), "");
+    assert.equal(casaComTodosOsTermos("A-1-01", ["a", "01"]), true);
+    assert.equal(casaComTodosOsTermos("A-1-02", ["a", "01"]), false);
+    assert.equal(casaComTodosOsTermos("Ação-1", ["ação"]), true);
+  });
+});

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLocalizacoes, listarLotes, obterLote } from "../api/lotes.ts";
-import { listarProdutos } from "../api/produtos.ts";
+import { buscarLotePorEtiqueta, contarLotes, contarLotesAVencer, desbloquearLote, listarLotes, obterLote } from "../api/lotes.ts";
+import { buscarLocalizacoesParaSeletor, buscarProdutosParaSeletor } from "../api/buscas.ts";
 import type { Lote, StatusLote } from "../api/tipos.ts";
 import { mensagemDoErro } from "../api/erros.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
@@ -11,6 +11,7 @@ import { CampoDeBusca } from "../componentes/CampoDeBusca.tsx";
 import { FaixaDeIndicadores } from "../componentes/FaixaDeIndicadores.tsx";
 import { FiltrosRapidos, type OpcaoDeFiltro } from "../componentes/FiltrosRapidos.tsx";
 import { Icone } from "../componentes/Icone.tsx";
+import { SeletorComBusca } from "../componentes/SeletorComBusca.tsx";
 import { MenuDeAcoes, type ItemDeMenu } from "../componentes/MenuDeAcoes.tsx";
 import { Paginacao } from "../componentes/Paginacao.tsx";
 import { Tabela, type Coluna } from "../componentes/Tabela.tsx";
@@ -45,11 +46,6 @@ export function Lotes() {
   const [painel, setPainel] = useState<Painel>(null);
   const [paraBloquear, setParaBloquear] = useState<Lote | null>(null);
   const [paraEtiquetar, setParaEtiquetar] = useState<Lote | null>(null);
-
-  const catalogos = useCarregar(async (sinal) => {
-    const [produtos, localizacoes] = await Promise.all([listarProdutos(cliente, { ativo: true, limite: 100 }, sinal), listarLocalizacoes(cliente, sinal)]);
-    return { produtos: produtos.dados, localizacoes: localizacoes.dados };
-  }, [cliente]);
 
   const lista = useCarregar(
     (sinal) =>
@@ -291,38 +287,28 @@ export function Lotes() {
               setPagina(1);
             }}
           />
-          <select
-            className="seletor"
-            aria-label="Filtrar por produto"
-            value={idProduto}
-            onChange={(evento) => {
-              setIdProduto(evento.target.value);
+          <SeletorComBusca
+            semRotulo
+            rotulo="Filtrar por produto"
+            placeholder="Todos os produtos"
+            valor={idProduto}
+            aoMudar={(valor) => {
+              setIdProduto(valor);
               setPagina(1);
             }}
-          >
-            <option value="">Todos os produtos</option>
-            {(catalogos.dados?.produtos ?? []).map((produto) => (
-              <option key={produto.id_produto} value={produto.id_produto}>
-                {produto.nome}
-              </option>
-            ))}
-          </select>
-          <select
-            className="seletor"
-            aria-label="Filtrar por localização"
-            value={idLocalizacao}
-            onChange={(evento) => {
-              setIdLocalizacao(evento.target.value);
+            buscar={(texto, sinal) => buscarProdutosParaSeletor(cliente, texto, sinal, false)}
+          />
+          <SeletorComBusca
+            semRotulo
+            rotulo="Filtrar por localização"
+            placeholder="Todas as localizações"
+            valor={idLocalizacao}
+            aoMudar={(valor) => {
+              setIdLocalizacao(valor);
               setPagina(1);
             }}
-          >
-            <option value="">Todas as localizações</option>
-            {(catalogos.dados?.localizacoes ?? []).map((localizacao) => (
-              <option key={localizacao.id_localizacao} value={localizacao.id_localizacao}>
-                {rotuloDaLocalizacao(localizacao)}
-              </option>
-            ))}
-          </select>
+            buscar={(texto, sinal) => buscarLocalizacoesParaSeletor(cliente, texto, sinal)}
+          />
           {filtrosAtivos ? (
             <button
               type="button"
@@ -372,8 +358,6 @@ export function Lotes() {
 
       {painel?.tipo === "novo" ? (
         <FormularioDeLote
-          produtos={catalogos.dados?.produtos ?? []}
-          localizacoes={catalogos.dados?.localizacoes ?? []}
           aoFechar={() => setPainel(null)}
           aoSalvar={(lote) => {
             setPainel(null);

@@ -1,16 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { corpoDeLote, criarLote } from "../../api/lotes.ts";
-import type { Localizacao, Lote, Produto } from "../../api/tipos.ts";
+import { buscarLocalizacoesParaSeletor, buscarProdutosParaSeletor } from "../../api/buscas.ts";
+import type { Lote } from "../../api/tipos.ts";
 import { useAutenticacao } from "../../autenticacao/ContextoDeAutenticacao.tsx";
 import { AvisoDoFormulario, CampoDeSelecao, CampoDeTexto, focarPrimeiroInvalido } from "../../componentes/Campo.tsx";
 import { Gaveta } from "../../componentes/Gaveta.tsx";
 import { Icone } from "../../componentes/Icone.tsx";
+import { SeletorComBusca } from "../../componentes/SeletorComBusca.tsx";
 import { interpretarFalhaDeFormulario, temErrosDeCampos, validarLote, type ErrosDeCampos, type ValoresDeLote } from "../../util/formularios.ts";
-import { rotuloDaLocalizacao } from "./apresentacao.ts";
 
 type Propriedades = {
-  produtos: readonly Produto[];
-  localizacoes: readonly Localizacao[];
   aoFechar: () => void;
   aoSalvar: (lote: Lote) => void;
 };
@@ -36,7 +35,7 @@ function traduzirCampos(campos: ErrosDeCampos): ErrosDeCampos {
   return traduzidos;
 }
 
-export function FormularioDeLote({ produtos, localizacoes, aoFechar, aoSalvar }: Propriedades) {
+export function FormularioDeLote({ aoFechar, aoSalvar }: Propriedades) {
   const { cliente } = useAutenticacao();
   const [valores, setValores] = useState<ValoresDeLote>(VAZIO);
   const [erros, setErros] = useState<ErrosDeCampos>({});
@@ -91,27 +90,26 @@ export function FormularioDeLote({ produtos, localizacoes, aoFechar, aoSalvar }:
     >
       <AvisoDoFormulario mensagem={geral} />
       <form id={ID_DO_FORMULARIO} className="formulario formulario--duas-colunas" onSubmit={enviar} noValidate>
-        <CampoDeSelecao
+        <SeletorComBusca
           largo
           obrigatorio
           rotulo="Produto"
+          placeholder="Digite para buscar o produto"
           valor={valores.id_produto}
-          aoMudar={alterar("id_produto")}
+          aoMudar={(valor) => alterar("id_produto")(valor)}
+          buscar={(texto, sinal) => buscarProdutosParaSeletor(cliente, texto, sinal)}
           erro={erros["id_produto"]}
-          vazio="Selecione o produto"
-          opcoes={produtos.map((produto) => ({ valor: String(produto.id_produto), rotulo: `${produto.nome} (${produto.unidade_medida})` }))}
           desabilitado={enviando}
-          ajuda={produtos.length === 0 ? "Nenhum produto ativo disponível." : undefined}
         />
         <CampoDeTexto obrigatorio autoFoco rotulo="Número do lote" valor={valores.numero_lote} aoMudar={alterar("numero_lote")} erro={erros["numero_lote"]} tamanhoMaximo={50} desabilitado={enviando} />
-        <CampoDeSelecao
+        <SeletorComBusca
           obrigatorio
           rotulo="Localização"
+          placeholder="Ex.: A-1-01"
           valor={valores.id_localizacao}
-          aoMudar={alterar("id_localizacao")}
+          aoMudar={(valor) => alterar("id_localizacao")(valor)}
+          buscar={(texto, sinal) => buscarLocalizacoesParaSeletor(cliente, texto, sinal)}
           erro={erros["id_localizacao"]}
-          vazio="Selecione a posição"
-          opcoes={localizacoes.map((localizacao) => ({ valor: String(localizacao.id_localizacao), rotulo: rotuloDaLocalizacao(localizacao) }))}
           desabilitado={enviando}
         />
         <CampoDeTexto
