@@ -209,3 +209,19 @@ describe("corpos enviados à API", () => {
     });
   });
 });
+
+describe("janela e limites da paginação", () => {
+  it("mostra até cinco páginas em torno da atual, sem passar dos extremos", async () => {
+    const { janelaDePaginas, limitesDaPagina, ultimaPagina } = await import("../src/util/paginacao.ts");
+    assert.deepEqual(janelaDePaginas(1, 1), [1]);
+    assert.deepEqual(janelaDePaginas(1, 10), [1, 2, 3, 4, 5]);
+    assert.deepEqual(janelaDePaginas(5, 10), [3, 4, 5, 6, 7]);
+    assert.deepEqual(janelaDePaginas(10, 10), [6, 7, 8, 9, 10]);
+    assert.deepEqual(janelaDePaginas(2, 3), [1, 2, 3]);
+    assert.equal(ultimaPagina(0, 20), 1);
+    assert.equal(ultimaPagina(41, 20), 3);
+    assert.deepEqual(limitesDaPagina(1, 20, 0), { primeiro: 0, ultimo: 0 });
+    assert.deepEqual(limitesDaPagina(3, 20, 41), { primeiro: 41, ultimo: 41 });
+    assert.deepEqual(limitesDaPagina(1, 20, 135), { primeiro: 1, ultimo: 20 });
+  });
+});

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as EventoDeTeclado } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import "../estilos/layout.css";
+import "../estilos/componentes.css";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
 import { iniciais, rotuloDoPerfil } from "../autenticacao/credenciais.ts";
 import { itemDoCaminho, menuDoPerfil } from "../sessao/navegacao.ts";
