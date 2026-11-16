@@ -25,6 +25,7 @@ import { compararDias, diaDeHoje, formatarDia } from "../util/datas.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
 import { interpretarFalhaDeFormulario } from "../util/formularios.ts";
 import { compararTexto } from "../util/ordenacao.ts";
+import { paginaCorrigida } from "../util/paginacao.ts";
 import { AssociarEtiqueta } from "./lotes/AssociarEtiqueta.tsx";
 import { BloquearLote } from "./lotes/BloquearLote.tsx";
 import { DetalhesDoLote } from "./lotes/DetalhesDoLote.tsx";
@@ -109,6 +110,15 @@ export function Lotes() {
   const leitor = useLeitor((leitura: Leitura) => {
     void procurarPorEtiqueta(leitura.codigo);
   });
+
+  const totalDaLista = lista.dados?.total;
+  const vaziaNaPagina = lista.dados !== null && lista.dados.dados.length === 0;
+
+  useEffect(() => {
+    if (totalDaLista === undefined || !vaziaNaPagina || pagina <= 1) return;
+    const valida = paginaCorrigida(pagina, totalDaLista, LIMITE);
+    if (valida !== pagina) setPagina(valida);
+  }, [totalDaLista, vaziaNaPagina, pagina]);
 
   const recarregarTudo = () => {
     lista.recarregar();

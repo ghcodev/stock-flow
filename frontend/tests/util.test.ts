@@ -323,3 +323,14 @@ describe("NUL e ids como no backend (T6)", () => {
     assert.ok(erros["id_localizacao"]);
   });
 });
+
+describe("página válida depois de esvaziar a última página (T8)", () => {
+  it("volta para a última página que ainda existe", async () => {
+    const { paginaCorrigida } = await import("../src/util/paginacao.ts");
+    assert.equal(paginaCorrigida(3, 40, 20), 2);
+    assert.equal(paginaCorrigida(2, 40, 20), 2);
+    assert.equal(paginaCorrigida(5, 0, 20), 1);
+    assert.equal(paginaCorrigida(0, 100, 20), 1);
+    assert.equal(paginaCorrigida(9, 21, 20), 2);
+  });
+});

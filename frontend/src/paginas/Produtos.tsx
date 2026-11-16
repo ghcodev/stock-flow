@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listarProdutos } from "../api/produtos.ts";
 import type { Produto } from "../api/tipos.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
@@ -16,6 +16,7 @@ import { useCarregar } from "../hooks/useCarregar.ts";
 import { compararDecimais, formatarInteiro, formatarQuantidade } from "../util/decimal.ts";
 import { formatarDia } from "../util/datas.ts";
 import { compararTexto } from "../util/ordenacao.ts";
+import { paginaCorrigida } from "../util/paginacao.ts";
 import { ConfirmarInativacao } from "./produtos/ConfirmarInativacao.tsx";
 import { DetalhesDoProduto } from "./produtos/DetalhesDoProduto.tsx";
 import { FormularioDeProduto } from "./produtos/FormularioDeProduto.tsx";
@@ -54,6 +55,15 @@ export function Produtos() {
     },
     [cliente],
   );
+
+  const totalDaLista = lista.dados?.total;
+  const vaziaNaPagina = lista.dados !== null && lista.dados.dados.length === 0;
+
+  useEffect(() => {
+    if (totalDaLista === undefined || !vaziaNaPagina || pagina <= 1) return;
+    const valida = paginaCorrigida(pagina, totalDaLista, LIMITE);
+    if (valida !== pagina) setPagina(valida);
+  }, [totalDaLista, vaziaNaPagina, pagina]);
 
   const recarregarTudo = () => {
     lista.recarregar();

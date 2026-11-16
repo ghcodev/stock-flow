@@ -17,6 +17,7 @@ function aoTeclar(evento: KeyboardEvent): void {
   if (evento.key === "Escape") {
     const alvo = evento.target instanceof Element ? evento.target : null;
     if (alvo?.closest('[role="combobox"][aria-expanded="true"]')) return;
+    if (document.querySelector('[role="menu"]')) return;
     evento.stopPropagation();
     topo.aoFechar();
     return;

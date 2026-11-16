@@ -11,3 +11,7 @@ export function ultimaPagina(total: number, limite: number): number {
 export function limitesDaPagina(pagina: number, limite: number, total: number): { primeiro: number; ultimo: number } {
   return { primeiro: total === 0 ? 0 : (pagina - 1) * limite + 1, ultimo: Math.min(total, pagina * limite) };
 }
+
+export function paginaCorrigida(pagina: number, total: number, limite: number): number {
+  return Math.min(Math.max(1, pagina), ultimaPagina(total, limite));
+}

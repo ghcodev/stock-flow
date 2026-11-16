@@ -70,6 +70,11 @@ export function Tabela<T>({
           </button>
         </div>
       ) : null}
+      {ordenacao !== null ? (
+        <div className="tabela-aviso" role="status">
+          Ordenação aplicada só aos itens desta página.
+        </div>
+      ) : null}
     <div className="tabela-rolagem">
       <table className={carregando && !primeiraCarga ? "tabela tabela--ocupada" : "tabela"} aria-label={rotulo} aria-busy={carregando}>
         <thead>
@@ -82,7 +87,7 @@ export function Tabela<T>({
                 aria-sort={coluna.comparar ? descricaoDoSentido(ordenacao, coluna.id) : undefined}
               >
                 {coluna.comparar ? (
-                  <button type="button" onClick={() => setOrdenacao((atual) => proximaOrdenacao(atual, coluna.id))}>
+                  <button type="button" title="Ordena só os itens desta página" onClick={() => setOrdenacao((atual) => proximaOrdenacao(atual, coluna.id))}>
                     {coluna.titulo}
                     <Icone nome={iconeDoSentido(ordenacao, coluna.id)} />
                   </button>
