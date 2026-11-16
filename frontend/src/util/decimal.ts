@@ -46,3 +46,30 @@ export function formatarQuantidade(texto: string): string {
 export function formatarInteiro(valor: number): string {
   return FORMATO_INTEIRO.format(valor);
 }
+
+function desescalar(valor: bigint, casas: number): string {
+  const negativo = valor < 0n;
+  const absoluto = (negativo ? -valor : valor).toString().padStart(casas + 1, "0");
+  const inteira = absoluto.slice(0, absoluto.length - casas);
+  const fracao = absoluto.slice(absoluto.length - casas).replace(/0+$/, "");
+  const texto = fracao === "" ? inteira : `${inteira}.${fracao}`;
+  return negativo ? `-${texto}` : texto;
+}
+
+function operar(a: string, b: string, sinal: 1n | -1n): string | null {
+  const pa = separar(a);
+  const pb = separar(b);
+  if (pa === null || pb === null) return null;
+  const casas = Math.max(pa.fracao.length, pb.fracao.length);
+  return desescalar(escalar(pa, casas) + sinal * escalar(pb, casas), casas);
+}
+
+export function somarDecimais(a: string, b: string): string | null {
+  return operar(a, b, 1n);
+}
+
+export function subtrairDecimais(a: string, b: string): string | null {
+  return operar(a, b, -1n);
+}
+
+export const SALDO_MAXIMO = "999999999.999";

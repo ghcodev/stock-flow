@@ -81,3 +81,21 @@ export type Lote = {
   localizacao: { id_localizacao: number; corredor: string; nivel: string; posicao: string };
   identificacao: Etiqueta | null;
 };
+
+export type TipoMovimentacao = "entrada" | "saida" | "transferencia" | "ajuste" | "inventario";
+
+export type Movimentacao = {
+  id_movimentacao: string;
+  tipo_movimentacao: TipoMovimentacao;
+  data_movimentacao: string;
+  quantidade: string;
+  saldo_anterior: string;
+  saldo_posterior: string;
+  id_lote: number;
+  id_usuario: number;
+  id_localizacao_origem: number | null;
+  id_localizacao_destino: number | null;
+  motivo_movimentacao: string | null;
+  observacao: string | null;
+  status_movimentacao: string;
+};
