@@ -66,6 +66,21 @@
   height: 14px;
 }
 
+.sidebar-fechar {
+  display: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border-radius: var(--radius-md);
+  color: var(--color-sidebar-text);
+}
+
+.sidebar-fechar:hover {
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text-active);
+}
+
 .marca-texto {
   color: var(--color-white);
   font-size: 14px;
@@ -362,6 +377,10 @@
     inset: 0;
     z-index: 250;
     background: var(--color-bg-overlay);
+  }
+
+  .sidebar-fechar {
+    display: grid;
   }
 
   .topbar {

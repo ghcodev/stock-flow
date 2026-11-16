@@ -83,16 +83,27 @@ export function Layout() {
 
   return (
     <div className={classes}>
-      <a className="pular-para-conteudo" href="#conteudo">
+      <a className="pular-para-conteudo" href="#conteudo" inert={gavetaAberta}>
         Ir para o conteúdo
       </a>
 
-      <aside id="menu-lateral" className="sidebar" ref={menu} onKeyDown={prenderFoco} aria-label="Menu lateral">
+      <aside
+        id="menu-lateral"
+        className="sidebar"
+        ref={menu}
+        onKeyDown={prenderFoco}
+        role={movel ? "dialog" : undefined}
+        aria-modal={movel ? gavetaAberta : undefined}
+        aria-label={movel ? "Menu de navegação" : "Menu lateral"}
+      >
         <div className="sidebar-header">
           <div className="marca-icone">
             <Icone nome="box" />
           </div>
           <div className="marca-texto">StockFlow</div>
+          <button type="button" className="sidebar-fechar" onClick={fecharGaveta} aria-label="Fechar menu">
+            <Icone nome="x" />
+          </button>
         </div>
 
         <nav className="sidebar-nav" aria-label="Navegação principal">
@@ -132,7 +143,7 @@ export function Layout() {
 
       {gavetaAberta ? <div className="sidebar-fundo" onClick={fecharGaveta} aria-hidden="true" /> : null}
 
-      <div className="main">
+      <div className="main" inert={gavetaAberta}>
         <header className="topbar">
           <button
             type="button"
