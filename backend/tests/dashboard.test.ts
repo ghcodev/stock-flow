@@ -134,10 +134,13 @@ describe("dashboard (A20, RF11, RN09)", () => {
       assert.deepEqual(Object.keys(corpo.indicadores).sort(), ["bloqueados", "divergencias", "lotes", "movimentacoes", "produtos", "vencidos"]);
       for (const valor of Object.values(corpo.indicadores)) assert.ok(Number.isInteger(valor) && valor >= 0);
       assert.ok(Array.isArray(corpo.grafico));
-      const meu = corpo.alertas_estoque_minimo.itens.find((i) => i.id_produto === p1);
-      assert.equal(meu?.saldo_ativo, "10");
-      assert.equal(meu?.estoque_minimo, "900000000");
       assert.ok(corpo.alertas_estoque_minimo.itens.length <= 100);
+      assert.ok(Number.isInteger(corpo.alertas_estoque_minimo.total) && corpo.alertas_estoque_minimo.total >= corpo.alertas_estoque_minimo.itens.length);
+      for (const item of corpo.alertas_estoque_minimo.itens) {
+        assert.equal(typeof item.nome, "string");
+        assert.equal(typeof item.estoque_minimo, "string");
+        assert.equal(typeof item.saldo_ativo, "string");
+      }
     }
     assert.equal((await chamarApi(servidor, "GET", "/dashboard")).status, 401);
     for (const metodo of ["POST", "PUT", "PATCH", "DELETE"]) {

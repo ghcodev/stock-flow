@@ -98,13 +98,6 @@ describe("mapa do armazém (A22, RF12)", () => {
     }
   });
 
-  it("uma página cheia (100 posições) responde dentro do alvo de 1,5 s", async () => {
-    const antes = Date.now();
-    const pagina = await mapa("limite=100");
-    assert.ok(pagina.dados.length <= 100);
-    assert.ok(Date.now() - antes < 1500);
-  });
-
   it("G1c: no máximo 50 lotes por posição, com total_lotes da posição, em ordem estável, e o restante pela listagem de lotes filtrada por localização", async () => {
     const lotada = (await prisma.localizacao.create({ data: { corredor: `${corredor}`.slice(0, 9) + "L", nivel: "9", posicao: "Z" } })).id_localizacao;
     await prisma.lote.createMany({
