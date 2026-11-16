@@ -124,6 +124,8 @@ describe("auditoria somente leitura (A18, RF13)", () => {
 
   it("validação: tabela, operação, IP, JSON, período e cursor inválidos ou repetidos viram 400", async () => {
     const profundo = { a: { b: { c: { d: 1 } } } };
+    const cemArrays = { a: Array.from({ length: 100 }).reduce<unknown>((interno) => [interno], 1) };
+    const arraysEmQuatroNiveis = { a: [[[1]]] };
     const muitasChaves = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`k${i}`, i]));
     const consultas = [
       "tabela=produto",
@@ -141,6 +143,8 @@ describe("auditoria somente leitura (A18, RF13)", () => {
       `valor_novo=${json("texto")}`,
       `valor_novo=${json({})}`,
       `valor_novo=${json(profundo)}`,
+      `valor_novo=${json(cemArrays)}`,
+      `valor_anterior=${json(arraysEmQuatroNiveis)}`,
       `valor_novo=${json(muitasChaves)}`,
       `valor_anterior=${json({ texto: "x".repeat(101) })}`,
       `valor_novo=${encodeURIComponent(`{"a":"${"x".repeat(600)}"}`)}`,

@@ -12,10 +12,11 @@ function valido(valor: unknown, profundidade: number, contador: { chaves: number
   if (valor === null || typeof valor === "boolean") return true;
   if (typeof valor === "number") return Number.isFinite(valor);
   if (typeof valor === "string") return valor.length <= MAX_TEXTO && !valor.includes("\u0000");
+  if (profundidade > MAX_PROFUNDIDADE) return false;
   if (Array.isArray(valor)) {
-    return valor.length <= MAX_ITENS_DE_LISTA && valor.every((item) => valido(item, profundidade, contador));
+    return valor.length <= MAX_ITENS_DE_LISTA && valor.every((item) => valido(item, profundidade + 1, contador));
   }
-  if (typeof valor !== "object" || profundidade > MAX_PROFUNDIDADE) return false;
+  if (typeof valor !== "object") return false;
   for (const [chave, interno] of Object.entries(valor)) {
     contador.chaves += 1;
     if (contador.chaves > MAX_CHAVES || chave.length === 0 || chave.length > MAX_TAMANHO_CHAVE) return false;
