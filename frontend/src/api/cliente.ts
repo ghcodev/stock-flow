@@ -41,22 +41,28 @@ export function montarConsulta(consulta: Consulta | undefined): string {
 
 const CONTROLE_OU_BARRA_INVERTIDA = /[\u0000-\u001f\u007f\\]/;
 
+const ETAPAS_DE_DECODIFICACAO = 8;
+
+function etapaValida(texto: string): boolean {
+  if (texto.includes("//") || CONTROLE_OU_BARRA_INVERTIDA.test(texto)) return false;
+  return !texto.split("/").some((parte) => parte === ".." || parte === ".");
+}
+
 export function caminhoDeApiValido(caminho: string): boolean {
-  if (!caminho.startsWith("/") || caminho.includes("//") || /[?#]/.test(caminho)) return false;
-  if (CONTROLE_OU_BARRA_INVERTIDA.test(caminho)) return false;
+  if (!caminho.startsWith("/") || /[?#]/.test(caminho)) return false;
   let atual = caminho;
-  for (let volta = 0; volta < 4; volta++) {
+  for (let etapa = 0; etapa <= ETAPAS_DE_DECODIFICACAO; etapa++) {
+    if (!etapaValida(atual)) return false;
     let decodificado: string;
     try {
       decodificado = decodeURIComponent(atual);
     } catch {
       return false;
     }
-    if (decodificado === atual) break;
-    if (CONTROLE_OU_BARRA_INVERTIDA.test(decodificado)) return false;
+    if (decodificado === atual) return true;
     atual = decodificado;
   }
-  return !atual.split("/").some((segmento) => segmento === ".." || segmento === ".");
+  return false;
 }
 
 export function segmento(valor: string | number): string {

@@ -322,3 +322,27 @@ describe("construção de URL e validação do caminho (R6)", () => {
     assert.equal(chamadas, 0);
   });
 });
+
+describe("decodificação em camadas do caminho (S1)", () => {
+  it("recusa barras duplas e pontos escondidos em qualquer camada de codificação", () => {
+    const ruins = [
+      "/%2f%2fhost", "/%2F%2Fhost", "/a/%252f%252fb", "/a/%25252f%25252fb", "/%2e%2e/x", "/%252e%252e/x", "/%25252e%25252e/x",
+      "/%2525252e%2525252e/x", "/a/%2e/b", "/a/%252e/b", "/a%252f%252fb", "/a/%255c/b", "/a%25250ab",
+    ];
+    for (const ruim of ruins) assert.equal(caminhoDeApiValido(ruim), false, ruim);
+  });
+
+  it("recusa quando ainda sobra codificação depois do limite de camadas", () => {
+    let texto = "/a/..";
+    for (let i = 0; i < 12; i++) texto = texto.replaceAll("%", "%25").replace("..", "%2e%2e");
+    assert.equal(caminhoDeApiValido(texto), false);
+    let profundo = "/lotes/x";
+    for (let i = 0; i < 12; i++) profundo = encodeURIComponent(profundo);
+    assert.equal(caminhoDeApiValido("/" + profundo), false);
+  });
+
+  it("continua aceitando caminhos legítimos, inclusive id codificado uma vez", () => {
+    for (const bom of ["/lotes/12", "/lotes/a%20b", "/inventario/contagens/9/finalizar", "/lotes/12/etiqueta"]) assert.equal(caminhoDeApiValido(bom), true, bom);
+    assert.equal(montarUrl("/api", `/lotes/${segmento("12")}/bloquear`, undefined), "/api/lotes/12/bloquear");
+  });
+});
