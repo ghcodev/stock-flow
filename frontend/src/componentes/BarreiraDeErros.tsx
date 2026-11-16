@@ -3,6 +3,7 @@ import { Icone } from "./Icone.tsx";
 
 type Propriedades = {
   children: ReactNode;
+  falhouNaCarga: () => boolean;
   aoTentarDeNovo: () => void;
 };
 
@@ -26,17 +27,24 @@ export class BarreiraDeErros extends Component<Propriedades, Estado> {
 
   override render(): ReactNode {
     if (!this.state.falhou) return this.props.children;
+    const deCarga = this.props.falhouNaCarga();
     return (
       <div className="estado estado--erro" role="alert">
         <Icone nome="alert-triangle" />
-        <strong>Não foi possível exibir esta tela</strong>
-        <span>Verifique a conexão e tente de novo. Se continuar, recarregue a aplicação: o que foi digitado nesta tela pode ser perdido.</span>
+        <strong>{deCarga ? "Não foi possível carregar esta tela" : "Não foi possível exibir esta tela"}</strong>
+        <span>
+          {deCarga
+            ? "A conexão caiu ou a aplicação foi atualizada. Recarregue a aplicação: o que foi digitado nesta tela pode ser perdido."
+            : "Tente de novo. Se continuar, recarregue a aplicação: o que foi digitado nesta tela pode ser perdido."}
+        </span>
         <div className="estado-acoes">
-          <button type="button" className="btn btn-outline btn-sm" onClick={this.tentarDeNovo}>
-            <Icone nome="refresh" />
-            Tentar de novo
-          </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={this.recarregar}>
+          {deCarga ? null : (
+            <button type="button" className="btn btn-outline btn-sm" onClick={this.tentarDeNovo}>
+              <Icone nome="refresh" />
+              Tentar de novo
+            </button>
+          )}
+          <button type="button" className={deCarga ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm"} onClick={this.recarregar}>
             Recarregar a aplicação
           </button>
         </div>

@@ -11,12 +11,12 @@ import type { Recurso } from "./sessao/permissoes.ts";
 import { Dashboard } from "./paginas/Dashboard.tsx";
 import { Entrar } from "./paginas/Entrar.tsx";
 import { NaoEncontrada } from "./paginas/NaoEncontrada.tsx";
-import { criarTelaSobDemanda, type TelaSobDemanda } from "./util/telaSobDemanda.ts";
+import { criarTelaSobDemanda, telaJaCarregada, type TelaSobDemanda } from "./util/telaSobDemanda.ts";
 
 const sobDemanda = criarTelaSobDemanda;
 
 const PAGINAS: Record<Recurso, TelaSobDemanda> = {
-  dashboard: { obter: () => Dashboard, renovar: () => undefined },
+  dashboard: telaJaCarregada(Dashboard),
   produtos: sobDemanda(() => import("./paginas/Produtos.tsx"), "Produtos"),
   lotes: sobDemanda(() => import("./paginas/Lotes.tsx"), "Lotes"),
   mapa: sobDemanda(() => import("./paginas/Mapa.tsx"), "Mapa"),
@@ -37,12 +37,7 @@ function TelaDaRota({ tela }: { tela: TelaSobDemanda }) {
   const [versao, setVersao] = useState(0);
   const Pagina = tela.obter();
   return (
-    <BarreiraDeErros
-      aoTentarDeNovo={() => {
-        tela.renovar();
-        setVersao((atual) => atual + 1);
-      }}
-    >
+    <BarreiraDeErros falhouNaCarga={tela.falhouNaCarga} aoTentarDeNovo={() => setVersao((atual) => atual + 1)}>
       <Suspense fallback={<CarregandoTela />}>
         <Pagina key={versao} />
       </Suspense>
@@ -78,7 +73,7 @@ export function App() {
                       caseSensitive
                       element={
                         <Protegida recurso={item.recurso}>
-                          <TelaDaRota tela={tela} />
+                          <TelaDaRota key={item.recurso} tela={tela} />
                         </Protegida>
                       }
                     />

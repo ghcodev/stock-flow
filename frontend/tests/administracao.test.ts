@@ -270,20 +270,30 @@ describe("X1: finalizar só com leitura atual bem-sucedida e previsão válida",
   });
 });
 
-describe("Y1: tela sob demanda recriável", () => {
-  it("a instância lazy é estável e renovar cria outra, que importa de novo", async () => {
+describe("Z1/Z2: tela sob demanda distingue falha de carga de erro de renderização", () => {
+  const Pagina = () => null;
+
+  it("import rejeitado marca falha de carga e repassa o erro; import bem-sucedido limpa a marca", async () => {
     const { criarTelaSobDemanda } = await import("../src/util/telaSobDemanda.ts");
-    let chamadas = 0;
-    const tela = criarTelaSobDemanda(() => {
-      chamadas += 1;
-      return Promise.reject(new Error("chunk"));
-    }, "Pagina");
-    const primeira = tela.obter();
-    assert.equal(tela.obter(), primeira);
-    tela.renovar();
-    const segunda = tela.obter();
-    assert.notEqual(segunda, primeira);
-    assert.equal(chamadas, 0);
+    let falhar = true;
+    const tela = criarTelaSobDemanda(() => (falhar ? Promise.reject(new Error("chunk")) : Promise.resolve({ Pagina })), "Pagina");
+    assert.equal(tela.falhouNaCarga(), false);
+    await assert.rejects(tela.carregar(), /chunk/);
+    assert.equal(tela.falhouNaCarga(), true);
+    falhar = false;
+    assert.equal((await tela.carregar()).default, Pagina);
+    assert.equal(tela.falhouNaCarga(), false);
+  });
+
+  it("cada tela tem seu estado: falha de A não marca B; tela já carregada nunca falha na carga", async () => {
+    const { criarTelaSobDemanda, telaJaCarregada } = await import("../src/util/telaSobDemanda.ts");
+    const a = criarTelaSobDemanda(() => Promise.reject(new Error("a")), "Pagina");
+    const b = criarTelaSobDemanda(() => Promise.resolve({ Pagina }), "Pagina");
+    await assert.rejects(a.carregar());
+    await b.carregar();
+    assert.equal(a.falhouNaCarga(), true);
+    assert.equal(b.falhouNaCarga(), false);
+    assert.equal(telaJaCarregada(Pagina).falhouNaCarga(), false);
   });
 });
 
