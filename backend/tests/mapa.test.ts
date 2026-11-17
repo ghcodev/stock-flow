@@ -108,6 +108,9 @@ describe("mapa do armazém (A22, RF12)", () => {
         quantidade: "1",
       })),
     });
+    await prisma.$executeRaw`
+      INSERT INTO movimentacao (tipo_movimentacao, quantidade, saldo_anterior, saldo_posterior, id_lote, id_usuario, id_localizacao_destino)
+      SELECT 'entrada'::tipo_movimentacao, 1, 0, 1, id_lote, ${c.operadorUsuario.id}, ${lotada} FROM lote WHERE id_localizacao = ${lotada}`;
     const pagina = await mapa(`corredor=${encodeURIComponent(`${corredor}`.slice(0, 9) + "L")}`);
     const posicao = pagina.dados.find((p) => p.id_localizacao === lotada);
     assert.equal(posicao?.total_lotes, 55);
