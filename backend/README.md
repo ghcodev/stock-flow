@@ -116,7 +116,7 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 
 `lotes_por_situacao`: contagem de lotes por situação (`ativo`, `bloqueado`, `vencido`) e `vencendo` (ativos com validade nos próximos 30 dias, subconjunto de `ativo`), em uma consulta agregada.
 
-`saldo_por_categoria`: até 8 categorias, do maior para o menor, com `saldo_kg` = soma de `quantidade × peso_unitario_kg` dos lotes ativos (só produtos com peso unitário informado, porque as unidades de medida não são somáveis entre si); texto decimal.
+`saldo_por_categoria`: até 8 categorias, do maior para o menor, com `saldo_kg` em quilos dos lotes ativos com saldo. Regra por unidade de medida (sem diferenciar maiúsculas): `kg` soma a quantidade direto; unidades de contagem (`un`, `cx`, `rolo`, `pct`) multiplicam a quantidade por `peso_unitario_kg` (peso de uma unidade); `L` e qualquer outra unidade, ou unidade de contagem sem peso informado, ficam de fora porque não há fator conhecido. `saldo_por_categoria_lotes_fora` informa quantos lotes ativos com saldo ficaram de fora. Texto decimal.
 
 `top_produtos`: os 5 produtos com mais movimentações concluídas de entrada e saída nos últimos 30 dias (mesma janela do gráfico), por `movimentacoes`, desempate pelo nome.
 

@@ -5,6 +5,7 @@ import { prisma } from "../src/db.ts";
 import {
   alertasDeEstoqueMinimo,
   calcularIndicadores,
+  lotesForaDaConversao,
   lotesPorSituacao,
   movimentacoesPorDiaETipo,
   produtosMaisMovimentados,
@@ -19,6 +20,7 @@ type Resposta = {
   indicadores: Record<string, number>;
   lotes_por_situacao: Record<string, number>;
   saldo_por_categoria: { categoria: string; saldo_kg: string }[];
+  saldo_por_categoria_lotes_fora: number;
   top_produtos: { id_produto: number; nome: string; movimentacoes: number }[];
   grafico: { dia: string; tipo: string; total: number }[];
   alertas_estoque_minimo: { total: number; itens: { id_produto: number; nome: string; estoque_minimo: string; saldo_ativo: string }[] };
@@ -138,6 +140,29 @@ describe("dashboard (A20, RF11, RN09)", () => {
     for (let i = 1; i < topo.length; i += 1) assert.ok((topo[i - 1]?.movimentacoes ?? 0) >= (topo[i]?.movimentacoes ?? 0));
   });
 
+  it("H3: saldo por categoria em kg respeita a unidade: kg soma direto, caixas multiplicam pelo peso, litro fica de fora", async () => {
+    const criar = async (nome: string, unidade: string, peso: string | null): Promise<number> =>
+      (await prisma.produto.create({ data: { nome: `${c.prefixo}-${nome}`, unidade_medida: unidade, categoria: `${c.prefixo}-conv`, peso_unitario_kg: peso, estoque_minimo: "0" } })).id_produto;
+    const arroz = await criar("arroz", "kg", "5");
+    const caixas = await criar("caixas", "cx", "12");
+    const suco = await criar("suco", "L", "1");
+    const semPeso = await criar("sempeso", "un", null);
+    const ids = [arroz, caixas, suco, semPeso];
+    await loteDe(arroz, "h3a", "10");
+    await loteDe(caixas, "h3b", "3");
+    await loteDe(suco, "h3c", "40");
+    await loteDe(semPeso, "h3d", "7");
+    const escopoH3 = { idsDeProduto: ids };
+    const categorias = await saldoPorCategoria(escopoH3);
+    assert.equal(categorias.length, 1);
+    assert.equal(categorias[0]?.categoria, `${c.prefixo}-conv`);
+    assert.equal(categorias[0]?.saldo_kg.toString(), "46");
+    assert.equal(await lotesForaDaConversao(escopoH3), 2);
+    assert.equal((await saldoPorCategoria({ idsDeProduto: [arroz] }))[0]?.saldo_kg.toString(), "10");
+    assert.equal((await saldoPorCategoria({ idsDeProduto: [caixas] }))[0]?.saldo_kg.toString(), "36");
+    assert.deepEqual(await saldoPorCategoria({ idsDeProduto: [suco] }), []);
+  });
+
   it("RN09: alerta só para produto ativo cuja soma dos lotes ativos é menor que o mínimo", async () => {
     const alertas = await alertasDeEstoqueMinimo(escopo);
     const porNome = new Map(alertas.itens.map((i) => [i.nome, i]));
@@ -167,6 +192,7 @@ describe("dashboard (A20, RF11, RN09)", () => {
       for (const valor of Object.values(corpo.indicadores)) assert.ok(Number.isInteger(valor) && valor >= 0);
       assert.ok(Array.isArray(corpo.grafico));
       for (const chave of ["ativo", "bloqueado", "vencido", "vencendo"]) assert.ok(Number.isInteger(corpo.lotes_por_situacao[chave]));
+      assert.ok(Number.isInteger(corpo.saldo_por_categoria_lotes_fora) && corpo.saldo_por_categoria_lotes_fora >= 0);
       assert.ok(Array.isArray(corpo.saldo_por_categoria) && corpo.saldo_por_categoria.length <= 8);
       assert.ok(Array.isArray(corpo.top_produtos) && corpo.top_produtos.length <= 5);
       assert.match(corpo.data_referencia, /^\d{4}-\d{2}-\d{2}$/);

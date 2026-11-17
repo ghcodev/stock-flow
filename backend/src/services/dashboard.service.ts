@@ -34,6 +34,7 @@ export type Dashboard = {
   grafico: PontoDoGrafico[];
   lotes_por_situacao: LotesPorSituacao;
   saldo_por_categoria: SaldoDeCategoria[];
+  saldo_por_categoria_lotes_fora: number;
   top_produtos: ProdutoMovimentado[];
   alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };
 };
@@ -89,13 +90,31 @@ export async function lotesPorSituacao(escopo?: Escopo): Promise<LotesPorSituaca
   return linha ?? { ativo: 0, bloqueado: 0, vencido: 0, vencendo: 0 };
 }
 
+const KG_DO_LOTE = Prisma.raw(`CASE
+    WHEN lower(p.unidade_medida) = 'kg' THEN l.quantidade
+    WHEN lower(p.unidade_medida) IN ('un', 'cx', 'rolo', 'pct') AND p.peso_unitario_kg IS NOT NULL THEN l.quantidade * p.peso_unitario_kg
+  END`);
+
 export function saldoPorCategoria(escopo?: Escopo): Promise<SaldoDeCategoria[]> {
   return prisma.$queryRaw<SaldoDeCategoria[]>`
-    SELECT COALESCE(p.categoria, 'Sem categoria') AS categoria, SUM(l.quantidade * p.peso_unitario_kg) AS saldo_kg
-    FROM lote l JOIN produto p ON p.id_produto = l.id_produto
-    WHERE l.status_lote = 'ativo' AND p.peso_unitario_kg IS NOT NULL ${produtoDe("l.id_produto", escopo)}
-    GROUP BY 1 HAVING SUM(l.quantidade * p.peso_unitario_kg) > 0
+    SELECT categoria, SUM(kg) AS saldo_kg FROM (
+      SELECT COALESCE(p.categoria, 'Sem categoria') AS categoria, ${KG_DO_LOTE} AS kg
+      FROM lote l JOIN produto p ON p.id_produto = l.id_produto
+      WHERE l.status_lote = 'ativo' AND l.quantidade > 0 ${produtoDe("l.id_produto", escopo)}
+    ) convertidos
+    WHERE kg IS NOT NULL
+    GROUP BY categoria HAVING SUM(kg) > 0
     ORDER BY 2 DESC, 1 LIMIT 8`;
+}
+
+export async function lotesForaDaConversao(escopo?: Escopo): Promise<number> {
+  const [linha] = await prisma.$queryRaw<{ total: number }[]>`
+    SELECT count(*)::int AS total FROM (
+      SELECT ${KG_DO_LOTE} AS kg
+      FROM lote l JOIN produto p ON p.id_produto = l.id_produto
+      WHERE l.status_lote = 'ativo' AND l.quantidade > 0 ${produtoDe("l.id_produto", escopo)}
+    ) convertidos WHERE kg IS NULL`;
+  return linha?.total ?? 0;
 }
 
 export function produtosMaisMovimentados(escopo?: Escopo): Promise<ProdutoMovimentado[]> {
@@ -131,13 +150,14 @@ export async function alertasDeEstoqueMinimo(escopo?: Escopo): Promise<Dashboard
 }
 
 export async function montarDashboard(): Promise<Dashboard> {
-  const [dataReferencia, indicadores, grafico, alertas, situacao, categorias, topo] = await Promise.all([
+  const [dataReferencia, indicadores, grafico, alertas, situacao, categorias, foraDaConversao, topo] = await Promise.all([
     diaDeReferencia(),
     calcularIndicadores(),
     movimentacoesPorDiaETipo(),
     alertasDeEstoqueMinimo(),
     lotesPorSituacao(),
     saldoPorCategoria(),
+    lotesForaDaConversao(),
     produtosMaisMovimentados(),
   ]);
   return {
@@ -146,6 +166,7 @@ export async function montarDashboard(): Promise<Dashboard> {
     grafico,
     lotes_por_situacao: situacao,
     saldo_por_categoria: categorias,
+    saldo_por_categoria_lotes_fora: foraDaConversao,
     top_produtos: topo,
     alertas_estoque_minimo: alertas,
   };
