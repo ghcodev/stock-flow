@@ -1,127 +1,182 @@
+<div align="center">
+
 # StockFlow v3.0
 
-Gestão de estoque com rastreabilidade por lote para a Arte Trigo: lotes, localizações físicas, movimentações transacionais, inventário rotativo, alertas de vencimento e auditoria de operações.
+**Gestão de estoque com rastreabilidade por lote para a Arte Trigo.**
 
-Projeto Integrador · UniEVANGÉLICA · 2026.
+![Node.js 22](https://img.shields.io/badge/Node.js-22-5FA04E?logo=nodedotjs&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![TypeScript 5.9](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Testes](https://img.shields.io/badge/testes-313%20API%20%C2%B7%20242%20frontend-2EA44F)
+
+Projeto Integrador · UniEVANGÉLICA · 2026
+
+</div>
 
 ## Sumário
 
-- [Subir a demonstração](#subir-a-demonstração)
+- [Visão geral](#visão-geral)
+- [Funcionalidades](#funcionalidades)
 - [Arquitetura](#arquitetura)
-- [Perfis e permissões](#perfis-e-permissões)
-- [Decisões de projeto](#decisões-de-projeto)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Rodar em desenvolvimento](#rodar-em-desenvolvimento)
+- [Início rápido: demonstração](#início-rápido-demonstração)
+- [Desenvolvimento](#desenvolvimento)
 - [Testes e verificações](#testes-e-verificações)
+- [Estrutura do repositório](#estrutura-do-repositório)
+- [Perfis e permissões](#perfis-e-permissões)
+- [Segurança e decisões de projeto](#segurança-e-decisões-de-projeto)
 - [Documentação](#documentação)
-- [Divergências conhecidas](#divergências-conhecidas)
 - [Equipe](#equipe)
 
-## Subir a demonstração
+## Visão geral
+
+O StockFlow controla o estoque de uma indústria de alimentos por **lote**: cada entrada, saída, transferência, ajuste e contagem de inventário é uma movimentação transacional, com saldo anterior e posterior gravados, e cada lote pode ser rastreado da primeira à última movimentação. A regra de negócio vive no servidor e no banco; o frontend apenas espelha as permissões.
+
+## Funcionalidades
+
+- **Lotes e produtos:** cadastro, bloqueio e desbloqueio com motivo, associação de etiqueta (QR Code ou RFID) e leitura por leitor que digita como teclado ou por Web Serial.
+- **Mapa do armazém:** posições agrupadas por corredor e nível, com os lotes armazenados em cada uma.
+- **Movimentações:** entrada, saída, transferência e ajuste de estoque, com saldo validado dentro da transação; a saída de lote vencido ou bloqueado é recusada também por uma trigger do banco.
+- **Inventário:** contagem pendente que só altera o saldo quando um administrador a finaliza, com a divergência calculada.
+- **Vencimentos e alertas:** lotes que vencem em até 30 dias, exportação em CSV e marcação automática de lotes vencidos por um agendador.
+- **Rastreabilidade:** linha do tempo completa de cada lote, com busca pelo número do lote ou pela etiqueta.
+- **Auditoria imutável:** triggers registram autor e IP de cada operação, e a aplicação não tem permissão para alterar ou apagar o log.
+- **Perfis:** Operador e Administrador, com a autoridade no backend.
+- **Dashboard:** indicadores e gráficos em **SVG puro**, sem biblioteca de gráficos.
+- **Login com cena 3D em CSS:** o armazém animado da tela de entrada é CSS puro e respeita `prefers-reduced-motion`.
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    N["Navegador"] -- HTTPS --> X["Nginx<br/>TLS, CSP, estáticos"]
+    X -- "/api/ (prefixo removido)" --> A["API<br/>Node 22 + Express 5"]
+    A -- "Prisma + pg" --> B[("PostgreSQL 16")]
+    G["Agendador<br/>lotes vencidos, a cada 24 h"] -. "dentro da API" .-> A
+```
+
+O Nginx serve o frontend (React, Vite) e repassa `/api/` à API sem o prefixo, sobrescrevendo `X-Forwarded-For` com o endereço real. Na demonstração, só as portas 8443 (HTTPS) e 8080 (redireciona para HTTPS) são publicadas; a API e o banco não expõem porta. O agendador roda dentro do processo da API e só liga com `AGENDADOR_ATIVO=true`, para uma única réplica.
+
+| Camada | Tecnologia | Versão |
+| --- | --- | --- |
+| Frontend | React e React DOM | 19.3.1 |
+| | React Router | 7.18.5 |
+| | Vite | 8.3.8 |
+| | TypeScript | 5.9.3 |
+| API | Node.js (imagem `node:22.20.0-bookworm-slim`; `engines` `>=22.18`) | 22.20.0 |
+| | Express | 5.3.0 |
+| | Prisma e `@prisma/adapter-pg` | 7.10.1 |
+| | `express-validator` | 7.3.2 |
+| | `express-rate-limit` | 8.7.4 |
+| | `jose` (JWT HS256, 8 h) | 6.2.17 |
+| | `bcrypt` | 6.0.0 |
+| | TypeScript | 5.9.3 |
+| Banco | PostgreSQL (imagem `postgres:16.10`) | 16.10 |
+| Servidor web | Nginx (imagem `nginx:1.28.0-alpine`) | 1.28.0 |
+
+O frontend não usa biblioteca de UI, de gráficos, de formulários, de estado nem de datas. Saldos e quantidades são `NUMERIC` no banco e trafegam como texto.
+
+## Início rápido: demonstração
 
 Pré-requisitos: Docker, `openssl` e um shell bash (no Windows, Git Bash).
 
-```
+```bash
 ./deploy/subir.sh      # gera deploy/.env e o certificado local, constrói e sobe tudo
 ./deploy/derrubar.sh   # derruba os serviços e mantém os dados
 ```
 
-Depois de subir, abra `https://localhost:8443` (o certificado é autoassinado: aceite a exceção). A porta 8080 só redireciona para o HTTPS. A API e o banco não publicam porta.
+Abra `https://localhost:8443`; o certificado é autoassinado, então aceite a exceção do navegador. Na demonstração, a tela de login oferece atalhos para entrar com as credenciais abaixo.
 
-Credenciais de demonstração (dados de exemplo, não são segredos reais):
+Credenciais **de demonstração** (dados fictícios, publicados de propósito; não são segredos):
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
 | Administrador | `carlos.matos@stockflow.demo` | `Admin@Demo2026` |
 | Operador | `joao.almeida@stockflow.demo` | `Operador@Demo2026` |
 
-Detalhes, lista completa de usuários, o que há nos dados e as verificações estão em [`deploy/README.md`](deploy/README.md). O passo a passo de apresentação de 10 minutos está em [`docs/ROTEIRO_APRESENTACAO.md`](docs/ROTEIRO_APRESENTACAO.md).
+A lista completa de usuários, o conteúdo dos dados e as verificações estão em [`deploy/README.md`](deploy/README.md). Há um roteiro de apresentação de 10 minutos em [`docs/ROTEIRO_APRESENTACAO.md`](docs/ROTEIRO_APRESENTACAO.md).
 
-## Arquitetura
+## Desenvolvimento
 
+O banco de desenvolvimento sobe pelo Compose da raiz (volume `pgdata`, porta 5433 só em `127.0.0.1`); veja [`database/postgres/README.md`](database/postgres/README.md). Depois:
+
+```bash
+cd backend  && npm install && npm run dev      # API em http://localhost:3000
+cd frontend && npm install && npm run dev      # http://localhost:5173, com proxy de /api para a API
 ```
-navegador ── HTTPS ──> Nginx ──(/api/, sem o prefixo)──> API (Node + Express) ──> PostgreSQL 16
-                        └── arquivos estáticos do frontend (React, Vite)
-```
 
-- **Frontend** (`frontend/`): React 19, TypeScript estrito, Vite 8 e React Router 7. Sem biblioteca de UI, de gráficos, de formulários, de estado ou de datas; os gráficos são SVG puro e a cena 3D do login é CSS puro.
-- **API** (`backend/`): Node 22, Express 5, Prisma 7 com o adaptador `pg`, JWT (HS256, 8 h), validação com `express-validator`, limite de tentativas no login. Regras de negócio e transações no servidor; saldos em `NUMERIC` tratados como texto.
-- **Banco** (`database/postgres/init`): esquema, triggers de auditoria e de bloqueio de saída, papel de aplicação com privilégios mínimos (a aplicação não altera nem apaga a auditoria) e índices.
-- **Nginx** (`deploy/nginx`): SPA com `try_files`, proxy `/api/` removendo o prefixo, `X-Forwarded-For` sobrescrito com o endereço real, TLS, HTTP redirecionando para HTTPS, CSP restrita (`default-src 'self'`), `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS, gzip e cache longo só para `/assets` com hash.
-- **Compose da demonstração** (`deploy/docker-compose.yml`): projeto `stockflow-demo`, volume próprio, TZ `America/Sao_Paulo`, agendador de vencimento ligado em uma única réplica.
+O frontend chama sempre `/api/...`; o proxy do Vite remove o prefixo, como o Nginx faz na demonstração. A API recusa subir sem `DATABASE_URL` e `JWT_SECRET` (mínimo de 32 caracteres); `PORT` e `AGENDADOR_ATIVO` são opcionais. Copie `backend/.env.example` para `backend/.env` e veja [`backend/README.md`](backend/README.md).
 
-## Perfis e permissões
+## Testes e verificações
 
-| Área | Operador | Administrador |
-| --- | --- | --- |
-| Dashboard, Produtos, Lotes, Mapa, Histórico, Rastreabilidade, Vencimentos | sim | sim |
-| Entrada, saída, transferência, registrar contagem de inventário | sim | sim |
-| Finalizar e cancelar contagem de inventário | não | sim |
-| Ajuste de estoque | não | sim |
-| Usuários | não | sim |
-| Auditoria | não | sim |
-| Exportar alertas de vencimento (CSV) | não | sim |
-| Meu Perfil (dados e troca da própria senha) | sim | sim |
+| Comando | O que faz |
+| --- | --- |
+| `cd backend && npm test` | 313 testes (312 passam, 1 é ignorado de propósito), **contra o banco de desenvolvimento**: criam e alteram dados com prefixos próprios; não rode contra um banco que precise ser preservado. |
+| `cd backend && npm run test:isolado` | Mesma suíte em um PostgreSQL descartável (`postgres:16.10`, dados em memória, porta livre em `127.0.0.1`, removido ao terminar): 312 + 1 testes, cerca de 25 a 30 s. Não precisa de `backend/.env` nem toca nos outros bancos. Exige Docker e bash. |
+| `cd frontend && npm test` | 242 testes de lógica pura. |
+| `./deploy/fumaca.sh` | Teste de fumaça contra a demonstração de pé. **Escreve** na demonstração: use só quando isso for esperado. |
+| `./deploy/verificar.sh` | Verifica as invariantes de saldo e as contagens no banco da demonstração, em transação de leitura. |
 
-O backend é a autoridade: o menu, as rotas e os botões do frontend só espelham essas regras.
-
-## Decisões de projeto
-
-- **Decimais como texto.** Quantidades e saldos nunca passam por `parseFloat` em conta de saldo; o frontend usa `BigInt` para somar, subtrair e comparar.
-- **Datas.** Dias são datas puras; data e hora das telas de análise aparecem em UTC e rotuladas; a janela de 30 dias do gráfico vem de `data_referencia`, o `current_date` do banco.
-- **Escritas nunca são repetidas sozinhas.** Envio único, resposta desconhecida manda conferir o histórico, conflito de saldo recarrega e pede nova confirmação.
-- **Listas grandes.** Auditoria, Histórico e Rastreabilidade usam cursor do servidor, e a tela renderiza no máximo 300 itens.
-- **Leitor de código.** O leitor que digita como teclado é detectado pela velocidade das teclas; a conexão serial (Web Serial) só existe em Chromium e em HTTPS ou `localhost`.
-- **Auditoria imutável.** As triggers registram o autor (`app.user_id`) e o IP de cada operação; o papel da aplicação não tem permissão para alterar a tabela de log.
-- **Segurança.** Token só em `sessionStorage`; nenhum HTML vindo da API é renderizado como HTML; CSP restrita; `X-Forwarded-For` do cliente nunca é repassado.
+O que o `test:isolado` faz e o que ele não toca estão em [`backend/README.md`](backend/README.md).
 
 ## Estrutura do repositório
 
 ```
 backend/            API (Node, Express, Prisma), testes e README técnico
 frontend/           Aplicação React, testes e README técnico
-database/postgres/  Esquema, triggers, papéis e índices (init) e README do banco de desenvolvimento
-deploy/             Compose da demonstração, Nginx, dados de demonstração, scripts
-docs/               Especificação v3.0 (PDF), manual do usuário e roteiro de apresentação
-stockflow-api/ stockflow-frontend/ database/*.sql   protótipo anterior (não faz parte da v3)
+database/postgres/  Esquema, triggers, papéis e índices (init), seed de desenvolvimento e README
+deploy/             Compose da demonstração, Nginx, dados de demonstração e scripts
+docs/               Especificação v3.0 (PDF), roteiro de apresentação e ponteiro do manual
+stockflow-api/  stockflow-frontend/  database/*.sql   protótipo anterior (fora da v3)
 ```
 
-## Rodar em desenvolvimento
+O protótipo anterior continua no repositório, mas não faz parte da v3.
 
-Banco de desenvolvimento (Compose da raiz, volume `pgdata`, porta 5433 só em `127.0.0.1`): veja [`database/postgres/README.md`](database/postgres/README.md). Depois:
+## Perfis e permissões
 
-```
-cd backend  && npm install && npm run dev      # API em http://localhost:3000
-cd frontend && npm install && npm run dev      # http://localhost:5173, proxy /api para a API
-```
+| Área | Operador | Administrador |
+| --- | --- | --- |
+| Dashboard, Produtos, Lotes, Mapa, Histórico, Rastreabilidade, Vencimentos | sim | sim |
+| Entrada, saída, transferência e registro de contagem de inventário | sim | sim |
+| Finalizar e cancelar contagem de inventário | não | sim |
+| Ajuste de estoque | não | sim |
+| Usuários | não | sim |
+| Auditoria | não | sim |
+| Exportar vencimentos (CSV) | não | sim |
+| Meu Perfil (dados e troca da própria senha) | sim | sim |
 
-O frontend chama sempre `/api/...`; o proxy do Vite remove o prefixo, como o Nginx faz na demonstração. Variáveis da API: `DATABASE_URL`, `JWT_SECRET` (mínimo de 32 caracteres), `PORT` e `AGENDADOR_ATIVO` (veja `backend/README.md`).
+O backend é a autoridade: o menu, as rotas e os botões do frontend só espelham essas regras.
 
-## Testes e verificações
+## Segurança e decisões de projeto
 
-```
-cd backend  && npm test        # 307 testes, contra o banco de desenvolvimento
-cd frontend && npm test        # 240 testes de lógica pura
-./deploy/fumaca.sh             # teste de fumaça contra a demonstração de pé
-./deploy/verificar.sh          # invariante de saldo e contagens no banco da demonstração
-```
+- **Decimais como texto.** Quantidades e saldos não passam por `parseFloat`; o frontend usa `BigInt` para somar, subtrair e comparar.
+- **Dia operacional.** O "hoje" das regras de negócio é a função SQL `hoje_operacional()`, que devolve a data em `America/Sao_Paulo`; vale para a trava de saída por validade, para o agendador, para os alertas e para as janelas do dashboard, independentemente do fuso do servidor ou da sessão. Histórico e Auditoria continuam filtrando e exibindo em UTC, e as telas rotulam isso.
+- **Escritas nunca são repetidas sozinhas.** Envio único; resposta desconhecida manda conferir o Histórico; conflito de saldo recarrega e pede nova confirmação.
+- **Listas grandes.** Auditoria, Histórico e Rastreabilidade usam cursor do servidor, e a tela renderiza no máximo 300 itens.
+- **Auditoria imutável.** As triggers registram o autor (`app.user_id`) e o IP; o papel da aplicação não tem permissão para alterar a tabela de log.
+- **Sessão e navegador.** JWT de 8 h guardado só em `sessionStorage`; nenhum HTML vindo da API é renderizado como HTML; CSP restrita (`default-src 'self'`), HSTS e demais cabeçalhos no Nginx; limite de tentativas no login.
+- **Banco.** A aplicação usa um papel com privilégios mínimos (`stockflow_app`).
+- **Gráfico de saldo por categoria, em kg.** Produtos em kg entram direto; `un`, `cx`, `rolo` e `pct` são multiplicados por `peso_unitario_kg`; litros, outras unidades e produtos de contagem sem peso ficam de fora, e o painel mostra quantos lotes ficaram de fora.
+- **Limites conhecidos.** O leitor por Web Serial (Chromium, em HTTPS ou `localhost`) não foi testado com um leitor físico. O certificado da demonstração é autoassinado; em produção deve ser substituído por um emitido por uma autoridade confiável. As credenciais da demonstração ficam dentro do JavaScript do frontend quando o modo de demonstração está ligado; por isso só existem dados fictícios nele.
+- **Documentos antigos.** `ARCHITECTURE.md`, `DEPLOYMENT_GUIDE.md`, `SECURITY.md`, `TECH_STACK.md` e `USER_MANUAL.md` já foram atualizados para a v3. `AUDIT.md` e `PROJECT_MEMORY.md` são registros históricos do protótipo anterior (2026-05-31) e estão marcados como tal.
 
-Os testes do backend criam e alteram dados no banco de desenvolvimento (com prefixos próprios); não rode contra um banco com dados que precisem ser preservados.
+Detalhes de segurança: [`SECURITY.md`](SECURITY.md).
 
 ## Documentação
 
-- [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md): rotas, perfis e convenções da API v3.
+- [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md): rotas, perfis e convenções da API.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): arquitetura da v3.
+- [`TECH_STACK.md`](TECH_STACK.md): tecnologias e versões.
+- [`SECURITY.md`](SECURITY.md): segurança.
+- [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md): implantação.
+- [`USER_MANUAL.md`](USER_MANUAL.md): manual do usuário, tela por tela.
 - [`backend/README.md`](backend/README.md): contratos detalhados e decisões da API.
 - [`frontend/README.md`](frontend/README.md): estrutura, decisões, limites e testes do frontend.
+- [`database/postgres/README.md`](database/postgres/README.md): banco de desenvolvimento.
 - [`deploy/README.md`](deploy/README.md): demonstração em Docker.
 - [`docs/ROTEIRO_APRESENTACAO.md`](docs/ROTEIRO_APRESENTACAO.md): roteiro de 10 minutos.
 - [`docs/StockFlow_Especificacao_v3.0.pdf`](docs/StockFlow_Especificacao_v3.0.pdf): especificação.
-
-## Divergências conhecidas
-
-- `ARCHITECTURE.md`, `DEPLOYMENT_GUIDE.md`, `SECURITY.md`, `TECH_STACK.md`, `USER_MANUAL.md`, `AUDIT.md` e `PROJECT_MEMORY.md` descrevem o protótipo anterior (React 18, Express 4, MySQL) e **não foram atualizados para a v3**. Valem a especificação v3.0, este README, `API_DOCUMENTATION.md` e os READMEs de `backend/`, `frontend/` e `deploy/`.
-- Gráfico de saldo por categoria do Dashboard, em kg: produtos em kg entram direto; unidades de contagem (`un`, `cx`, `rolo`, `pct`) são multiplicadas por `peso_unitario_kg`; litros, outras unidades e produtos de contagem sem peso ficam de fora, e o painel mostra quantos lotes ficaram de fora.
-- O certificado da demonstração é autoassinado; em produção real deve ser substituído por um emitido por uma autoridade confiável.
 
 ## Equipe
 
@@ -131,8 +186,6 @@ Os testes do backend criam e alteram dados no banco de desenvolvimento (com pref
 | 👤 | Pedro |
 | 👤 | Rayk |
 | 👤 | Vinicius |
-
-Projeto Integrador · UniEVANGÉLICA · 2026
 
 ---
 
