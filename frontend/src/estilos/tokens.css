@@ -162,3 +162,11 @@ html[data-theme="dark"] {
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.55), 0 8px 10px rgba(0, 0, 0, 0.3);
 }
+
+:root {
+  --duracao-rapida: 150ms;
+  --duracao-media: 300ms;
+  --duracao-lenta: 700ms;
+  --curva-entrada: cubic-bezier(0.22, 1, 0.36, 1);
+  --curva-suave: cubic-bezier(0.4, 0, 0.2, 1);
+}

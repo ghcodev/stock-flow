@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, useLocation } from "react-router";
 import "../estilos/entrar.css";
+import "../estilos/cena.css";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
 import {
   MENSAGEM_DE_CREDENCIAIS_INVALIDAS,
@@ -10,7 +11,9 @@ import {
   validarCredenciais,
   type ErrosDoLogin,
 } from "../autenticacao/credenciais.ts";
+import { CenaDeArmazem } from "../componentes/CenaDeArmazem.tsx";
 import { Icone } from "../componentes/Icone.tsx";
+import { pedirPermissaoDeMovimento, precisaDePermissaoDeMovimento, useParallax } from "../hooks/useParallax.ts";
 import { useTema } from "../tema/useTema.ts";
 
 export function Entrar() {
@@ -23,6 +26,9 @@ export function Entrar() {
   const [erros, setErros] = useState<ErrosDoLogin>({});
   const [geral, setGeral] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const palco = useRef<HTMLDivElement>(null);
+  const cartao = useRef<HTMLElement>(null);
+  const [pedirMovimento, setPedirMovimento] = useState(precisaDePermissaoDeMovimento);
   const campoEmail = useRef<HTMLInputElement>(null);
   const campoSenha = useRef<HTMLInputElement>(null);
   const [foco, setFoco] = useState<"email" | "senha" | null>(null);
@@ -71,11 +77,17 @@ export function Entrar() {
     }
   };
 
+  useParallax((inclinacao) => {
+    if (palco.current) palco.current.style.transform = `rotateX(${58 + inclinacao.y * 7}deg) rotateZ(${-38 + inclinacao.x * 12}deg)`;
+    if (cartao.current) cartao.current.style.transform = `rotateY(${inclinacao.x * 3}deg) rotateX(${-inclinacao.y * 2}deg)`;
+  });
+
   const mensagemGeral = geral ?? aviso;
 
   return (
     <div className="auth-shell">
       <aside className="auth-brand" aria-label="Apresentação do StockFlow">
+        <CenaDeArmazem palco={palco} />
         <header className="auth-logo">
           <div className="marca-icone">
             <Icone nome="box" />
@@ -109,6 +121,19 @@ export function Entrar() {
         </div>
 
         <footer className="auth-brand-rodape">StockFlow v3.0</footer>
+        {pedirMovimento ? (
+          <button
+            type="button"
+            className="auth-movimento"
+            onClick={() => {
+              void pedirPermissaoDeMovimento().then((concedida) => {
+                if (concedida) setPedirMovimento(false);
+              });
+            }}
+          >
+            Ativar movimento do aparelho
+          </button>
+        ) : null}
       </aside>
 
       <section className="auth-form-painel">
@@ -129,7 +154,7 @@ export function Entrar() {
           </button>
         </div>
 
-        <main className="auth-form-corpo">
+        <main className="auth-form-corpo" ref={cartao}>
           <h2 className="auth-form-titulo">Entrar na sua conta</h2>
           <p className="auth-form-sub">Use o e-mail e a senha cadastrados para acessar o sistema.</p>
 

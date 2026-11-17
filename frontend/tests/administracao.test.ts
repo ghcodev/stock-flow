@@ -340,3 +340,30 @@ describe("Y2: leitura do lote (pendente, falhou, válida)", () => {
     assert.equal(podeEscreverNoLote(reduzirLeitura(l, { tipo: "recebida", lote: lote(2) })), false);
   });
 });
+
+describe("B1: inclinação do parallax", () => {
+  it("ponteiro vira -1..1 e limita; tamanho inválido não inclina", async () => {
+    const { inclinacaoDoPonteiro } = await import("../src/util/parallax.ts");
+    assert.deepEqual(inclinacaoDoPonteiro(0, 0, 100, 200), { x: -1, y: -1 });
+    assert.deepEqual(inclinacaoDoPonteiro(50, 100, 100, 200), { x: 0, y: 0 });
+    assert.deepEqual(inclinacaoDoPonteiro(500, -50, 100, 200), { x: 1, y: -1 });
+    assert.deepEqual(inclinacaoDoPonteiro(10, 10, 0, 0), { x: 0, y: 0 });
+  });
+
+  it("aparelho: neutro em beta 45, limita e ignora leituras nulas ou inválidas", async () => {
+    const { inclinacaoDoAparelho } = await import("../src/util/parallax.ts");
+    assert.deepEqual(inclinacaoDoAparelho(45, 0), { x: 0, y: 0 });
+    assert.deepEqual(inclinacaoDoAparelho(200, 90), { x: 1, y: 1 });
+    assert.deepEqual(inclinacaoDoAparelho(null, 10), { x: 0, y: 0 });
+    assert.deepEqual(inclinacaoDoAparelho(Number.NaN, 10), { x: 0, y: 0 });
+  });
+
+  it("suavizar converge ao alvo e para quando estabiliza", async () => {
+    const { suavizar, estabilizou } = await import("../src/util/parallax.ts");
+    let atual = { x: 0, y: 0 };
+    const alvo = { x: 1, y: -1 };
+    for (let i = 0; i < 200; i++) atual = suavizar(atual, alvo);
+    assert.equal(estabilizou(atual, alvo), true);
+    assert.equal(estabilizou({ x: 0, y: 0 }, alvo), false);
+  });
+});
