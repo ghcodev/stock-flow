@@ -27,7 +27,7 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM produto p WHERE p.nome = v.nome);
 
 INSERT INTO lote (numero_lote, data_fabricacao, data_validade, quantidade, id_produto, id_localizacao, status_lote, data_bloqueio, motivo_bloqueio)
-SELECT v.numero_lote, current_date - v.fab_dias, current_date + v.val_dias, v.quantidade, p.id_produto, l.id_localizacao,
+SELECT v.numero_lote, hoje_operacional() - v.fab_dias, hoje_operacional() + v.val_dias, v.quantidade, p.id_produto, l.id_localizacao,
        v.status::status_lote, CASE WHEN v.status = 'bloqueado' THEN now() END, v.motivo
 FROM (VALUES
   ('DEV-0001', 'Farinha de trigo', 'A', '1', '01', 60, 300, 500, 'ativo', NULL),

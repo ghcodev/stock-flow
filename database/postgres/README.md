@@ -48,7 +48,7 @@ Duas sessões pedem ao mesmo tempo 50 unidades do lote L-002, que tem saldo 70. 
 
 - Índices GIN de `auditoria_log` (`valor_anterior`, `valor_novo`) usam `jsonb_path_ops`; filtros em campos internos usam o operador `@>`.
 - Novos índices B-tree: `idx_auditoria_data_hora` em `auditoria_log(data_hora)` e `idx_movimentacao_lote_data` em `movimentacao(id_lote, data_movimentacao)`. O esquema passa a ter 7 tabelas, 7 tipos ENUM, 16 índices, 2 funções e 4 triggers.
-- `fn_bloquear_saida` também recusa saída de lote com `data_validade` anterior a `current_date`, mesmo com status `ativo`.
+- `fn_bloquear_saida` também recusa saída de lote com `data_validade` anterior ao dia operacional, mesmo com status `ativo`. O dia vem de `hoje_operacional()` (dia de `America/Sao_Paulo`, `init/05_hoje_operacional.sql`), não do `current_date` da sessão.
 - `stockflow_app` recebe `GRANT UPDATE (status_movimentacao) ON movimentacao`, para cancelar movimentações e controlar contagens pendentes de inventário. Nenhuma outra coluna de `movimentacao` é atualizável.
 - `trg_auditoria_movimentacao` passou a ser `AFTER INSERT OR UPDATE OF status_movimentacao`: cancelar ou concluir uma movimentação fica na auditoria com autor, IP, valor anterior e novo. A permissão continua restrita à coluna.
 - `movimentacao.id_lote` declara `ON DELETE RESTRICT` (RNF03), como `id_usuario`.

@@ -28,13 +28,13 @@ UNION ALL
 SELECT 'saidas em lote vencido ou bloqueado na data da saida', count(*)
 FROM movimentacao m JOIN lote l ON l.id_lote = m.id_lote
 WHERE m.tipo_movimentacao = 'saida'
-  AND ((l.status_lote = 'bloqueado' AND m.data_movimentacao >= l.data_bloqueio) OR m.data_movimentacao::date > l.data_validade)
+  AND ((l.status_lote = 'bloqueado' AND m.data_movimentacao >= l.data_bloqueio) OR (m.data_movimentacao AT TIME ZONE 'America/Sao_Paulo')::date > l.data_validade)
 UNION ALL
 SELECT 'movimentacoes no futuro', count(*) FROM movimentacao WHERE data_movimentacao > now() OR created_at > now()
 UNION ALL
 SELECT 'bloqueios de lote no futuro', count(*) FROM lote WHERE data_bloqueio > now()
 UNION ALL
-SELECT 'lotes com data de fabricacao no futuro', count(*) FROM lote WHERE data_fabricacao > current_date
+SELECT 'lotes com data de fabricacao no futuro', count(*) FROM lote WHERE data_fabricacao > hoje_operacional()
 UNION ALL
 SELECT 'triggers esperados ausentes ou desabilitados', count(*)
 FROM unnest(ARRAY['trg_auditoria_lote', 'trg_auditoria_movimentacao', 'trg_auditoria_usuario', 'trg_bloquear_saida']) AS esperado(nome)

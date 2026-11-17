@@ -98,7 +98,7 @@ $$ LANGUAGE sql IMMUTABLE;
 CREATE FUNCTION pg_temp.rnd() RETURNS numeric AS $$ SELECT random()::numeric $$ LANGUAGE sql VOLATILE;
 
 CREATE FUNCTION pg_temp.hora_util(d date) RETURNS timestamptz AS $$
-  SELECT (d::timestamp + make_interval(hours => 8 + floor(random() * 10)::int, mins => floor(random() * 60)::int, secs => floor(random() * 60)::int))::timestamptz
+  SELECT (d::timestamp + make_interval(hours => 8 + floor(random() * 10)::int, mins => floor(random() * 60)::int, secs => floor(random() * 60)::int)) AT TIME ZONE 'America/Sao_Paulo'
 $$ LANGUAGE sql VOLATILE;
 
 INSERT INTO lotdef (lk, numero, id_produto, unidade, zona, tipo, dec)
@@ -120,14 +120,14 @@ WITH sorteio AS (
 UPDATE lotdef l SET pend = true FROM sorteio s WHERE s.lk = l.lk AND s.r <= 9;
 
 UPDATE lotdef l SET
-  e0 = pg_temp.hora_util(pg_temp.dia_util(current_date - (CASE l.tipo WHEN 'venc' THEN 45 + floor(random() * 43)::int WHEN 'bloq' THEN 22 + floor(random() * 66)::int ELSE 4 + floor(random() * 84)::int END))),
+  e0 = pg_temp.hora_util(pg_temp.dia_util(hoje_operacional() - (CASE l.tipo WHEN 'venc' THEN 45 + floor(random() * 43)::int WHEN 'bloq' THEN 22 + floor(random() * 66)::int ELSE 4 + floor(random() * 84)::int END))),
   validade = CASE l.tipo
-    WHEN 'vencendo' THEN current_date + (2 + floor(random() * 26)::int)
-    WHEN 'venc' THEN current_date - (3 + floor(random() * 26)::int)
-    ELSE current_date + (45 + floor(random() * 380)::int) END;
+    WHEN 'vencendo' THEN hoje_operacional() + (2 + floor(random() * 26)::int)
+    WHEN 'venc' THEN hoje_operacional() - (3 + floor(random() * 26)::int)
+    ELSE hoje_operacional() + (45 + floor(random() * 380)::int) END;
 
 UPDATE lotdef l SET
-  fab = LEAST(l.validade - (d.vida_util / 2 + floor(random() * 60)::int), current_date - (3 + floor(random() * 30)::int)),
+  fab = LEAST(l.validade - (d.vida_util / 2 + floor(random() * 60)::int), hoje_operacional() - (3 + floor(random() * 30)::int)),
   qtd_ini = round((CASE WHEN l.unidade IN ('un', 'cx', 'rolo') THEN 150 + random() * 1850 ELSE 60 + random() * 640 END)::numeric, l.dec),
   loc_ini = (SELECT lo.id_localizacao FROM localizacao lo WHERE lo.tipo_zona = l.zona::tipo_armazenagem ORDER BY random() LIMIT 1)
 FROM prod_def d JOIN produto pr ON pr.nome = d.nome WHERE pr.id_produto = l.id_produto;
@@ -135,8 +135,8 @@ FROM prod_def d JOIN produto pr ON pr.nome = d.nome WHERE pr.id_produto = l.id_p
 UPDATE lotdef SET numero = 'L' || to_char(fab, 'YYMM') || '-' || lpad(lk::text, 4, '0');
 
 UPDATE lotdef SET t_fim = CASE tipo
-  WHEN 'venc' THEN (validade::timestamp + interval '23 hours')::timestamptz
-  WHEN 'bloq' THEN pg_temp.hora_util(pg_temp.dia_util(current_date - (1 + floor(random() * 13)::int)))
+  WHEN 'venc' THEN ((validade::timestamp + interval '23 hours') AT TIME ZONE 'America/Sao_Paulo')
+  WHEN 'bloq' THEN pg_temp.hora_util(pg_temp.dia_util(hoje_operacional() - (1 + floor(random() * 13)::int)))
   ELSE now() - interval '40 minutes' END;
 
 UPDATE lotdef SET e0 = LEAST(e0, t_fim - interval '5 days') WHERE tipo IN ('venc', 'bloq');
@@ -172,7 +172,7 @@ BEGIN
     ult := r.e0;
     n := 4 + floor(random() * 11)::int;
     FOR t IN
-      SELECT pg_temp.hora_util(pg_temp.dia_util((r.e0 + (r.t_fim - r.e0 - interval '4 hours') * random())::date))
+      SELECT pg_temp.hora_util(pg_temp.dia_util(((r.e0 + (r.t_fim - r.e0 - interval '4 hours') * random()) AT TIME ZONE 'America/Sao_Paulo')::date))
       FROM generate_series(1, n) ORDER BY 1
     LOOP
       CONTINUE WHEN t <= ult + interval '1 hour' OR t >= r.t_fim - interval '1 hour' OR t >= now() - interval '30 minutes';
@@ -232,7 +232,7 @@ BEGIN
               ops[1 + floor(random() * array_length(ops, 1))::int], 'Aguardando finalização do administrador');
     END IF;
     IF r.tipo = 'venc' THEN
-      INSERT INTO ev (ts, lk, tipo) VALUES ((r.validade + 1)::timestamp::timestamptz + interval '5 minutes', r.lk, 'venc');
+      INSERT INTO ev (ts, lk, tipo) VALUES (((r.validade + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo') + interval '5 minutes', r.lk, 'venc');
     ELSIF r.tipo = 'bloq' THEN
       INSERT INTO ev (ts, lk, tipo, uid, motivo) VALUES (r.t_fim, r.lk, 'bloq', admins[1 + floor(random() * array_length(admins, 1))::int],
         (ARRAY['Embalagem avariada na conferência', 'Suspeita de contaminação cruzada', 'Temperatura fora da faixa no recebimento', 'Divergência de rótulo apontada pela qualidade', 'Aguardando laudo do fornecedor'])[1 + floor(random() * 5)::int]);
