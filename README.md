@@ -41,7 +41,7 @@ O StockFlow controla o estoque de uma indústria de alimentos por **lote**: cada
 - **Inventário:** contagem pendente que só altera o saldo quando um administrador a finaliza, com a divergência calculada.
 - **Vencimentos e alertas:** lotes que vencem em até 30 dias, exportação em CSV e marcação automática de lotes vencidos por um agendador.
 - **Rastreabilidade:** linha do tempo completa de cada lote, com busca pelo número do lote ou pela etiqueta.
-- **Auditoria imutável:** triggers registram autor e IP de cada operação, e a aplicação não tem permissão para alterar ou apagar o log.
+- **Auditoria imutável:** triggers registram autor e IP das operações em lotes, movimentações e usuários, e a aplicação não tem permissão para alterar ou apagar o log.
 - **Perfis:** Operador e Administrador, com a autoridade no backend.
 - **Dashboard:** indicadores e gráficos em **SVG puro**, sem biblioteca de gráficos.
 - **Login com cena 3D em CSS:** o armazém animado da tela de entrada é CSS puro e respeita `prefers-reduced-motion`.
@@ -99,14 +99,38 @@ A lista completa de usuários, o conteúdo dos dados e as verificações estão 
 
 ## Desenvolvimento
 
-O banco de desenvolvimento sobe pelo Compose da raiz (volume `pgdata`, porta 5433 só em `127.0.0.1`); veja [`database/postgres/README.md`](database/postgres/README.md). Depois:
+Em ordem, a partir da raiz do repositório:
+
+**1. Banco de desenvolvimento** (Compose da raiz, volume `pgdata`, porta 5433 só em `127.0.0.1`):
 
 ```bash
-cd backend  && npm install && npm run dev      # API em http://localhost:3000
-cd frontend && npm install && npm run dev      # http://localhost:5173, com proxy de /api para a API
+cp .env.example .env     # defina POSTGRES_PASSWORD e APP_DB_PASSWORD
+docker compose up -d
 ```
 
-O frontend chama sempre `/api/...`; o proxy do Vite remove o prefixo, como o Nginx faz na demonstração. A API recusa subir sem `DATABASE_URL` e `JWT_SECRET` (mínimo de 32 caracteres); `PORT` e `AGENDADOR_ATIVO` são opcionais. Copie `backend/.env.example` para `backend/.env` e veja [`backend/README.md`](backend/README.md).
+Detalhes, o seed opcional de desenvolvimento e como recriar o banco estão em [`database/postgres/README.md`](database/postgres/README.md).
+
+**2. API** (primeiro terminal):
+
+```bash
+cp backend/.env.example backend/.env     # preencha DATABASE_URL, JWT_SECRET, PORT e AGENDADOR_ATIVO
+cd backend
+npm ci
+npm run generate                         # gera o cliente Prisma em src/generated (ignorado no Git)
+npm run dev                              # API em http://localhost:3000
+```
+
+`DATABASE_URL` e `JWT_SECRET` (mínimo de 32 caracteres) são obrigatórios: a API recusa subir sem eles. `DATABASE_URL` usa o papel `stockflow_app` na porta 5433. `PORT` e `AGENDADOR_ATIVO` são opcionais. Veja [`backend/README.md`](backend/README.md).
+
+**3. Frontend** (segundo terminal):
+
+```bash
+cd frontend
+npm ci
+npm run dev                              # http://localhost:5173, com proxy de /api para a API
+```
+
+O frontend chama sempre `/api/...`; o proxy do Vite remove o prefixo, como o Nginx faz na demonstração.
 
 ## Testes e verificações
 
@@ -116,7 +140,7 @@ O frontend chama sempre `/api/...`; o proxy do Vite remove o prefixo, como o Ngi
 | `cd backend && npm run test:isolado` | Mesma suíte em um PostgreSQL descartável (`postgres:16.10`, dados em memória, porta livre em `127.0.0.1`, removido ao terminar): 312 + 1 testes, cerca de 25 a 30 s. Não precisa de `backend/.env` nem toca nos outros bancos. Exige Docker e bash. |
 | `cd frontend && npm test` | 242 testes de lógica pura. |
 | `./deploy/fumaca.sh` | Teste de fumaça contra a demonstração de pé. **Escreve** na demonstração: use só quando isso for esperado. |
-| `./deploy/verificar.sh` | Verifica as invariantes de saldo e as contagens no banco da demonstração, em transação de leitura. |
+| `./deploy/verificar.sh` | Verifica as invariantes de saldo e as contagens no banco da demonstração, sem alterar dados persistentes. |
 
 O que o `test:isolado` faz e o que ele não toca estão em [`backend/README.md`](backend/README.md).
 
@@ -154,7 +178,7 @@ O backend é a autoridade: o menu, as rotas e os botões do frontend só espelha
 - **Dia operacional.** O "hoje" das regras de negócio é a função SQL `hoje_operacional()`, que devolve a data em `America/Sao_Paulo`; vale para a trava de saída por validade, para o agendador, para os alertas e para as janelas do dashboard, independentemente do fuso do servidor ou da sessão. Histórico e Auditoria continuam filtrando e exibindo em UTC, e as telas rotulam isso.
 - **Escritas nunca são repetidas sozinhas.** Envio único; resposta desconhecida manda conferir o Histórico; conflito de saldo recarrega e pede nova confirmação.
 - **Listas grandes.** Auditoria, Histórico e Rastreabilidade usam cursor do servidor, e a tela renderiza no máximo 300 itens.
-- **Auditoria imutável.** As triggers registram o autor (`app.user_id`) e o IP; o papel da aplicação não tem permissão para alterar a tabela de log.
+- **Auditoria imutável.** Triggers gravam em `auditoria_log` o autor (`app.user_id`) e o IP (`app.ip`) só de `lote` (inserção, alteração e exclusão), `movimentacao` (inserção e mudança de status) e `usuario` (inserção e alteração); produto, localização e identificação não geram auditoria própria. As ações do agendador (`executarComoSistema`) ficam com usuário e IP nulos e aparecem como "Sistema". O papel da aplicação não tem permissão para alterar ou apagar o log.
 - **Sessão e navegador.** JWT de 8 h guardado só em `sessionStorage`; nenhum HTML vindo da API é renderizado como HTML; CSP restrita (`default-src 'self'`), HSTS e demais cabeçalhos no Nginx; limite de tentativas no login.
 - **Banco.** A aplicação usa um papel com privilégios mínimos (`stockflow_app`).
 - **Gráfico de saldo por categoria, em kg.** Produtos em kg entram direto; `un`, `cx`, `rolo` e `pct` são multiplicados por `peso_unitario_kg`; litros, outras unidades e produtos de contagem sem peso ficam de fora, e o painel mostra quantos lotes ficaram de fora.
