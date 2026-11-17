@@ -61,7 +61,7 @@ export async function montarCenario(servidor: Servidor, rotulo: string): Promise
   const saldoDo = async (idLote: number): Promise<string> =>
     (await prisma.lote.findUniqueOrThrow({ where: { id_lote: idLote } })).quantidade.toString();
   const movimentos = (idLote: number) =>
-    prisma.movimentacao.findMany({ where: { id_lote: idLote }, orderBy: { id_movimentacao: "asc" } });
+    prisma.movimentacao.findMany({ where: { id_lote: idLote }, orderBy: [{ data_movimentacao: "asc" }, { id_movimentacao: "asc" }] });
   const verificarInvariante = async (idLote: number): Promise<void> => {
     const lista = (await movimentos(idLote)).filter(
       (m) => m.tipo_movimentacao !== "inventario" && m.status_movimentacao === "concluida",
