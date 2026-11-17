@@ -21,7 +21,7 @@
     linear-gradient(to right, var(--color-brand-pane-border) 1px, transparent 1px),
     linear-gradient(to bottom, var(--color-brand-pane-border) 1px, transparent 1px);
   background-size: 60px 60px;
-  mask-image: radial-gradient(circle at 70% 55%, black 0%, transparent 70%);
+  mask-image: radial-gradient(circle at 70% 55%, var(--color-text-primary) 0%, transparent 70%);
   opacity: 0.55;
   animation: cena-grade 14s linear infinite;
 }
@@ -40,7 +40,7 @@
   inset: 0;
   perspective: 1500px;
   perspective-origin: var(--cena-x, 84%) var(--cena-y, 64%);
-  mask-image: linear-gradient(to right, transparent 0%, black 55%);
+  mask-image: linear-gradient(to right, transparent 0%, var(--color-text-primary) 55%);
   animation: cena-entrada 1.4s var(--curva-entrada) backwards;
 }
 
