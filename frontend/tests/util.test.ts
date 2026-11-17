@@ -66,7 +66,10 @@ describe("datas sem fuso", () => {
     assert.equal(diasAte("2026-05-27", "2026-05-29"), -2);
     assert.equal(diasAte("2026-03-01", "2026-02-28"), 1);
     assert.equal(diasAte("x", "2026-05-27"), null);
-    assert.equal(diaDeHoje(new Date(2026, 10, 5)), "2026-11-05");
+    assert.equal(diaDeHoje(new Date("2026-11-17T01:30:00Z")), "2026-11-16");
+    assert.equal(diaDeHoje(new Date("2026-11-17T02:59:59Z")), "2026-11-16");
+    assert.equal(diaDeHoje(new Date("2026-11-17T03:00:00Z")), "2026-11-17");
+    assert.equal(diaDeHoje(new Date("2026-11-05T15:00:00Z")), "2026-11-05");
   });
 
   it("ordena dias com nulos por último", () => {

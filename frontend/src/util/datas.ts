@@ -50,10 +50,11 @@ export function formatarDataHoraUtc(iso: string | null): string {
   return Number.isNaN(data.getTime()) ? iso : FORMATO_DATA_HORA_UTC.format(data);
 }
 
+const FORMATO_DIA_OPERACIONAL = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" });
+
 export function diaDeHoje(agora: Date = new Date()): string {
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${agora.getFullYear()}-${mes}-${dia}`;
+  const partes = new Map(FORMATO_DIA_OPERACIONAL.formatToParts(agora).map((parte) => [parte.type, parte.value]));
+  return `${partes.get("year")}-${partes.get("month")}-${partes.get("day")}`;
 }
 
 export function diasAte(dia: string, hoje: string): number | null {
