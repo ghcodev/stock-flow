@@ -1,717 +1,115 @@
-# API Documentation — StockFlow
+# API Documentation — StockFlow v3.0
 
-Base URL local: `http://localhost:3000/api/v1`.
+Esta documentação cobre as rotas que existem no código da API (`backend/src/routes`). Os contratos detalhados (campos, regras de negócio e decisões) estão em [`backend/README.md`](backend/README.md); aqui ficam as rotas, os perfis e as convenções.
 
-Autenticação padrão: `Authorization: Bearer <token>`.
+## Base e autenticação
 
-Formato de erro comum:
+- **Desenvolvimento:** a API escuta em `http://localhost:3000` e as rotas não têm prefixo (`GET /health`, `POST /auth/login`, ...).
+- **Frontend e demonstração:** o navegador chama `/api/...`; o Vite (desenvolvimento) e o Nginx (demonstração) removem o prefixo `/api` antes de repassar à API. Na demonstração a API não publica porta no host.
+- **Autenticação:** `Authorization: Bearer <token>` (JWT HS256, validade de 8 horas), obtido em `POST /auth/login`. Todas as rotas, exceto `GET /health` e `POST /auth/login`, exigem token.
+- **Perfis:** `operador` e `administrador`. Operador acessa as áreas operacionais; administrador acessa tudo. Rotas só de administrador respondem `403 ACESSO_NEGADO` ao operador.
+- **Corpo:** JSON de até 100 KB. Datas em `AAAA-MM-DD`; instantes em ISO 8601. Quantidades e saldos (`NUMERIC`) trafegam como **texto** decimal (até 9 inteiros e 3 decimais).
 
-```json
-{
-  "error": "Mensagem do erro",
-  "timestamp": "2026-05-31T00:00:00.000Z"
-}
-```
+## Convenções
 
-## Health
-
-### GET `/health`
-
-Autenticação: não.
-
-Resposta:
+**Erro** (sempre este formato, sem stack nem detalhe interno):
 
 ```json
-{
-  "status": "ok",
-  "timestamp": "2026-05-31T00:00:00.000Z"
-}
+{ "erro": { "codigo": "VALIDACAO", "mensagem": "…", "campos": [{ "campo": "nome", "mensagem": "…" }] } }
 ```
 
-## Auth
-
-### GET `/auth/usuario-por-codigo/:codigo`
-
-Autenticação: não.
-
-Busca usuário ativo por ID numérico.
-
-Resposta:
-
-```json
-{ "encontrado": true, "nome": "Nome do usuário" }
-```
-
-ou:
-
-```json
-{ "encontrado": false }
-```
-
-### POST `/auth/login`
-
-Autenticação: não. Usa `loginLimiter`.
-
-Request:
-
-```json
-{
-  "identifier": "admin@empresa.com",
-  "senha": "senha"
-}
-```
-
-Resposta:
-
-```json
-{
-  "token": "jwt",
-  "usuario": {
-    "id": 1,
-    "nome": "Usuário",
-    "email": "usuario@empresa.com",
-    "perfil": "administrador",
-    "permissoes": null
-  }
-}
-```
-
-Erros: 400 validação, 401 credenciais inválidas.
-
-### GET `/auth/perfil`
-
-Autenticação: sim.
-
-Resposta:
-
-```json
-{ "usuario": { "id": 1, "email": "usuario@empresa.com", "perfil": "administrador" } }
-```
-
-### POST `/auth/logout`
-
-Autenticação: sim.
-
-Resposta:
-
-```json
-{ "mensagem": "Logout realizado com sucesso" }
-```
-
-### PATCH `/auth/senha`
-
-Autenticação: sim.
-
-Request:
-
-```json
-{
-  "senha_atual": "senha atual",
-  "nova_senha": "nova senha"
-}
-```
-
-Resposta:
-
-```json
-{ "mensagem": "Senha alterada com sucesso" }
-```
-
-Erros: 400, 401, 404.
-
-## Produtos
-
-Todas as rotas exigem JWT.
-
-### GET `/produtos`
-
-Permissão: `produtos.ver`.
-
-Query real usada: `search`/`busca`, `categoria`, `page`, `limit`.
-
-Resposta:
-
-```json
-{
-  "data": [],
-  "total": 0,
-  "page": 1,
-  "limit": 20
-}
-```
-
-### GET `/produtos/:id`
-
-Permissão: `produtos.ver`.
-
-Resposta: produto com `estoque_atual`.
-
-Erros: 404.
-
-### POST `/produtos`
-
-Permissão: `produtos.criar`.
-
-Request:
-
-```json
-{
-  "nome": "Produto",
-  "categoria": "Categoria",
-  "unidade_medida": "unidade",
-  "descricao": "Opcional",
-  "estoque_minimo": 10,
-  "tipo_armazenagem": "seco",
-  "peso_unitario_kg": 0.05
-}
-```
-
-`tipo_armazenagem` aceita `seco`, `refrigerado` ou `quimico` e vale `seco` quando omitido. `peso_unitario_kg` é opcional, maior que zero, ou `null`.
-
-Resposta: 201 com `id`, `nome`, `categoria`, `unidade_medida`, `estoque_minimo`, `tipo_armazenagem`, `peso_unitario_kg`.
-
-Erros: 400, 409.
-
-### PUT `/produtos/:id`
-
-Permissão: `produtos.editar`.
-
-Request: campos de produto, inclusive `tipo_armazenagem` e `peso_unitario_kg`. Campos omitidos mantêm o valor atual; `peso_unitario_kg: null` limpa o peso.
-
-Resposta:
-
-```json
-{ "mensagem": "Produto atualizado" }
-```
-
-Erros: 400, 404.
-
-### PATCH `/produtos/:id/inativar`
-
-Autenticação: admin + `produtos.inativar`.
-
-Resposta:
-
-```json
-{ "mensagem": "Produto inativado" }
-```
-
-## Lotes
-
-Todas as rotas exigem JWT.
-
-### GET `/lotes/vencendo`
-
-Lista lotes ativos com validade até 30 dias.
-
-### GET `/lotes/abaixo-minimo`
-
-Lista produtos com estoque agregado abaixo do mínimo.
-
-### GET `/lotes`
-
-Query: `search`, `status`, `produto`, `page`, `limit`.
-
-Resposta paginada:
-
-```json
-{ "data": [], "total": 0, "page": 1, "limit": 20 }
-```
-
-### GET `/lotes/:id`
-
-Retorna lote com produto, localização e identificação.
-
-Erros: 404.
-
-### GET `/lotes/:id/timeline`
-
-Retorna movimentações do lote com usuário e localizações.
-
-### POST `/lotes`
-
-Request:
-
-```json
-{
-  "numero_lote": "LOT-001",
-  "id_produto": 1,
-  "id_localizacao": 1,
-  "quantidade": 100,
-  "data_fabricacao": "2026-05-31",
-  "data_validade": "2026-06-30"
-}
-```
-
-Resposta: 201 com `id` e `numero_lote`.
-
-Erros: 400, 409.
-
-### PUT `/lotes/:id`
-
-Atualiza número, datas e localização.
-
-Resposta:
-
-```json
-{ "mensagem": "Lote atualizado" }
-```
-
-### PATCH `/lotes/:id/bloquear`
-
-Autenticação: admin.
-
-Request:
-
-```json
-{ "motivo": "Motivo do bloqueio" }
-```
-
-Resposta:
-
-```json
-{ "mensagem": "Lote bloqueado" }
-```
-
-### PATCH `/lotes/:id/desbloquear`
-
-Autenticação: admin.
-
-Resposta:
-
-```json
-{ "mensagem": "Lote desbloqueado" }
-```
-
-## Movimentações
-
-Todas as rotas exigem JWT.
-
-### GET `/movimentacoes`
-
-Query: `tipo`, `lote`, `usuario`, `search`, `page`, `limit`, `order`.
-
-Resposta paginada:
-
-```json
-{ "data": [], "total": 0, "page": 1, "limit": 20 }
-```
-
-### POST `/movimentacoes/entrada`
-
-Permissão: `movimentacoes.entrada`.
-
-Request:
-
-```json
-{
-  "id_lote": 1,
-  "quantidade": 10,
-  "id_localizacao_destino": 1,
-  "observacao": "Entrada"
-}
-```
-
-Resposta: 201.
-
-### POST `/movimentacoes/saida`
-
-Permissão: `movimentacoes.saida`.
-
-Request:
-
-```json
-{
-  "id_lote": 1,
-  "quantidade": 5,
-  "observacao": "Saída"
-}
-```
-
-Erros: lote não encontrado, lote bloqueado/vencido, estoque insuficiente.
-
-### POST `/movimentacoes/transferencia`
-
-Permissão: `movimentacoes.transferencia`.
-
-Request:
-
-```json
-{
-  "id_lote": 1,
-  "id_localizacao_destino": 2,
-  "motivo_movimentacao": "Reorganização do armazém"
-}
-```
-
-### POST `/movimentacoes/ajuste`
-
-Autenticação: admin + `movimentacoes.ajuste`.
-
-Request:
-
-```json
-{
-  "id_lote": 1,
-  "nova_quantidade": 12,
-  "justificativa": "Correção após conferência"
-}
-```
-
-### POST `/movimentacoes/inventario`
-
-Compara contagens com quantidade do sistema.
-
-Request:
-
-```json
-{
-  "contagens": [
-    { "id_lote": 1, "quantidade_contada": 10 }
-  ]
-}
-```
-
-Resposta:
-
-```json
-{
-  "divergencias": [],
-  "total_contado": 1,
-  "total_divergencias": 0
-}
-```
-
-## Localizações
-
-### GET `/localizacoes`
-
-Autenticação: sim.
-
-Resposta: lista de localizações.
-
-### GET `/localizacoes/sugestao`
-
-Disponível para administradores e operadores autenticados em `/api/v1/localizacoes/sugestao` e `/api/localizacoes/sugestao`.
-
-Informe `id_produto` (inteiro positivo) e `quantidade` (positiva, com até três casas decimais). `data_validade` é opcional e usa o formato `AAAA-MM-DD`. `ignorar_localizacao` é opcional (inteiro positivo) e tira essa localização das sugestões sem contá-la como descartada; a tela de transferência envia a posição atual do lote.
-
-A resposta contém `sugestoes`, com até três posições em ordem decrescente de pontuação. Cada item contém `id`, `corredor`, `nivel`, `posicao`, `pontuacao` (0 a 100), `criterios` (notas de 0 a 1 para `giro`, `validade`, `agrupamento` e `ergonomia`) e `motivos`.
-
-`descartadas` conta as posições que falharam nas regras de zona, ocupação, capacidade ou peso. `motivo_vazio` explica a ausência de sugestões ou vem como `null` quando há resultados. Parâmetros inválidos retornam 400 e produto inexistente retorna 404.
-
-### GET `/localizacoes/:id/lotes`
-
-Autenticação: sim.
-
-Resposta: lotes de uma localização.
-
-### POST `/localizacoes`
-
-Autenticação: admin.
-
-Request:
-
-```json
-{
-  "corredor": "A",
-  "nivel": 1,
-  "posicao": 1,
-  "descricao": "Opcional",
-  "capacidade": 500,
-  "tipo_zona": "seco",
-  "distancia_expedicao": 3
-}
-```
-
-`capacidade` é opcional, maior que zero, ou `null` para limite não informado. `tipo_zona` aceita `seco`, `refrigerado` ou `quimico` e vale `seco` quando omitido. `distancia_expedicao` é inteiro maior ou igual a zero e vale 0 quando omitido.
-
-Resposta: 201 com `id`, `corredor`, `nivel`, `posicao`, `capacidade`, `tipo_zona`, `distancia_expedicao`.
-
-### PUT `/localizacoes/:id`
-
-Autenticação: admin.
-
-Request: os mesmos campos do cadastro, todos opcionais. Campos omitidos mantêm o valor atual; `capacidade: null` remove o limite.
-
-Resposta: 200 com a localização atualizada.
-
-Erros: 400, 403, 404.
-
-## Assistente
-
-Assistente de estoque em linguagem natural, opcional. Usa um servidor Ollama (`ASSISTENTE_URL`, padrão `http://localhost:11434`) com o modelo `ASSISTENTE_MODELO` (padrão `qwen3.5:9b`). O modelo só consulta dados por três ferramentas de leitura: `buscar_produto` (id, nome, unidade e saldo em lotes ativos), `lotes_vencendo` (lotes ativos que vencem em até N dias, de 1 a 365) e `sugerir_posicao` (o mesmo serviço de `GET /localizacoes/sugestao`). Ele não grava nada, faz no máximo 4 rodadas de ferramenta por pergunta e a resposta é limitada a 4000 caracteres. O conteúdo das perguntas não é registrado em log.
-
-### GET `/assistente`
-
-Autenticação: sim.
-
-Resposta: `{ "disponivel": true }` quando o Ollama responde e o modelo está instalado; caso contrário, 503 com `{ "error": "Assistente indisponível" }`.
-
-### POST `/assistente`
-
-Autenticação: sim. Também disponível em `/api/assistente`. Limite de 10 perguntas por minuto.
-
-Request:
-
-```json
-{
-  "pergunta": "Onde guardo 40 sacos de farinha que vencem em março?",
-  "historico": [
-    { "papel": "usuario", "texto": "Pergunta anterior" },
-    { "papel": "assistente", "texto": "Resposta anterior" }
-  ]
-}
-```
-
-`pergunta` tem de 1 a 1000 caracteres. `historico` é opcional, com até 10 itens de até 2000 caracteres.
-
-Resposta:
-
-```json
-{
-  "resposta": "Texto da resposta",
-  "atalhos": [{ "id_produto": 17, "nome": "Farinha de Trigo 25kg" }]
-}
-```
-
-`atalhos` lista os produtos para os quais o assistente consultou uma sugestão de posição com resultado. Erros: 400, 401, 429, 503.
-
-## Usuários
-
-### GET `/usuarios/perfil`
-
-Autenticação: sim.
-
-Retorna perfil do usuário autenticado.
-
-### GET `/usuarios`
-
-Autenticação: admin + `usuarios.ver`.
-
-### GET `/usuarios/:id`
-
-Autenticação: admin + `usuarios.ver`.
-
-### POST `/usuarios`
-
-Autenticação: admin + `usuarios.criar`.
-
-Request:
-
-```json
-{
-  "nome": "Usuário",
-  "email": "usuario@empresa.com",
-  "senha": "123456",
-  "perfil": "operador"
-}
-```
-
-### PUT `/usuarios/:id`
-
-Autenticação: admin.
-
-Permite atualizar nome, e-mail, perfil e permissões.
-
-### PATCH `/usuarios/:id/inativar`
-
-Autenticação: admin.
-
-## Identificações
-
-### GET `/identificacoes/:codigo`
-
-Autenticação: sim.
-
-Busca lote por código QR/RFID.
-
-Erros: 404.
-
-### POST `/identificacoes`
-
-Autenticação: sim.
-
-Request:
-
-```json
-{
-  "tipo": "RFID",
-  "codigo": "RFID-001",
-  "id_lote": 1
-}
-```
-
-Erros: 400, 404, 409.
-
-## Auditoria
-
-Todas exigem admin + `auditoria.ver`.
-
-### GET `/auditoria`
-
-Query: `operacao`, `tabela`, `usuario`, `search`, `page`, `limit`.
-
-### GET `/auditoria/lote/:id`
-
-Busca logs relacionados a lote.
-
-### GET `/auditoria/usuario/:id`
-
-Retorna até 200 logs de um usuário.
-
-## Dashboard
-
-Todas exigem JWT.
-
-### GET `/dashboard/kpis`
-
-Query opcional: `periodo`.
-
-Retorna KPIs operacionais.
-
-### GET `/dashboard/movimentacoes`
-
-Retorna movimentações agregadas por período.
-
-### GET `/dashboard/alertas`
-
-Retorna alertas de vencimento, estoque mínimo e bloqueios.
-
-### GET `/dashboard/alertas-pendentes`
-
-Retorna itens pendentes para ação.
-
-### GET `/dashboard/ocupacao-corredores`
-
-Retorna ocupação por corredor.
-
-### GET `/dashboard/top-produtos`
-
-Query: `periodo`.
-
-Retorna produtos mais movimentados.
-
-### GET `/dashboard/operadores-hoje`
-
-Retorna operadores com movimentações no dia.
-
-### GET `/dashboard/saude-estoque`
-
-Retorna indicadores agregados de saúde do estoque.
-
-### GET `/dashboard/rupturas`
-
-Retorna risco de ruptura baseado em estoque e média de saída.
-
-### GET `/dashboard/curva-abc`
-
-Retorna classificação ABC baseada em movimentações.
-
-### GET `/dashboard/distribuicao-categoria`
-
-Query opcional: `periodo`.
-
-Retorna distribuição por categoria.
-
-## Inventários
-
-Há duas APIs reais.
-
-### GET `/inventarios`
-
-Autenticação: sim.
-
-Lista registros da tabela `inventario`. Depende da existência dessa tabela no banco.
-
-### POST `/inventarios`
-
-Autenticação: sim.
-
-Request:
-
-```json
-{
-  "corredor": "A",
-  "observacao": "Opcional"
-}
-```
-
-Resposta: 201 com ID e mensagem.
-
-### GET `/inventario`
-
-Autenticação: sim.
-
-Lista inventários com campos de etapa, totais e usuário.
-
-### POST `/inventario`
-
-Autenticação: sim.
-
-Request:
-
-```json
-{
-  "corredor": "A",
-  "id_usuario": 1
-}
-```
-
-Cria inventário com itens baseados em lotes ativos do corredor.
-
-### GET `/inventario/:id`
-
-Retorna inventário detalhado.
-
-### PATCH `/inventario/:id/contar`
-
-Request:
-
-```json
-{
-  "id_lote": 1,
-  "qtd_contada": 10
-}
-```
-
-Atualiza item contado.
-
-### PATCH `/inventario/:id/confirmar`
-
-Confirma inventário após todos os itens serem contados.
-
-### PATCH `/inventario/:id/finalizar`
-
-Finaliza inventário confirmado, cria movimentações tipo `inventario` para divergências e atualiza quantidades de lote.
-
-## SAP
-
-Todas exigem JWT e permissão `sap.importar`.
-
-### POST `/sap/importar-produtos`
-
-Aceita array ou objeto com `produtos`/`data`.
-
-Campos SAP usados:
-
-- `MAKTX`: nome obrigatório.
-- `MATNR`: SKU SAP opcional.
-- `MATKL`: categoria.
-- `MEINS`: unidade.
-- `MINBE`: estoque mínimo.
-
-Resposta:
-
-```json
-{
-  "importados": 1,
-  "atualizados": 0,
-  "erros": 0,
-  "detalhes": []
-}
-```
-
-### POST `/sap/importar-json`
-
-Mesmo contrato de `/sap/importar-produtos`, com erro específico para JSON sem produtos válidos.
+`campos` só aparece em `400 VALIDACAO`. Códigos usados: `VALIDACAO`, `CREDENCIAIS_INVALIDAS`, `NAO_AUTENTICADO`, `ACESSO_NEGADO`, `NAO_ENCONTRADO`, `ROTA_NAO_ENCONTRADA`, `REGISTRO_DUPLICADO`, `LOTE_EM_USO`, `LOTE_NAO_ATIVO`, `LOTE_NAO_BLOQUEADO`, `LOTE_COM_ETIQUETA`, `ETIQUETA_DUPLICADA`, `SALDO_INSUFICIENTE`, `SALDO_DESATUALIZADO`, `SALDO_FINAL_NEGATIVO`, `SALDO_EXCEDE_LIMITE`, `AJUSTE_SEM_ALTERACAO`, `LOTE_INDISPONIVEL`, `LOTE_SEM_SALDO`, `DESTINO_IGUAL_ORIGEM`, `LOCALIZACAO_INVALIDA`, `PRODUTO_INATIVO`, `PRODUTO_INVALIDO`, `REFERENCIA_INVALIDA`, `VALOR_FORA_DO_LIMITE`, `REGRA_VIOLADA`, `OPERACAO_RECUSADA`, `CONTAGEM_PENDENTE_EXISTENTE`, `CONTAGEM_JA_FINALIZADA`, `CONTAGEM_NAO_PENDENTE`, `AUTO_INATIVACAO`, `ULTIMO_ADMINISTRADOR`, `SENHA_ATUAL_INCORRETA`, `MUITAS_TENTATIVAS` (429, com `Retry-After`), `BANCO_INDISPONIVEL` e `SERVICO_OCUPADO` (503).
+
+**Listas:** `{ "dados": [...], "pagina": n, "limite": n, "total": n }`, com `pagina` e `limite` na consulta. Auditoria, Histórico de movimentações e Rastreabilidade também aceitam cursor (`antes_de_id` ou `depois_de_id`) e devolvem o próximo cursor na resposta (`proximo_antes_de_id` ou `proximo_depois_de_id`); o cursor nunca deve ser calculado pelo cliente.
+
+**Período:** `de` e `ate` em `AAAA-MM-DD` (dia inteiro, UTC) ou instante completo com `Z` ou deslocamento.
+
+**Limite de tentativas:** `POST /auth/login` e `POST /auth/senha` têm limite por endereço (10 tentativas em 15 minutos no login), respondendo `429 MUITAS_TENTATIVAS`.
+
+**Auditoria:** cada escrita registra o autor e o IP pelas triggers do banco; não existe rota que altere ou apague a auditoria.
+
+## Rotas
+
+### Sistema e conta
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /health` | público | Responde `ok` se a API e o banco estão de pé (`503 BANCO_INDISPONIVEL` se o banco não responde) |
+| `POST /auth/login` | público | `{ email, senha }` → `{ token, usuario }` |
+| `GET /auth/me` | autenticado | Usuário do token |
+| `POST /auth/senha` | autenticado | Troca da própria senha: `{ senha_atual, nova_senha }` (mínimo de 8 caracteres e 72 bytes); `204` |
+
+### Produtos
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /produtos` | operacional | Lista com `busca`, `ativo`, paginação |
+| `POST /produtos` | operacional | Cria |
+| `GET /produtos/:id` | operacional | Detalhe |
+| `PATCH /produtos/:id` | operacional | Edita |
+| `POST /produtos/:id/inativar` | operacional | Inativa (não há reativação) |
+
+### Localizações e mapa
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /localizacoes` | operacional | Lista, com `busca` por corredor, nível, posição ou rótulo combinado |
+| `POST /localizacoes` | operacional | Cria |
+| `GET /localizacoes/:id` | operacional | Detalhe |
+| `GET /mapa` | operacional | Posições por corredor e nível, com `total_lotes` e até 50 lotes cada; filtro `corredor` |
+
+### Lotes
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /lotes` | operacional | Lista com `numero_lote`, `status`, `id_produto`, `id_localizacao`, `codigo_etiqueta`; cada lote traz `validade_expirada` |
+| `POST /lotes` | operacional | Cria (a quantidade inicial gera a entrada) |
+| `GET /lotes/:id` | operacional | Detalhe |
+| `POST /lotes/:id/bloquear` | operacional | `{ motivo }` |
+| `POST /lotes/:id/desbloquear` | operacional | Desbloqueia |
+| `POST /lotes/:id/etiqueta` | operacional | Associa etiqueta `qr_code` ou `rfid` (`{ tipo_identificacao, codigo }`) |
+
+### Movimentações
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /movimentacoes` | operacional | Histórico: filtros `tipo`, `de`, `ate`, `id_lote`, `id_usuario`; cursor `antes_de_id`; traz `numero_lote` e `nome_usuario` |
+| `GET /movimentacoes/:id` | operacional | Detalhe |
+| `POST /movimentacoes/entrada` | operacional | `{ id_lote, quantidade, motivo?, observacao? }` |
+| `POST /movimentacoes/saida` | operacional | Recusa lote vencido, expirado ou bloqueado e saldo insuficiente |
+| `POST /movimentacoes/transferencia` | operacional | `{ id_lote, id_localizacao_destino, motivo }` |
+| `POST /movimentacoes/ajuste` | **administrador** | `{ id_lote, saldo_exibido, novo_saldo, motivo }` (justificativa de 10 a 255 caracteres); `409 SALDO_DESATUALIZADO` se o saldo mudou |
+
+### Inventário rotativo
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /inventario/contagens` | operacional | `status` = `pendente` (padrão), `concluida` ou `cancelada` |
+| `POST /inventario/contagens` | operacional | `{ id_lote, quantidade_contada, observacao? }`; contagem pendente, não altera o saldo; uma pendente por lote |
+| `GET /inventario/contagens/:id` | operacional | Detalhe com divergência |
+| `POST /inventario/contagens/:id/finalizar` | **administrador** | Soma a divergência ao saldo **atual** e gera um ajuste |
+| `POST /inventario/contagens/:id/cancelar` | **administrador** | Cancela sem mexer no saldo |
+
+### Análise
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /dashboard` | operacional | `data_referencia`, `indicadores`, `grafico` (30 dias por dia e tipo), `lotes_por_situacao`, `saldo_por_categoria`, `top_produtos`, `alertas_estoque_minimo` |
+| `GET /alertas/vencimento` | operacional | Lotes ativos que vencem em até 30 dias |
+| `GET /alertas/vencimento/exportacao` | **administrador** | CSV (UTF-8 com BOM, `;`), até 10.000 linhas |
+| `GET /rastreabilidade` | operacional | `numero_lote` **ou** `id_lote`; linha do tempo cronológica com cursor `depois_de_id` |
+
+### Administração
+
+| Método e caminho | Perfil | Descrição |
+| --- | --- | --- |
+| `GET /usuarios` | **administrador** | Lista com `busca`, `perfil`, `ativo` |
+| `POST /usuarios` | **administrador** | Cria |
+| `GET /usuarios/:id` | **administrador** | Detalhe |
+| `PATCH /usuarios/:id` | **administrador** | Edita nome, e-mail, perfil e senha (opcional) |
+| `POST /usuarios/:id/inativar` | **administrador** | Inativa; `409` para a si mesmo e para o último administrador |
+| `GET /auditoria` | **administrador** | Filtros `id_usuario`, `tabela`, `operacao`, `ip`, `de`, `ate`, `valor_novo`, `valor_anterior` (JSON simples e validado); cursor `antes_de_id` |
+
+## Divergência registrada
+
+O arquivo anterior descrevia o protótipo (`/api/v1`, `{ "error": … }`, Express 4 e MySQL). Foi substituído por esta versão; o protótipo continua nas pastas `stockflow-api` e `stockflow-frontend`, intocadas, e não segue estas convenções.
