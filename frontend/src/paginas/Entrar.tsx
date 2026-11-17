@@ -11,17 +11,20 @@ import {
   validarCredenciais,
   type ErrosDoLogin,
 } from "../autenticacao/credenciais.ts";
+import { lerModoDemo, type CredencialDeDemo } from "../util/modoDemo.ts";
 import { CenaDeArmazem } from "../componentes/CenaDeArmazem.tsx";
 import { Icone } from "../componentes/Icone.tsx";
 import { pedirPermissaoDeMovimento, precisaDePermissaoDeMovimento, useParallax } from "../hooks/useParallax.ts";
 import { useTema } from "../tema/useTema.ts";
 
+const MODO_DEMO = lerModoDemo(import.meta.env);
+
 export function Entrar() {
   const { sessao, entrar, aviso, limparAviso } = useAutenticacao();
   const { tema, alternar } = useTema();
   const local = useLocation();
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [email, setEmail] = useState(MODO_DEMO?.administrador.email ?? "");
+  const [senha, setSenha] = useState(MODO_DEMO?.administrador.senha ?? "");
   const [mostrar, setMostrar] = useState(false);
   const [erros, setErros] = useState<ErrosDoLogin>({});
   const [geral, setGeral] = useState<string | null>(null);
@@ -48,6 +51,14 @@ export function Entrar() {
     const origem = (local.state as { de?: unknown } | null)?.de;
     return <Navigate to={destinoAposLogin(origem)} replace />;
   }
+
+  const usarCredencial = (credencial: CredencialDeDemo) => {
+    setEmail(credencial.email);
+    setSenha(credencial.senha);
+    setErros({});
+    setGeral(null);
+    limparAviso();
+  };
 
   const campoComErro = (campos: ErrosDoLogin): "email" | "senha" | null => {
     if (campos.email !== undefined) return "email";
@@ -251,6 +262,22 @@ export function Entrar() {
               {enviando ? null : <Icone nome="arrow-right" />}
             </button>
           </form>
+
+          {MODO_DEMO ? (
+            <div className="auth-demo">
+              <div className="auth-demo-faixa" role="note">
+                <Icone nome="info" />
+                <span>Ambiente de demonstração - dados fictícios</span>
+              </div>
+              <div className="auth-demo-atalhos">
+                {[MODO_DEMO.administrador, MODO_DEMO.operador].map((credencial) => (
+                  <button key={credencial.rotulo} type="button" className="btn auth-demo-atalho" onClick={() => usarCredencial(credencial)} disabled={enviando}>
+                    Entrar como {credencial.rotulo} (demo)
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="auth-rodape-form">
             <Icone nome="info" />

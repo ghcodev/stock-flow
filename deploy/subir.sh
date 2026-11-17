@@ -21,6 +21,14 @@ if [ ! -f .env ]; then
   } > .env
 fi
 
+garantir_demo() {
+  grep -q "^$1=" .env || echo "$1=$2" >> .env
+}
+garantir_demo DEMO_ADMIN_EMAIL carlos.matos@stockflow.demo
+garantir_demo DEMO_ADMIN_SENHA Admin@Demo2026
+garantir_demo DEMO_OPERADOR_EMAIL joao.almeida@stockflow.demo
+garantir_demo DEMO_OPERADOR_SENHA Operador@Demo2026
+
 if [ ! -f certs/demo.crt ] || [ ! -f certs/demo.key ]; then
   echo "Gerando certificado autoassinado local"
   mkdir -p certs

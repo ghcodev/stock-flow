@@ -49,6 +49,12 @@ services:
     build:
       context: ..
       dockerfile: frontend/Dockerfile
+      args:
+        VITE_MODO_DEMO: "true"
+        VITE_DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:?defina DEMO_ADMIN_EMAIL no deploy/.env}
+        VITE_DEMO_ADMIN_SENHA: ${DEMO_ADMIN_SENHA:?defina DEMO_ADMIN_SENHA no deploy/.env}
+        VITE_DEMO_OPERADOR_EMAIL: ${DEMO_OPERADOR_EMAIL:?defina DEMO_OPERADOR_EMAIL no deploy/.env}
+        VITE_DEMO_OPERADOR_SENHA: ${DEMO_OPERADOR_SENHA:?defina DEMO_OPERADOR_SENHA no deploy/.env}
     restart: unless-stopped
     environment:
       HTTPS_PUBLICA: ${HTTPS_PORTA:-8443}

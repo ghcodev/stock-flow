@@ -3,6 +3,11 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY frontend/ ./
+ARG VITE_MODO_DEMO
+ARG VITE_DEMO_ADMIN_EMAIL
+ARG VITE_DEMO_ADMIN_SENHA
+ARG VITE_DEMO_OPERADOR_EMAIL
+ARG VITE_DEMO_OPERADOR_SENHA
 RUN npm run build
 
 FROM nginx:1.28.0-alpine
