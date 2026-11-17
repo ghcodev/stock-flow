@@ -160,7 +160,7 @@ describe("agendador diário (A23, RN08)", () => {
       else ambiente.AGENDADOR_ATIVO = valor;
       const r = spawnSync(
         process.execPath,
-        ["--env-file=.env", "--input-type=module", "-e", 'import { config } from "./src/config.ts"; process.stdout.write(String(config.agendadorAtivo));'],
+        ["--input-type=module", "-e", 'import { config } from "./src/config.ts"; process.stdout.write(String(config.agendadorAtivo));'],
         { env: ambiente, encoding: "utf8", timeout: 20000 },
       );
       assert.equal(r.status, 0, r.stderr);

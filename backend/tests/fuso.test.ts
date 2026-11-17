@@ -11,7 +11,7 @@ function ambienteCom(fuso: string): NodeJS.ProcessEnv {
 describe("filtros de período não dependem do fuso do processo", () => {
   for (const fuso of ["UTC", "America/Sao_Paulo"]) {
     it(`historico.test.ts passa com TZ=${fuso}`, () => {
-      const r = spawnSync(process.execPath, ["--env-file=.env", "--test", "tests/historico.test.ts"], {
+      const r = spawnSync(process.execPath, ["--test", "tests/historico.test.ts"], {
         env: ambienteCom(fuso),
         encoding: "utf8",
         timeout: 120000,

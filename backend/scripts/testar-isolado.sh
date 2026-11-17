@@ -10,8 +10,22 @@ INICIO=$(date +%s)
 limpar() {
   docker rm -f -v "$NOME" >/dev/null 2>&1
 }
+FILHO=0
+encerrar() {
+  [ "$FILHO" -ne 0 ] && kill -TERM "$FILHO" 2>/dev/null
+  exit 130
+}
 trap limpar EXIT
-trap 'exit 130' INT TERM HUP
+trap encerrar INT TERM HUP
+
+rodar() {
+  "$@" &
+  FILHO=$!
+  wait "$FILHO"
+  local codigo=$?
+  FILHO=0
+  return "$codigo"
+}
 
 aleatorio() {
   openssl rand -base64 64 | tr -dc 'A-Za-z0-9' | head -c "$1"
@@ -73,12 +87,12 @@ while IFS= read -r arquivo; do
   ARQUIVOS+=("$arquivo")
 done < <(find tests -name '*.test.ts' ! -name 'usuarios.ultimo-admin.test.ts' | sort)
 
-node --test "${ARQUIVOS[@]}"
+rodar node --test "${ARQUIVOS[@]}"
 RESULTADO=$?
 
 if [ "$RESULTADO" -eq 0 ]; then
   echo "Rodando sozinho o caso que depende do estado global de administradores"
-  node --test tests/usuarios.ultimo-admin.test.ts
+  rodar node --test tests/usuarios.ultimo-admin.test.ts
   RESULTADO=$?
 fi
 

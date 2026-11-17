@@ -16,7 +16,7 @@ function ambienteComFusoDoBanco(fusoDoBanco: string, fusoDoProcesso: string): No
 describe("a decisão por data de validade não depende do relógio nem do fuso do Node (G2)", () => {
   for (const fusoDoBanco of FUSOS_DA_SESSAO) {
     it(`desbloqueio com a sessão do banco em ${fusoDoBanco} e o Node em America/Sao_Paulo`, () => {
-      const r = spawnSync(process.execPath, ["--env-file=.env", "--test", "tests/desbloqueio.test.ts"], {
+      const r = spawnSync(process.execPath, ["--test", "tests/desbloqueio.test.ts"], {
         env: ambienteComFusoDoBanco(fusoDoBanco, "America/Sao_Paulo"),
         encoding: "utf8",
         timeout: 120000,
@@ -32,7 +32,6 @@ describe("a decisão por data de validade não depende do relógio nem do fuso d
     const r = spawnSync(
       process.execPath,
       [
-        "--env-file=.env",
         "--input-type=module",
         "-e",
         'import { prisma } from "./src/db.ts"; const [l] = await prisma.$queryRaw`SELECT (now() AT TIME ZONE \'Pacific/Pago_Pago\')::date::text AS a, (now() AT TIME ZONE \'Pacific/Kiritimati\')::date::text AS b, (now() AT TIME ZONE \'UTC\')::date::text AS u`; process.stdout.write(JSON.stringify(l)); await prisma.$disconnect();',
@@ -50,7 +49,6 @@ describe("a decisão por data de validade não depende do relógio nem do fuso d
     const r = spawnSync(
       process.execPath,
       [
-        "--env-file=.env",
         "--input-type=module",
         "-e",
         'import { prisma } from "./src/db.ts"; const [l] = await prisma.$queryRaw`SELECT current_setting(\'TimeZone\') AS fuso`; process.stdout.write(l.fuso); await prisma.$disconnect();',
