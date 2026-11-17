@@ -5,14 +5,21 @@ const DURACAO_MS = 900;
 
 export function useContadorAnimado(valor: number | null): number | null {
   const [exibido, setExibido] = useState<number | null>(null);
+  const [reduzir, setReduzir] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const atual = useRef<number>(0);
+
+  useEffect(() => {
+    const consulta = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const aoMudar = () => setReduzir(consulta.matches);
+    consulta.addEventListener("change", aoMudar);
+    return () => consulta.removeEventListener("change", aoMudar);
+  }, []);
 
   useEffect(() => {
     if (valor === null) {
       setExibido(null);
       return;
     }
-    const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduzir || valor === atual.current) {
       atual.current = valor;
       setExibido(valor);
@@ -34,7 +41,7 @@ export function useContadorAnimado(valor: number | null): number | null {
     };
     quadro = window.requestAnimationFrame(passo);
     return () => window.cancelAnimationFrame(quadro);
-  }, [valor]);
+  }, [valor, reduzir]);
 
   return exibido;
 }

@@ -7,11 +7,10 @@ export function useParallax(aoMover: (inclinacao: Inclinacao) => void): void {
 
   useEffect(() => {
     const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)");
-    funcao.current(SEM_INCLINACAO);
-    if (reduzir.matches) return;
     let alvo: Inclinacao = SEM_INCLINACAO;
     let atual: Inclinacao = SEM_INCLINACAO;
     let quadro = 0;
+    let ligado = false;
 
     const animar = () => {
       quadro = 0;
@@ -23,7 +22,6 @@ export function useParallax(aoMover: (inclinacao: Inclinacao) => void): void {
     const pedir = () => {
       if (quadro === 0) quadro = window.requestAnimationFrame(animar);
     };
-
     const aoPonteiro = (evento: PointerEvent) => {
       alvo = inclinacaoDoPonteiro(evento.clientX, evento.clientY, window.innerWidth, window.innerHeight);
       pedir();
@@ -37,14 +35,38 @@ export function useParallax(aoMover: (inclinacao: Inclinacao) => void): void {
       pedir();
     };
 
-    window.addEventListener("pointermove", aoPonteiro, { passive: true });
-    document.addEventListener("pointerleave", aoSair);
-    window.addEventListener("deviceorientation", aoAparelho, { passive: true });
-    return () => {
+    const ligar = () => {
+      if (ligado) return;
+      ligado = true;
+      window.addEventListener("pointermove", aoPonteiro, { passive: true });
+      document.addEventListener("pointerleave", aoSair);
+      window.addEventListener("deviceorientation", aoAparelho, { passive: true });
+    };
+    const desligar = () => {
+      if (!ligado) return;
+      ligado = false;
       window.removeEventListener("pointermove", aoPonteiro);
       document.removeEventListener("pointerleave", aoSair);
       window.removeEventListener("deviceorientation", aoAparelho);
-      if (quadro !== 0) window.cancelAnimationFrame(quadro);
+      if (quadro !== 0) {
+        window.cancelAnimationFrame(quadro);
+        quadro = 0;
+      }
+      alvo = SEM_INCLINACAO;
+      atual = SEM_INCLINACAO;
+      funcao.current(SEM_INCLINACAO);
+    };
+    const aoMudarPreferencia = () => {
+      if (reduzir.matches) desligar();
+      else ligar();
+    };
+
+    funcao.current(SEM_INCLINACAO);
+    if (!reduzir.matches) ligar();
+    reduzir.addEventListener("change", aoMudarPreferencia);
+    return () => {
+      reduzir.removeEventListener("change", aoMudarPreferencia);
+      desligar();
     };
   }, []);
 }
