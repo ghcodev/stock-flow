@@ -1,0 +1,71 @@
+name: stockflow-demo
+
+services:
+  postgres:
+    image: postgres:16.10
+    restart: unless-stopped
+    environment:
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB em deploy/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER em deploy/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD em deploy/.env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?defina APP_DB_PASSWORD em deploy/.env}
+    command: ["postgres", "-c", "timezone=America/Sao_Paulo", "-c", "log_timezone=America/Sao_Paulo"]
+    volumes:
+      - stockflow_demo_pgdata:/var/lib/postgresql/data
+      - ../database/postgres/init:/base:ro
+      - ./demo:/demo:ro
+      - ./demo/inicializar.sh:/docker-entrypoint-initdb.d/10_demo.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    networks:
+      - interna
+
+  api:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    environment:
+      TZ: America/Sao_Paulo
+      NODE_ENV: production
+      PORT: "3000"
+      AGENDADOR_ATIVO: "true"
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET em deploy/.env}
+      DATABASE_URL: postgresql://stockflow_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+    networks:
+      - interna
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    environment:
+      HTTPS_PUBLICA: ${HTTPS_PORTA:-8443}
+      NGINX_ENVSUBST_FILTER: HTTPS_PUBLICA
+    ports:
+      - "${PUBLICAR_EM:-127.0.0.1}:${HTTP_PORTA:-8080}:80"
+      - "${PUBLICAR_EM:-127.0.0.1}:${HTTPS_PORTA:-8443}:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - interna
+
+networks:
+  interna:
+
+volumes:
+  stockflow_demo_pgdata:
