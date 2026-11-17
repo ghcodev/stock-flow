@@ -69,6 +69,18 @@ export async function listarUsuarios(filtro: FiltroUsuarios): Promise<Pagina<Usu
   return { dados, pagina, limite, total };
 }
 
+export function deixariaSemAdministrador(
+  idsDeAdministradoresAtivos: readonly number[],
+  alvo: { id_usuario: number; perfil: perfil_usuario; ativo: boolean },
+  mudancas: MudancasUsuario,
+): boolean {
+  const deixaDeSerAdministradorAtivo =
+    alvo.perfil === "administrador" &&
+    alvo.ativo &&
+    (mudancas.ativo === false || (mudancas.perfil !== undefined && mudancas.perfil !== "administrador"));
+  return deixaDeSerAdministradorAtivo && idsDeAdministradoresAtivos.every((id) => id === alvo.id_usuario);
+}
+
 export async function alterarNaTransacao(
   tx: Tx,
   atorId: number,
@@ -83,11 +95,13 @@ export async function alterarNaTransacao(
   if (mudancas.ativo === false && alvoId === atorId) {
     throw new HttpError(409, "AUTO_INATIVACAO", "O administrador não pode inativar a si mesmo");
   }
-  const deixaDeSerAdministradorAtivo =
-    alvo.perfil === "administrador" &&
-    alvo.ativo &&
-    (mudancas.ativo === false || (mudancas.perfil !== undefined && mudancas.perfil !== "administrador"));
-  if (deixaDeSerAdministradorAtivo && administradores.every((a) => a.id_usuario === alvoId)) {
+  if (
+    deixariaSemAdministrador(
+      administradores.map((a) => a.id_usuario),
+      alvo,
+      mudancas,
+    )
+  ) {
     throw new HttpError(409, "ULTIMO_ADMINISTRADOR", "O sistema não pode ficar sem administrador ativo");
   }
   return tx.usuario.update({ where: { id_usuario: alvoId }, data: mudancas, select: SELECAO });

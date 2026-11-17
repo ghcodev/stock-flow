@@ -4,8 +4,7 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcrypt";
 import { createApp } from "../src/app.ts";
 import { prisma } from "../src/db.ts";
-import { HttpError } from "../src/errors.ts";
-import { alterarNaTransacao } from "../src/services/usuario.service.ts";
+import { deixariaSemAdministrador } from "../src/services/usuario.service.ts";
 import { chamarApi } from "./api.ts";
 import {
   criarUsuarioTeste,
@@ -18,8 +17,6 @@ import {
 
 type Usuario = { id_usuario: number; nome: string; email: string; perfil: string; ativo: boolean };
 type Lista = { dados: Usuario[]; pagina: number; limite: number; total: number };
-
-class Desfazer extends Error {}
 
 describe("usuários (A9)", () => {
   const sufixo = randomUUID().slice(0, 8);
@@ -214,30 +211,16 @@ describe("usuários (A9)", () => {
     assert.equal((r.corpo as Usuario).perfil, "operador");
   });
 
-  it("o último administrador ativo não pode ser inativado nem rebaixado (transação desfeita)", async () => {
-    const alvo = await criarUsuarioTeste("administrador");
-    let resultados: string[] = [];
-    await assert.rejects(
-      prisma.$transaction(async (tx) => {
-        await tx.usuario.updateMany({
-          where: { perfil: "administrador", ativo: true, id_usuario: { not: alvo.id } },
-          data: { ativo: false },
-        });
-        const tentativas = [{ perfil: "operador" as const }, { ativo: false }];
-        for (const mudanca of tentativas) {
-          const erro = await alterarNaTransacao(tx, 0, alvo.id, mudanca).then(
-            () => null,
-            (e: unknown) => e,
-          );
-          assert.ok(erro instanceof HttpError);
-          resultados = [...resultados, `${erro.status}:${erro.codigo}`];
-        }
-        throw new Desfazer("desfazer");
-      }),
-      Desfazer,
-    );
-    assert.deepEqual(resultados, ["409:ULTIMO_ADMINISTRADOR", "409:ULTIMO_ADMINISTRADOR"]);
-    const ativos = await prisma.usuario.count({ where: { perfil: "administrador", ativo: true } });
-    assert.ok(ativos >= 2);
+  it("decisão do último administrador, com conjunto de administradores injetado", () => {
+    const alvo = { id_usuario: 7, perfil: "administrador" as const, ativo: true };
+    assert.equal(deixariaSemAdministrador([7], alvo, { ativo: false }), true);
+    assert.equal(deixariaSemAdministrador([7], alvo, { perfil: "operador" }), true);
+    assert.equal(deixariaSemAdministrador([7, 9], alvo, { ativo: false }), false);
+    assert.equal(deixariaSemAdministrador([7, 9], alvo, { perfil: "operador" }), false);
+    assert.equal(deixariaSemAdministrador([7], alvo, { nome: "Outro nome" }), false);
+    assert.equal(deixariaSemAdministrador([7], alvo, { perfil: "administrador" }), false);
+    assert.equal(deixariaSemAdministrador([7], { ...alvo, ativo: false }, { ativo: false }), false);
+    assert.equal(deixariaSemAdministrador([9], { id_usuario: 7, perfil: "operador", ativo: true }, { ativo: false }), false);
+    assert.equal(deixariaSemAdministrador([], alvo, { ativo: false }), true);
   });
 });
