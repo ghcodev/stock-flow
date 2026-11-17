@@ -11,13 +11,12 @@ import {
   validarCredenciais,
   type ErrosDoLogin,
 } from "../autenticacao/credenciais.ts";
-import { lerModoDemo, type CredencialDeDemo } from "../util/modoDemo.ts";
+import { MODO_DEMO } from "../util/ambienteDemo.ts";
+import type { CredencialDeDemo } from "../util/modoDemo.ts";
 import { CenaDeArmazem } from "../componentes/CenaDeArmazem.tsx";
 import { Icone } from "../componentes/Icone.tsx";
 import { pedirPermissaoDeMovimento, precisaDePermissaoDeMovimento, useParallax } from "../hooks/useParallax.ts";
 import { useTema } from "../tema/useTema.ts";
-
-const MODO_DEMO = lerModoDemo(import.meta.env);
 
 export function Entrar() {
   const { sessao, entrar, aviso, limparAviso } = useAutenticacao();

@@ -2,17 +2,20 @@ export type CredencialDeDemo = { rotulo: string; email: string; senha: string };
 
 export type ModoDemo = { administrador: CredencialDeDemo; operador: CredencialDeDemo };
 
-type Ambiente = Readonly<Record<string, unknown>>;
+export type ValoresDeDemo = {
+  adminEmail: unknown;
+  adminSenha: unknown;
+  operadorEmail: unknown;
+  operadorSenha: unknown;
+};
 
-function texto(ambiente: Ambiente, chave: string): string {
-  const valor = ambiente[chave];
+function texto(valor: unknown): string {
   return typeof valor === "string" ? valor.trim() : "";
 }
 
-export function lerModoDemo(ambiente: Ambiente): ModoDemo | null {
-  if (texto(ambiente, "VITE_MODO_DEMO") !== "true") return null;
-  const administrador = { rotulo: "Administrador", email: texto(ambiente, "VITE_DEMO_ADMIN_EMAIL"), senha: texto(ambiente, "VITE_DEMO_ADMIN_SENHA") };
-  const operador = { rotulo: "Operador", email: texto(ambiente, "VITE_DEMO_OPERADOR_EMAIL"), senha: texto(ambiente, "VITE_DEMO_OPERADOR_SENHA") };
+export function montarModoDemo(valores: ValoresDeDemo): ModoDemo | null {
+  const administrador = { rotulo: "Administrador", email: texto(valores.adminEmail), senha: texto(valores.adminSenha) };
+  const operador = { rotulo: "Operador", email: texto(valores.operadorEmail), senha: texto(valores.operadorSenha) };
   const completo = [administrador, operador].every((credencial) => credencial.email !== "" && credencial.senha !== "");
   return completo ? { administrador, operador } : null;
 }
