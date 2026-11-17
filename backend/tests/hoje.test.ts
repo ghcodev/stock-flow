@@ -11,13 +11,10 @@ const dia = async (instante: string): Promise<string> => {
   return linha?.d ?? "";
 };
 
-const MARGEM_DA_MEIA_NOITE_S = 30;
-
-const esperarVirarODia = async (): Promise<void> => {
-  const [linha] = await prisma.$queryRaw<{ falta: number }[]>`
-    SELECT extract(epoch FROM (((hoje_operacional() + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo') - now()))::float8 AS falta`;
-  const falta = linha?.falta ?? Number.POSITIVE_INFINITY;
-  if (falta < MARGEM_DA_MEIA_NOITE_S) await new Promise((resolver) => setTimeout(resolver, (falta + 1) * 1000));
+const inicioDoDia = async (instante: string): Promise<string> => {
+  const [linha] = await prisma.$queryRaw<{ t: string }[]>`
+    SELECT to_char((hoje_operacional(${instante}::timestamptz)::timestamp AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS t`;
+  return linha?.t ?? "";
 };
 
 describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
@@ -43,39 +40,41 @@ describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
     assert.notEqual(utc?.d, await dia("2026-11-17 01:30:00+00"));
   });
 
-  it("sem argumento é o dia de hoje em São Paulo e é o data_referencia do dashboard", async () => {
-    await esperarVirarODia();
-    const [agora] = await prisma.$queryRaw<{ d: string }[]>`SELECT to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') AS d`;
-    assert.equal(await diaDeReferencia(), agora?.d);
+  it("usa as regras do tzdata: horário de verão de 2018/2019 (UTC-2) e a volta ao UTC-3", async () => {
+    assert.equal(await dia("2019-01-15 01:59:59+00"), "2019-01-14");
+    assert.equal(await dia("2019-01-15 02:00:00+00"), "2019-01-15");
+    assert.equal(await dia("2019-02-16 02:59:59+00"), "2019-02-16");
+    assert.equal(await dia("2019-02-17 01:59:59+00"), "2019-02-16");
+    assert.equal(await dia("2019-02-17 02:59:59+00"), "2019-02-16");
+    assert.equal(await dia("2019-02-17 03:00:00+00"), "2019-02-17");
+    assert.equal(await dia("2018-11-04 02:59:59+00"), "2018-11-03");
+    assert.equal(await dia("2018-11-04 03:00:00+00"), "2018-11-04");
+    assert.equal(await inicioDoDia("2019-01-15 12:00:00+00"), "2019-01-15T02:00:00Z");
+    assert.equal(await inicioDoDia("2019-07-15 12:00:00+00"), "2019-07-15T03:00:00Z");
   });
 
-  it("janela do dia no dashboard e no gráfico começa e termina à meia-noite de São Paulo", async () => {
-    await esperarVirarODia();
+  it("janela do dia no dashboard e no gráfico começa e termina à meia-noite de São Paulo, com instante fixo", async () => {
+    const instante = new Date("2026-11-17T02:30:00Z");
+    assert.equal(await diaDeReferencia(instante), "2026-11-16");
     const lote = await c.novoLote("a");
     const escopo = { idsDeProduto: [c.idProduto] };
-    const antesIndicadores = (await calcularIndicadores(escopo)).movimentacoes;
-    const antesGrafico = (await movimentacoesPorDiaETipo(escopo)).reduce((soma, p) => soma + p.total, 0);
-    const [limites] = await prisma.$queryRaw<{ inicio: Date; fim: Date }[]>`
-      SELECT (hoje_operacional()::timestamp AT TIME ZONE 'America/Sao_Paulo') AS inicio,
-             ((hoje_operacional() + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo') AS fim`;
-    assert.ok(limites);
-    const instantes = [
-      new Date(limites.inicio.getTime() - 1000),
-      limites.inicio,
-      new Date(limites.fim.getTime() - 1000),
-      limites.fim,
-    ];
-    for (const [i, instante] of instantes.entries()) {
+    const inicio = new Date("2026-11-16T03:00:00Z");
+    const fim = new Date("2026-11-17T03:00:00Z");
+    assert.equal(await inicioDoDia(instante.toISOString()), inicio.toISOString().replace(".000Z", "Z"));
+    const instantes = [new Date(inicio.getTime() - 1000), inicio, new Date(fim.getTime() - 1000), fim];
+    for (const [i, momento] of instantes.entries()) {
       await prisma.$executeRaw`
         INSERT INTO movimentacao (tipo_movimentacao, data_movimentacao, quantidade, saldo_anterior, saldo_posterior, id_lote, id_usuario, id_localizacao_destino)
-        VALUES ('entrada'::tipo_movimentacao, ${instante}::timestamptz, 1, ${i}, ${i + 1}, ${lote}, ${c.operadorUsuario.id}, ${c.idLocalizacao})`;
+        VALUES ('entrada'::tipo_movimentacao, ${momento}::timestamptz, 1, ${i}, ${i + 1}, ${lote}, ${c.operadorUsuario.id}, ${c.idLocalizacao})`;
     }
     await prisma.lote.update({ where: { id_lote: lote }, data: { quantidade: instantes.length } });
     await c.verificarInvariante(lote);
-    assert.equal((await calcularIndicadores(escopo)).movimentacoes, antesIndicadores + 2);
-    assert.equal((await movimentacoesPorDiaETipo(escopo)).reduce((soma, p) => soma + p.total, 0), antesGrafico + 3);
-    const hoje = await diaDeReferencia();
-    const porDia = new Map((await movimentacoesPorDiaETipo(escopo)).map((p) => [p.dia, p.total]));
-    assert.ok((porDia.get(hoje) ?? 0) >= 2);
+    assert.equal((await calcularIndicadores(escopo, instante)).movimentacoes, 2);
+    const grafico = await movimentacoesPorDiaETipo(escopo, instante);
+    const porDia = new Map(grafico.map((p) => [p.dia, p.total]));
+    assert.equal(porDia.get("2026-11-15"), 1);
+    assert.equal(porDia.get("2026-11-16"), 2);
+    assert.equal(porDia.has("2026-11-17"), false);
+    assert.equal(grafico.reduce((soma, p) => soma + p.total, 0), 3);
   });
 });
