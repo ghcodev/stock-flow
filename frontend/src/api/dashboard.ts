@@ -1,5 +1,5 @@
 import type { ArquivoBaixado, Cliente } from "./cliente.ts";
-import type { AlertaDeVencimento, Dashboard, Pagina } from "./tipos.ts";
+import type { AlertaDeVencimento, Dashboard, MovimentacaoDoHistorico, Pagina } from "./tipos.ts";
 
 const TEMPO_DA_EXPORTACAO_MS = 60_000;
 
@@ -9,6 +9,10 @@ export function obterDashboard(cliente: Cliente, sinal?: AbortSignal): Promise<D
 
 export function listarAlertasDeVencimento(cliente: Cliente, pagina: number, limite: number, sinal?: AbortSignal): Promise<Pagina<AlertaDeVencimento>> {
   return cliente.get<Pagina<AlertaDeVencimento>>("/alertas/vencimento", { pagina, limite }, sinal);
+}
+
+export function listarAtividadeRecente(cliente: Cliente, limite: number, sinal?: AbortSignal): Promise<Pagina<MovimentacaoDoHistorico>> {
+  return cliente.get<Pagina<MovimentacaoDoHistorico>>("/movimentacoes", { limite }, sinal);
 }
 
 export function exportarAlertasDeVencimento(cliente: Cliente, sinal?: AbortSignal): Promise<ArquivoBaixado> {

@@ -116,8 +116,17 @@ export type AlertaDeEstoqueMinimo = {
   saldo_ativo: string;
 };
 
+export type LotesPorSituacao = { ativo: number; bloqueado: number; vencido: number; vencendo: number };
+
+export type SaldoDeCategoria = { categoria: string; saldo_kg: string };
+
+export type ProdutoMovimentado = { id_produto: number; nome: string; movimentacoes: number };
+
 export type Dashboard = {
   data_referencia: string;
+  lotes_por_situacao: LotesPorSituacao;
+  saldo_por_categoria: SaldoDeCategoria[];
+  top_produtos: ProdutoMovimentado[];
   indicadores: Indicadores;
   grafico: PontoDoGrafico[];
   alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };

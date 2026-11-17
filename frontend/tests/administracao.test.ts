@@ -380,3 +380,60 @@ describe("B2: contador animado", () => {
     assert.ok(suavizacaoDeSaida(0.2) > 0.2);
   });
 });
+
+describe("B3: dados dos gráficos de resumo", () => {
+  it("rosca: ativos sem os que vencem, soma das frações e comprimentos", async () => {
+    const { fatiasDaRosca } = await import("../src/util/resumo.ts");
+    const { fatias, total } = fatiasDaRosca({ ativo: 100, bloqueado: 20, vencido: 10, vencendo: 30 }, 1000);
+    assert.equal(total, 130);
+    assert.deepEqual(fatias.map((f) => [f.chave, f.valor]), [["ativo", 70], ["vencendo", 30], ["bloqueado", 20], ["vencido", 10]]);
+    assert.ok(Math.abs(fatias.reduce((s, f) => s + f.comprimento, 0) - 1000) < 1e-9);
+    assert.equal(fatias[1]?.deslocamento, (70 / 130) * 1000);
+    assert.deepEqual(fatiasDaRosca({ ativo: 0, bloqueado: 0, vencido: 0, vencendo: 0 }, 100).total, 0);
+    assert.equal(fatiasDaRosca({ ativo: 5, bloqueado: 0, vencido: 0, vencendo: 9 }, 100).fatias[1]?.valor, 5);
+  });
+
+  it("barras e linha: largura relativa limitada e pontos dentro da área", async () => {
+    const { larguraRelativa, pontosDaLinha, cortarTexto, paraGeometria } = await import("../src/util/resumo.ts");
+    assert.equal(larguraRelativa(5, 10), 0.5);
+    assert.equal(larguraRelativa(50, 10), 1);
+    assert.equal(larguraRelativa(0, 10), 0);
+    assert.equal(larguraRelativa(5, 0), 0);
+    assert.equal(pontosDaLinha([], 100, 50, 10), "");
+    assert.equal(pontosDaLinha([0, 10], 100, 50, 10), "0.0,50.0 100.0,0.0");
+    assert.equal(pontosDaLinha([5], 100, 50, 10), "0.0,25.0");
+    assert.equal(cortarTexto("abcdef", 4), "abc…");
+    assert.equal(cortarTexto("abc", 4), "abc");
+    assert.equal(paraGeometria("12.5"), 12.5);
+    assert.equal(paraGeometria("x"), 0);
+  });
+});
+
+describe("B3: paleta de comandos", () => {
+  const comandos = [
+    { rotulo: "Dashboard", caminho: "/", grupo: "Operação" },
+    { rotulo: "Mapa do Armazém", caminho: "/mapa", grupo: "Operação" },
+    { rotulo: "Ajuste de estoque", caminho: "/ajuste", grupo: "Movimentações" },
+    { rotulo: "Rastreabilidade", caminho: "/rastreabilidade", grupo: "Análise" },
+  ];
+
+  it("busca sem acento e sem diferença de caixa, com prefixo antes de trecho", async () => {
+    const { filtrarComandos, normalizarBusca } = await import("../src/util/paleta.ts");
+    assert.equal(normalizarBusca("  Armazém "), "armazem");
+    assert.deepEqual(filtrarComandos(comandos, "armazem").map((c) => c.caminho), ["/mapa"]);
+    assert.deepEqual(filtrarComandos(comandos, "AJU").map((c) => c.caminho), ["/ajuste"]);
+    assert.deepEqual(filtrarComandos(comandos, "analise").map((c) => c.caminho), ["/rastreabilidade"]);
+    assert.equal(filtrarComandos(comandos, "").length, 4);
+    assert.equal(filtrarComandos(comandos, "zzz").length, 0);
+    assert.equal(filtrarComandos(comandos, "de")[0]?.caminho, "/ajuste");
+  });
+
+  it("atalho é Ctrl+K ou Cmd+K, sem Alt nem Shift", async () => {
+    const { atalhoDaPaleta } = await import("../src/util/paleta.ts");
+    assert.equal(atalhoDaPaleta({ key: "k", ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }), true);
+    assert.equal(atalhoDaPaleta({ key: "K", ctrlKey: false, metaKey: true, altKey: false, shiftKey: false }), true);
+    assert.equal(atalhoDaPaleta({ key: "k", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false }), false);
+    assert.equal(atalhoDaPaleta({ key: "k", ctrlKey: true, metaKey: false, altKey: true, shiftKey: false }), false);
+    assert.equal(atalhoDaPaleta({ key: "j", ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }), false);
+  });
+});

@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
-import { listarAlertasDeVencimento, obterDashboard } from "../api/dashboard.ts";
+import { listarAlertasDeVencimento, listarAtividadeRecente, obterDashboard } from "../api/dashboard.ts";
 import type { AlertaDeEstoqueMinimo, AlertaDeVencimento, Indicadores } from "../api/tipos.ts";
 import { useAutenticacao } from "../autenticacao/ContextoDeAutenticacao.tsx";
 import { AvisoDeAtualizacao } from "../componentes/AvisoDeAtualizacao.tsx";
@@ -15,10 +15,12 @@ import { ehDiaValido, formatarDia } from "../util/datas.ts";
 import { formatarInteiro, formatarQuantidade, subtrairDecimais } from "../util/decimal.ts";
 import { montarDias } from "../util/grafico.ts";
 import { GraficoDeMovimentacoes } from "./dashboard/GraficoDeMovimentacoes.tsx";
+import { AtividadeRecente, BarrasDeCategoria, BarrasDeProdutos, LinhaDeFluxo, RoscaDeLotes } from "./dashboard/GraficosDeResumo.tsx";
 import { tomDoPrazo } from "./vencimentos/prazo.ts";
 import "../estilos/dashboard.css";
 
 const ITENS_DE_VENCIMENTO = 8;
+const ITENS_DE_ATIVIDADE = 8;
 
 function Bloco({ titulo, subtitulo, acao, children, rotulo }: { titulo: string; subtitulo?: string | undefined; acao?: ReactNode; children: ReactNode; rotulo: string }) {
   return (
@@ -53,6 +55,7 @@ function indicadores(dados: Indicadores): Indicador[] {
 export function Dashboard() {
   const { cliente } = useAutenticacao();
   const painel = useCarregar((sinal) => obterDashboard(cliente, sinal), [cliente]);
+  const atividade = useCarregar((sinal) => listarAtividadeRecente(cliente, ITENS_DE_ATIVIDADE, sinal), [cliente]);
   const vencimentos = useCarregar((sinal) => listarAlertasDeVencimento(cliente, 1, ITENS_DE_VENCIMENTO, sinal), [cliente]);
 
   const dias = useMemo(() => (painel.dados && ehDiaValido(painel.dados.data_referencia) ? montarDias(painel.dados.grafico, painel.dados.data_referencia) : null), [painel.dados]);
@@ -64,6 +67,7 @@ export function Dashboard() {
 
   const recarregar = () => {
     painel.recarregar();
+    atividade.recarregar();
     vencimentos.recarregar();
   };
 
@@ -167,6 +171,84 @@ export function Dashboard() {
           )}
         </Bloco>
       </div>
+
+      <div className="dashboard-grade dashboard-grade--igual">
+        <Bloco titulo="Entradas contra saídas" subtitulo="Movimentações concluídas por dia, 30 dias" rotulo="Entradas contra saídas">
+          {painel.erro && !dias ? (
+            <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
+          ) : dias === null ? (
+            <div className="grafico-carregando">
+              <span className="esqueleto" />
+            </div>
+          ) : (
+            <LinhaDeFluxo dias={dias} />
+          )}
+        </Bloco>
+        <Bloco titulo="Lotes por situação" subtitulo="Ativos, vencendo, bloqueados e vencidos" rotulo="Lotes por situação">
+          {painel.erro && !painel.dados ? (
+            <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
+          ) : painel.dados === null ? (
+            <div className="grafico-carregando">
+              <span className="esqueleto" />
+            </div>
+          ) : (
+            <RoscaDeLotes situacao={painel.dados.lotes_por_situacao} />
+          )}
+        </Bloco>
+      </div>
+
+      <div className="dashboard-grade dashboard-grade--igual">
+        <Bloco titulo="Saldo por categoria" subtitulo="Lotes ativos, em quilos equivalentes" rotulo="Saldo por categoria">
+          {painel.erro && !painel.dados ? (
+            <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
+          ) : painel.dados === null ? (
+            <div className="grafico-carregando">
+              <span className="esqueleto" />
+            </div>
+          ) : painel.dados.saldo_por_categoria.length === 0 ? (
+            <EstadoVazio titulo="Sem saldo com peso informado" descricao="Cadastre o peso unitário dos produtos para ver o saldo por categoria." />
+          ) : (
+            <BarrasDeCategoria categorias={painel.dados.saldo_por_categoria} />
+          )}
+        </Bloco>
+        <Bloco titulo="Produtos mais movimentados" subtitulo="Entradas e saídas nos últimos 30 dias" rotulo="Produtos mais movimentados">
+          {painel.erro && !painel.dados ? (
+            <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
+          ) : painel.dados === null ? (
+            <div className="grafico-carregando">
+              <span className="esqueleto" />
+            </div>
+          ) : painel.dados.top_produtos.length === 0 ? (
+            <EstadoVazio titulo="Sem movimentações no período" descricao="As entradas e saídas dos últimos 30 dias aparecem aqui." />
+          ) : (
+            <BarrasDeProdutos produtos={painel.dados.top_produtos} />
+          )}
+        </Bloco>
+      </div>
+
+      <Bloco
+        titulo="Atividade recente"
+        subtitulo="Últimas movimentações registradas"
+        rotulo="Atividade recente"
+        acao={
+          <Link className="btn btn-outline btn-sm" to="/historico">
+            Ver histórico
+            <Icone nome="arrow-right" />
+          </Link>
+        }
+      >
+        {atividade.erro && !atividade.dados ? (
+          <EstadoDeErro mensagem={atividade.erro} aoTentarNovamente={atividade.recarregar} />
+        ) : atividade.dados === null ? (
+          <div className="grafico-carregando">
+            <span className="esqueleto" />
+          </div>
+        ) : atividade.dados.dados.length === 0 ? (
+          <EstadoVazio titulo="Nenhuma movimentação ainda" descricao="As últimas operações aparecem aqui." />
+        ) : (
+          <AtividadeRecente movimentacoes={atividade.dados.dados} />
+        )}
+      </Bloco>
 
       <Bloco
         titulo="Vencimentos nos próximos 30 dias"

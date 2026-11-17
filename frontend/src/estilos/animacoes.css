@@ -1,16 +1,16 @@
-.pagina > * {
+.pagina-interna > * {
   animation: tela-entrar var(--duracao-media) var(--curva-entrada) backwards;
 }
 
-.pagina > *:nth-child(2) {
+.pagina-interna > *:nth-child(2) {
   animation-delay: 40ms;
 }
 
-.pagina > *:nth-child(3) {
+.pagina-interna > *:nth-child(3) {
   animation-delay: 80ms;
 }
 
-.pagina > *:nth-child(n + 4) {
+.pagina-interna > *:nth-child(n + 4) {
   animation-delay: 120ms;
 }
 
@@ -110,7 +110,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pagina > *,
+  .pagina-interna > *,
   .pulsar,
   .grafico-barra,
   .resultado-movimentacao,

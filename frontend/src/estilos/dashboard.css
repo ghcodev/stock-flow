@@ -151,3 +151,228 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
+
+.dashboard-grade--igual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rosca {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: center;
+}
+
+.rosca-svg {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+}
+
+.rosca-trilho {
+  fill: none;
+  stroke: var(--color-bg-muted);
+  stroke-width: 26;
+}
+
+.rosca-fatia {
+  fill: none;
+  stroke-width: 26;
+  stroke-linecap: butt;
+  animation: rosca-desenhar 1s var(--curva-entrada) backwards;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+.rosca-fatia--ativo {
+  stroke: var(--color-success-500);
+  background: var(--color-success-500);
+}
+
+.rosca-fatia--vencendo {
+  stroke: var(--color-warning-400);
+  background: var(--color-warning-400);
+}
+
+.rosca-fatia--bloqueado {
+  stroke: var(--color-admin-600);
+  background: var(--color-admin-600);
+}
+
+.rosca-fatia--vencido {
+  stroke: var(--color-danger-500);
+  background: var(--color-danger-500);
+}
+
+.rosca-total {
+  fill: var(--color-text-primary);
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rosca-rotulo {
+  fill: var(--color-text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rosca-legenda {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  font-size: 13px;
+}
+
+.rosca-legenda li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rosca-amostra {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-sm);
+}
+
+.barras-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.barras-rotulo {
+  fill: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.barras-valor {
+  fill: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.barras-trilho {
+  fill: var(--color-bg-muted);
+}
+
+.barras-barra {
+  fill: var(--color-brand-600);
+  transform-box: fill-box;
+  transform-origin: left;
+  animation: barras-crescer var(--duracao-lenta) var(--curva-entrada) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.linha-fluxo {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  animation: linha-desenhar 1.4s var(--curva-entrada) backwards;
+}
+
+.linha-fluxo--entrada {
+  stroke: var(--color-success-500);
+}
+
+.linha-fluxo--saida {
+  stroke: var(--color-danger-500);
+  animation-delay: 150ms;
+}
+
+.atividade {
+  display: grid;
+  list-style: none;
+}
+
+.atividade-item {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) minmax(0, 200px);
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-default);
+  animation: tela-entrar var(--duracao-media) var(--curva-entrada) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.atividade-item:last-child {
+  border-bottom: none;
+}
+
+.atividade-corpo,
+.atividade-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.atividade-meta {
+  text-align: right;
+}
+
+.estado-ilustracao {
+  width: 120px;
+  height: 90px;
+  color: var(--color-text-tertiary);
+}
+
+.estado-ilustracao .ilustracao-preenchimento {
+  fill: var(--color-bg-muted);
+  stroke: none;
+}
+
+.estado-ilustracao .ilustracao-destaque {
+  stroke: var(--color-brand-600);
+}
+
+@keyframes rosca-desenhar {
+  from {
+    stroke-dasharray: 0 1000;
+  }
+}
+
+@keyframes barras-crescer {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes linha-desenhar {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-grade--igual {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rosca {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .atividade-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .atividade-meta {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rosca-fatia,
+  .barras-barra,
+  .linha-fluxo,
+  .atividade-item {
+    animation: none;
+  }
+}

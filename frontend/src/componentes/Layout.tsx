@@ -8,6 +8,8 @@ import { itemDoCaminho, menuDoPerfil } from "../sessao/navegacao.ts";
 import { useConsultaDeMidia } from "../tema/useConsultaDeMidia.ts";
 import { useTema } from "../tema/useTema.ts";
 import { Icone } from "./Icone.tsx";
+import { PaletaDeComandos } from "./PaletaDeComandos.tsx";
+import "../estilos/paleta.css";
 
 const CONSULTA_MOVEL = "(max-width: 900px)";
 
@@ -18,6 +20,7 @@ export function Layout() {
   const navegar = useNavigate();
   const movel = useConsultaDeMidia(CONSULTA_MOVEL);
   const [aberto, setAberto] = useState(() => !window.matchMedia(CONSULTA_MOVEL).matches);
+  const [paletaAberta, setPaletaAberta] = useState(false);
   const botaoDoMenu = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLElement>(null);
   const conteudo = useRef<HTMLElement>(null);
@@ -173,6 +176,11 @@ export function Layout() {
             </span>
           </nav>
           <div className="topbar-acoes">
+            <button type="button" className="paleta-botao" onClick={() => setPaletaAberta(true)} aria-label="Buscar tela pelo nome (Ctrl+K)" aria-keyshortcuts="Control+K">
+              <Icone nome="search" />
+              <span>Buscar tela</span>
+              <kbd>Ctrl K</kbd>
+            </button>
             <button
               type="button"
               className="icon-btn"
@@ -187,6 +195,8 @@ export function Layout() {
             </div>
           </div>
         </header>
+
+        <PaletaDeComandos aberta={paletaAberta} aoAlterar={setPaletaAberta} />
 
         <main id="conteudo" className="pagina" ref={conteudo} tabIndex={-1}>
           <div className="pagina-interna">
