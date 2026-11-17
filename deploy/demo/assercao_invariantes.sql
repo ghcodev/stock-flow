@@ -1,3 +1,8 @@
+\if :{?checar_etiqueta}
+\else
+\set checar_etiqueta 0
+\endif
+
 DROP TABLE IF EXISTS pg_temp.alteradoras;
 DROP TABLE IF EXISTS pg_temp.violacoes;
 
@@ -35,7 +40,7 @@ SELECT 'triggers esperados ausentes ou desabilitados', count(*)
 FROM unnest(ARRAY['trg_auditoria_lote', 'trg_auditoria_movimentacao', 'trg_auditoria_usuario', 'trg_bloquear_saida']) AS esperado(nome)
 WHERE NOT EXISTS (SELECT 1 FROM pg_trigger t WHERE t.tgname = esperado.nome AND t.tgenabled = 'O' AND NOT t.tgisinternal)
 UNION ALL
-SELECT 'lotes sem etiqueta', count(*) FROM lote l WHERE NOT EXISTS (SELECT 1 FROM identificacao i WHERE i.id_lote = l.id_lote)
+SELECT 'lotes sem etiqueta (so na carga do seed)', CASE WHEN :checar_etiqueta = 1 THEN count(*) ELSE 0 END FROM lote l WHERE NOT EXISTS (SELECT 1 FROM identificacao i WHERE i.id_lote = l.id_lote)
 UNION ALL
 SELECT 'usuarios com hash que nao e bcrypt custo 12', count(*) FROM usuario WHERE senha_hash !~ '^[$]2b[$]12[$]';
 

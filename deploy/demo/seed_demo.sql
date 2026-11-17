@@ -305,6 +305,7 @@ WHERE nome IN ('Farinha de trigo integral', 'Cacau em pó alcalino', 'Queijo mus
 
 ALTER TABLE movimentacao ENABLE TRIGGER trg_bloquear_saida;
 
+\set checar_etiqueta 1
 \i /demo/assercao_invariantes.sql
 
 COMMIT;
