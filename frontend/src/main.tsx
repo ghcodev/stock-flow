@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./estilos/tokens.css";
 import "./estilos/base.css";
+import "./estilos/animacoes.css";
 import { App } from "./App.tsx";
 import { iniciarCaptura } from "./leitor/captura.ts";
 import { deveHabilitarNoInicio } from "./leitor/inicio.ts";

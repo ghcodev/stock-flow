@@ -1,3 +1,4 @@
+import { useContadorAnimado } from "../hooks/useContadorAnimado.ts";
 import { formatarInteiro } from "../util/decimal.ts";
 import { Icone } from "./Icone.tsx";
 
@@ -8,6 +9,11 @@ export type Indicador = {
   icone: string;
   tom?: "sucesso" | "alerta" | "perigo" | undefined;
 };
+
+function ValorAnimado({ valor }: { valor: number | null }) {
+  const exibido = useContadorAnimado(valor);
+  return <>{exibido === null ? "–" : formatarInteiro(exibido)}</>;
+}
 
 export function FaixaDeIndicadores({ rotulo, itens }: { rotulo: string; itens: readonly Indicador[] }) {
   return (
@@ -22,7 +28,7 @@ export function FaixaDeIndicadores({ rotulo, itens }: { rotulo: string; itens: r
             {item.rotulo}
           </div>
           <div className={item.tom ? `indicador-valor indicador-valor--${item.tom}` : "indicador-valor"}>
-            {item.valor === null ? "–" : formatarInteiro(item.valor)}
+            <ValorAnimado valor={item.valor} />
           </div>
           <div className="indicador-detalhe">{item.detalhe}</div>
         </article>

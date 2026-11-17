@@ -367,3 +367,16 @@ describe("B1: inclinação do parallax", () => {
     assert.equal(estabilizou({ x: 0, y: 0 }, alvo), false);
   });
 });
+
+describe("B2: contador animado", () => {
+  it("interpola de 0 ao valor, com saída suave, e respeita os limites", async () => {
+    const { valorDoContador, suavizacaoDeSaida } = await import("../src/util/animacao.ts");
+    assert.equal(valorDoContador(0, 100, 0), 0);
+    assert.equal(valorDoContador(0, 100, 1), 100);
+    assert.equal(valorDoContador(0, 100, 2), 100);
+    assert.equal(valorDoContador(0, 100, -1), 0);
+    assert.ok(valorDoContador(0, 100, 0.5) > 50);
+    assert.equal(valorDoContador(40, 10, 1), 10);
+    assert.ok(suavizacaoDeSaida(0.2) > 0.2);
+  });
+});

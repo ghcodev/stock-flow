@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useId } from "react";
 import { formatarInteiro } from "../../util/decimal.ts";
 import { formatarDia } from "../../util/datas.ts";
@@ -45,7 +46,7 @@ export function GraficoDeMovimentacoes({ dias }: { dias: readonly DiaDoGrafico[]
           const x = MARGEM.esquerda + indice * passo + (passo - larguraDaBarra) / 2;
           let acumulado = 0;
           return (
-            <g key={dia.dia}>
+            <g key={dia.dia} style={{ "--i": indice } as CSSProperties}>
               {TIPOS_DO_GRAFICO.map((tipo) => {
                 const valor = dia.valores[tipo];
                 if (valor === 0) return null;

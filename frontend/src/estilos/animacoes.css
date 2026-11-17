@@ -1,0 +1,125 @@
+.pagina > * {
+  animation: tela-entrar var(--duracao-media) var(--curva-entrada) backwards;
+}
+
+.pagina > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.pagina > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.pagina > *:nth-child(n + 4) {
+  animation-delay: 120ms;
+}
+
+.cartao,
+.indicador {
+  transition:
+    box-shadow var(--duracao-media) var(--curva-suave),
+    transform var(--duracao-media) var(--curva-suave),
+    border-color var(--duracao-media) var(--curva-suave);
+}
+
+.indicador:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.cartao:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.tabela tbody tr {
+  transition: background var(--duracao-rapida) var(--curva-suave);
+}
+
+.grafico-barra {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: barra-crescer var(--duracao-lenta) var(--curva-entrada) backwards;
+  animation-delay: calc(var(--i, 0) * 14ms);
+}
+
+.grafico-barra:hover {
+  filter: brightness(1.12);
+}
+
+.pulsar {
+  display: inline-block;
+  animation: saldo-pulsar 700ms var(--curva-entrada);
+}
+
+.resultado-movimentacao {
+  animation: sucesso-entrar var(--duracao-lenta) var(--curva-entrada) backwards;
+}
+
+.resultado-movimentacao strong {
+  display: inline-block;
+  animation: saldo-pulsar 900ms var(--curva-entrada) 200ms backwards;
+}
+
+.badge .badge-ponto,
+.badge-ponto {
+  animation: ponto-suave 2.4s var(--curva-suave) infinite;
+}
+
+.toast,
+.aviso {
+  animation: tela-entrar var(--duracao-media) var(--curva-entrada) backwards;
+}
+
+@keyframes tela-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes barra-crescer {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes saldo-pulsar {
+  0% {
+    transform: scale(1);
+    color: var(--color-brand-600);
+  }
+  35% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sucesso-entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+}
+
+@keyframes ponto-suave {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina > *,
+  .pulsar,
+  .grafico-barra,
+  .resultado-movimentacao,
+  .resultado-movimentacao strong,
+  .badge-ponto {
+    animation: none;
+  }
+
+  .indicador:hover {
+    transform: none;
+  }
+}

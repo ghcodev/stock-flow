@@ -37,7 +37,9 @@ export function ResumoDoLote({ lote, aviso, aoTrocar, desabilitado }: Propriedad
       <div className="resumo-lote-saldo">
         <span className="detalhe-rotulo">Saldo atual</span>
         <strong>
-          {formatarQuantidade(lote.quantidade)} <small>{lote.produto.unidade_medida}</small>
+          <span key={lote.quantidade} className="pulsar">
+            {formatarQuantidade(lote.quantidade)} <small>{lote.produto.unidade_medida}</small>
+          </span>
         </strong>
       </div>
       <dl className="resumo-lote-dados">
