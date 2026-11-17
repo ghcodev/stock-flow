@@ -18,7 +18,7 @@ describe("alertas de vencimento e exportação (A21, RF08, RN08)", () => {
 
   const ajustarValidade = async (idLote: number, deslocamento: number | null): Promise<void> => {
     if (deslocamento === null) await prisma.$executeRaw`UPDATE lote SET data_validade = NULL WHERE id_lote = ${idLote}`;
-    else await prisma.$executeRaw`UPDATE lote SET data_validade = current_date + ${deslocamento}::int WHERE id_lote = ${idLote}`;
+    else await prisma.$executeRaw`UPDATE lote SET data_validade = hoje_operacional() + ${deslocamento}::int WHERE id_lote = ${idLote}`;
   };
 
   before(async () => {

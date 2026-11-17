@@ -87,7 +87,7 @@ describe("nomes nas listas de movimentações, contagens e auditoria (H2)", () =
 
   it("GET /auditoria traz nome_usuario do autor e null quando a ação é do sistema", async () => {
     const vencido = await c.novoLote("b", { quantidade: 1 });
-    await prisma.$executeRaw`UPDATE lote SET data_validade = current_date - 1 WHERE id_lote = ${vencido}`;
+    await prisma.$executeRaw`UPDATE lote SET data_validade = hoje_operacional() - 1 WHERE id_lote = ${vencido}`;
     assert.equal(await marcarLotesVencidos({ idsDeLote: [vencido] }), 1);
     const filtro = encodeURIComponent(JSON.stringify({ id_lote: vencido, status_lote: "vencido" }));
     const sistema = await get(`/auditoria?tabela=lote&valor_novo=${filtro}`, c.admin);

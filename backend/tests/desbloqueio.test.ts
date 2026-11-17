@@ -14,7 +14,7 @@ describe("bloqueio e desbloqueio decidem vencido pela data do banco, sob a trava
 
   const validade = async (id: number, deslocamento: number | null): Promise<void> => {
     if (deslocamento === null) await prisma.$executeRaw`UPDATE lote SET data_validade = NULL WHERE id_lote = ${id}`;
-    else await prisma.$executeRaw`UPDATE lote SET data_validade = current_date + ${deslocamento}::int WHERE id_lote = ${id}`;
+    else await prisma.$executeRaw`UPDATE lote SET data_validade = hoje_operacional() + ${deslocamento}::int WHERE id_lote = ${id}`;
   };
   const bloquear = (id: number) => chamarApi(servidor, "POST", `/lotes/${id}/bloquear`, c.operador, { motivo: "teste de fuso" });
   const desbloquear = (id: number) => chamarApi(servidor, "POST", `/lotes/${id}/desbloquear`, c.admin);
@@ -31,7 +31,7 @@ describe("bloqueio e desbloqueio decidem vencido pela data do banco, sob a trava
     await prisma.$disconnect();
   });
 
-  it("validade anterior ao current_date do banco volta como vencido; hoje, futura e sem validade voltam como ativo", async () => {
+  it("validade anterior ao hoje operacional do banco volta como vencido; hoje, futura e sem validade voltam como ativo", async () => {
     const casos: [string, number | null, string][] = [
       ["ontem", -1, "vencido"],
       ["antigo", -400, "vencido"],

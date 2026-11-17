@@ -256,7 +256,7 @@ describe("lotes (A7)", () => {
     assert.equal(await campo(idPassado), true);
     assert.equal(await campo(futuro.id_lote), false);
     assert.equal(await campo(sem.id_lote), false);
-    const hoje = (await prisma.$queryRaw<{ d: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS d`)[0]?.d ?? "";
+    const hoje = (await prisma.$queryRaw<{ d: string }[]>`SELECT to_char(hoje_operacional(), 'YYYY-MM-DD') AS d`)[0]?.d ?? "";
     const limite = (await criar({ numero_lote: numero("v2d"), data_validade: hoje })).corpo as Lote;
     assert.equal(await campo(limite.id_lote), false);
     const lista = (await chamarApi(servidor, "GET", `/lotes?numero_lote=${prefixo.toLowerCase()}-v2`, operador)).corpo as unknown as { dados: { validade_expirada: boolean; numero_lote: string }[] };

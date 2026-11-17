@@ -196,7 +196,7 @@ describe("dashboard (A20, RF11, RN09)", () => {
       assert.ok(Array.isArray(corpo.saldo_por_categoria) && corpo.saldo_por_categoria.length <= 8);
       assert.ok(Array.isArray(corpo.top_produtos) && corpo.top_produtos.length <= 5);
       assert.match(corpo.data_referencia, /^\d{4}-\d{2}-\d{2}$/);
-      const [banco] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
+      const [banco] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(hoje_operacional(), 'YYYY-MM-DD') AS dia`;
       assert.equal(corpo.data_referencia, banco?.dia);
       for (const ponto of corpo.grafico) assert.ok(ponto.dia <= corpo.data_referencia);
       assert.ok(corpo.alertas_estoque_minimo.itens.length <= 100);

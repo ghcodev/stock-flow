@@ -23,7 +23,7 @@ describe("agendador diário (A23, RN08)", () => {
       FROM auditoria_log WHERE tabela_afetada = 'lote' AND (valor_novo->>'id_lote')::int = ${id} ORDER BY id_log`;
   const validade = async (id: number, deslocamento: number | null): Promise<void> => {
     if (deslocamento === null) await prisma.$executeRaw`UPDATE lote SET data_validade = NULL WHERE id_lote = ${id}`;
-    else await prisma.$executeRaw`UPDATE lote SET data_validade = current_date + ${deslocamento}::int WHERE id_lote = ${id}`;
+    else await prisma.$executeRaw`UPDATE lote SET data_validade = hoje_operacional() + ${deslocamento}::int WHERE id_lote = ${id}`;
   };
 
   before(async () => {
@@ -53,7 +53,7 @@ describe("agendador diário (A23, RN08)", () => {
     await prisma.$disconnect();
   });
 
-  it("marca como vencido só o ativo com validade anterior ao current_date do banco; hoje, futuro, sem validade, bloqueado e já vencido ficam como estão", async () => {
+  it("marca como vencido só o ativo com validade anterior ao hoje operacional do banco; hoje, futuro, sem validade, bloqueado e já vencido ficam como estão", async () => {
     const escopo = { idsDeLote: Object.values(ids) };
     const marcados = await marcarLotesVencidos(escopo);
     assert.equal(marcados, 2);
