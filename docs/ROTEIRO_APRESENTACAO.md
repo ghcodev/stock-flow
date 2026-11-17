@@ -34,10 +34,10 @@ Se sobrar tempo: *Usuários* (criar, editar, inativar com confirmação; o siste
 - **Certificado local.** O HTTPS usa um certificado autoassinado gerado no computador; em produção real seria um certificado de uma autoridade confiável.
 - **Leitor físico não testado.** A leitura de etiqueta funciona pela digitação simulada (e por leitor que age como teclado, detectado pela velocidade das teclas). A conexão serial (Web Serial) existe, só funciona em Chromium e em HTTPS ou `localhost`, e **nunca foi testada com um leitor de verdade**.
 - **Senhas de demonstração.** São públicas neste repositório de propósito; os segredos reais do Compose (banco e JWT) são gerados aleatoriamente em `deploy/.env`, fora do git.
-- **Peso dos produtos.** O gráfico de saldo por categoria usa quilos equivalentes (quantidade × peso unitário); produtos sem peso informado ficam de fora dele.
+- **Saldo por categoria em kg.** Produtos em kg entram direto; unidades de contagem (un, cx, rolo, pct) são multiplicadas pelo peso unitário; litros e produtos sem peso informado ficam de fora, e o gráfico mostra quantos lotes ficaram de fora.
 
 ## Verificações para citar, se perguntarem
 
 - `./deploy/fumaca.sh`: teste de fumaça contra a demonstração (HTTPS, cabeçalhos de segurança, login dos dois perfis, leituras, uma entrada e uma saída, API e banco sem porta publicada).
-- `./deploy/verificar.sh`: invariante de saldo no banco inteiro (saldo do lote igual ao saldo posterior da última movimentação que altera saldo, e cadeia sem buracos).
-- Testes automatizados: 307 no backend e 240 no frontend.
+- `./deploy/verificar.sh`: invariantes no banco inteiro (saldo do lote igual ao saldo posterior da última movimentação que altera saldo, cadeia sem buracos, deltas coerentes, saídas válidas, nada no futuro e triggers existentes e habilitados); sai com erro se houver qualquer violação. A mesma verificação roda no fim da carga, antes do COMMIT.
+- Testes automatizados: 309 no backend e 240 no frontend.
