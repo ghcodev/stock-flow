@@ -1,92 +1,51 @@
-# Tech Stack — StockFlow
+# Tech Stack — StockFlow v3.0
 
-## Frontend
+Versões exatas conforme `package.json` e os `Dockerfile`. Dependências fixadas sem intervalo (`npm install --save-exact`).
 
-| Tecnologia | Função |
-|---|---|
-| React 18 | Construção da interface SPA |
-| Vite | Dev server e build de produção |
-| React Router DOM | Rotas client-side e guards |
-| Axios | Cliente HTTP para API |
-| Tailwind CSS | Base utilitária disponível no projeto |
-| CSS Tokens | Design system próprio em `src/styles/tokens.css` |
-| Lucide React | Ícones |
-| Recharts | Dependência instalada; uso deve ser verificado por tela |
-| html2canvas | Suporte a exportação/captura |
-| jsPDF | Exportação PDF |
-| xlsx | Exportação/importação de planilhas; possui vulnerabilidade alta sem fix pelo npm audit |
+## Frontend (`frontend/`)
 
-## Backend
+| Tecnologia | Versão | Função |
+| --- | --- | --- |
+| React e React DOM | 19.3.1 | Interface SPA |
+| React Router | 7.18.5 | Rotas, proteção por perfil e carga de telas sob demanda |
+| TypeScript | 5.9.3 | Tipagem estrita |
+| Vite e `@vitejs/plugin-react` | 8.3.8 e 6.3.0 | Servidor de desenvolvimento (proxy `/api`) e build |
 
-| Tecnologia | Função |
-|---|---|
-| Node.js | Runtime |
-| Express 4 | Framework HTTP |
-| mysql2/promise | Driver MySQL com promises e pool |
-| jsonwebtoken | Geração e validação de JWT |
-| bcrypt | Verificação/hash de senha |
-| dotenv | Variáveis de ambiente |
-| cors | Controle de origem permitida |
-| helmet | Headers de segurança |
-| express-validator | Validação de payload |
-| express-rate-limit | Rate limit do login |
-| express-async-errors | Captura de erros async |
-| swagger-jsdoc | Geração de especificação Swagger |
-| swagger-ui-express | UI de documentação em `/api/docs` |
-| nodemon | Hot reload em desenvolvimento |
+Não há biblioteca de UI, de gráficos, de formulários, de estado, de datas nem de requisições: o cliente da API usa `fetch` nativo, os gráficos são SVG puro, a cena 3D do login é CSS puro, o estilo é CSS próprio com tokens (`src/estilos/tokens.css`) e os decimais usam `BigInt`. Os testes usam o `node:test` do Node, sobre a lógica pura em `.ts`.
 
-## Banco
+## Backend (`backend/`)
 
-| Tecnologia | Função |
-|---|---|
-| MySQL 8.4 | Banco relacional |
-| InnoDB | Engine transacional |
-| Triggers | Auditoria automática |
-| Constraints | Integridade de quantidade, chaves e enums |
-| SQL direto | Controle explícito de consultas e transações |
-| PostgreSQL 16 | Banco das provas de conceito do 4º período (Docker Compose), alvo da migração |
+| Tecnologia | Versão | Função |
+| --- | --- | --- |
+| Node.js | 22 (imagem `22.20.0`) | Execução; o código TypeScript roda com remoção de tipos nativa em desenvolvimento e é compilado com `tsc` para a imagem |
+| Express | 5.3.0 | API HTTP |
+| Prisma e `@prisma/adapter-pg` | 7.10.1 | Acesso ao PostgreSQL (consultas e SQL parametrizado) |
+| express-validator | 7.3.2 | Validação de entrada |
+| express-rate-limit | 8.7.4 | Limite de tentativas de login e de troca de senha |
+| bcrypt | 6.0.0 | Hash de senha, custo 12 |
+| jose | 6.2.17 | JWT HS256 |
+| TypeScript | 5.9.3 | Tipagem e build |
 
-## Ferramentas
+## Banco de dados
 
-- npm para dependências e scripts.
-- Git para versionamento.
-- Swagger UI para exploração da API.
-- Scripts SQL versionados em `database/`.
+PostgreSQL 16 (`postgres:16.10` na demonstração). Esquema, triggers, papéis e índices em `database/postgres/init`.
 
-## Build
+## Infraestrutura da demonstração (`deploy/`)
 
-Frontend:
+| Item | Versão |
+| --- | --- |
+| Docker Compose | arquivo `deploy/docker-compose.yml`, projeto `stockflow-demo` |
+| Nginx | `nginx:1.28.0-alpine` |
+| Imagem base do build | `node:22.20.0-bookworm-slim` |
+| PostgreSQL | `postgres:16.10` |
 
-```bash
-cd stockflow-frontend
-npm run build
-```
+Scripts em bash (`subir.sh`, `derrubar.sh`, `fumaca.sh`, `verificar.sh`); o teste de fumaça usa `fetch` nativo do Node.
 
-Backend:
+## Testes
 
-```bash
-cd stockflow-api
-npm start
-```
+- Backend: `node --test`, 307 testes, contra o banco de desenvolvimento.
+- Frontend: `node --test`, 240 testes de lógica pura. Componentes e CSS não têm teste automatizado; são conferidos no navegador.
 
-Raiz:
+## Divergência registrada
 
-```bash
-npm run dev
-```
-
-## Deploy
-
-Modelo esperado:
-
-- Frontend gerado em `stockflow-frontend/dist`.
-- API Node executando com `.env` configurado.
-- MySQL acessível pela API.
-- `ALLOWED_ORIGINS` configurado para CORS.
-- `VITE_API_URL` configurado no build do frontend.
-
-## Observações Técnicas
-
-- A API exige `JWT_SECRET` e configuração de banco ao iniciar.
-- `src/config/database.js` usa `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` e `DB_NAME`.
-- O schema principal precisa ser revisado para incluir `inventario` se o módulo continuar ativo.
+O documento anterior listava o protótipo: React 18, Axios, Tailwind CSS, Express 4, MySQL, Swagger, Helmet e CORS. Nada disso faz parte da v3.

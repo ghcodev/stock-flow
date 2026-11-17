@@ -1,3 +1,5 @@
+> **Registro histórico do protótipo anterior (2026-05-31).** Não descreve a v3.0 (stack, rotas e banco mudaram). Para o estado atual, veja o [`README.md`](README.md).
+
 # Memória do Projeto StockFlow
 
 Atualizado em: 2026-05-31.

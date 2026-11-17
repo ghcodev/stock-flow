@@ -1,168 +1,38 @@
-# Deployment Guide — StockFlow
+# Deployment Guide — StockFlow v3.0
 
-## Pré-requisitos
+O guia de implantação e de demonstração da v3.0 está em [`deploy/README.md`](deploy/README.md). Este arquivo só resume e aponta.
 
-- Node.js 18+.
-- npm.
-- MySQL 8.4.
-- Acesso ao repositório.
-- Variáveis de ambiente configuradas.
+## Demonstração (Docker Compose)
 
-## Instalação
+Pré-requisitos: Docker, `openssl` e um shell bash (no Windows, Git Bash).
 
-```bash
-git clone https://github.com/ghcodev/stock-flow.git
-cd stock-flow
-npm install
-cd stockflow-api && npm install
-cd ../stockflow-frontend && npm install
+```
+./deploy/subir.sh      # gera deploy/.env e o certificado local, constrói e sobe tudo
+./deploy/derrubar.sh   # derruba os serviços e mantém os dados
+./deploy/fumaca.sh     # teste de fumaça contra a demonstração de pé
+./deploy/verificar.sh  # invariante de saldo e contagens no banco da demonstração
 ```
 
-## Banco
+- Abra `https://localhost:8443` (certificado autoassinado: aceite a exceção). A porta 8080 só redireciona para o HTTPS.
+- Projeto Compose `stockflow-demo`, volume próprio (`VOLUME_DO_BANCO` em `deploy/.env`, padrão `stockflow_demo_pgdata`); não toca no banco de desenvolvimento.
+- A API e o banco não publicam porta; o Nginx é a única entrada.
+- Segredos (`POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `JWT_SECRET`) são gerados aleatoriamente em `deploy/.env` (fora do git). Há um `deploy/.env.example`.
+- Credenciais de demonstração e o que há nos dados: [`deploy/README.md`](deploy/README.md). Roteiro de apresentação: [`docs/ROTEIRO_APRESENTACAO.md`](docs/ROTEIRO_APRESENTACAO.md).
 
-Executar:
+## Desenvolvimento
 
-```bash
-mysql -u root -p < database/setup.sql
-```
+Veja a seção "Rodar em desenvolvimento" do [`README.md`](README.md): banco de desenvolvimento pelo `docker-compose.yml` da raiz (porta 5433 em `127.0.0.1`), `npm run dev` no `backend/` e no `frontend/`.
 
-Observação importante:
+## Imagens
 
-`database/setup.sql` não cria a tabela `inventario`. Se o módulo de inventário for usado, o deploy precisa incluir uma migração que crie essa tabela antes de aplicar `database/feature_inventory_sap_permissions.sql`.
+- `backend/Dockerfile`: multiestágio em `node:22.20.0-bookworm-slim`, `npm ci --ignore-scripts`, usuário não root e `HEALTHCHECK` em `/health`.
+- `frontend/Dockerfile`: build do Vite em `node:22.20.0-bookworm-slim` e `nginx:1.28.0-alpine` servindo os estáticos.
+- Banco: `postgres:16.10`. Todas as imagens têm versão fixa.
 
-## Variáveis `.env`
+## O que este guia não afirma
 
-### API
+Não há implantação em produção real descrita nem testada aqui. O certificado da demonstração é autoassinado e os dados são de exemplo. Para um ambiente real seria preciso, no mínimo, um certificado emitido por uma autoridade confiável, segredos próprios, política de backup do banco e a revisão do agendador em uma única réplica.
 
-Arquivo: `stockflow-api/.env`.
+## Divergência registrada
 
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASS=sua_senha
-DB_NAME=stockflow
-JWT_SECRET=troque-por-uma-string-aleatoria-de-64-chars-minimo
-JWT_EXPIRES_IN=8h
-PORT=3000
-ALLOWED_ORIGINS=http://localhost:5173
-NODE_ENV=production
-```
-
-Campos obrigatórios na inicialização da API:
-
-- `JWT_SECRET`
-- `ALLOWED_ORIGINS`
-- configuração de banco por `DB_HOST`/`DB_USER`/`DB_NAME` ou variáveis equivalentes verificadas em `app.js`
-
-### Frontend
-
-Arquivo: `stockflow-frontend/.env`.
-
-```env
-VITE_API_URL=http://localhost:3000/api/v1
-```
-
-Em produção, use a URL pública da API.
-
-## Execução Local
-
-API:
-
-```bash
-cd stockflow-api
-npm run dev
-```
-
-Frontend:
-
-```bash
-cd stockflow-frontend
-npm run dev
-```
-
-Ambos:
-
-```bash
-npm run dev
-```
-
-## Build
-
-Frontend:
-
-```bash
-cd stockflow-frontend
-npm run build
-```
-
-Saída: `stockflow-frontend/dist`.
-
-API:
-
-```bash
-cd stockflow-api
-npm start
-```
-
-## Produção
-
-Checklist:
-
-- Definir `NODE_ENV=production`.
-- Definir `JWT_SECRET` forte.
-- Definir `ALLOWED_ORIGINS` com os domínios permitidos do frontend.
-- Definir `VITE_API_URL` antes do build do frontend.
-- Garantir MySQL disponível e com schema aplicado.
-- Servir `dist/` por servidor estático ou CDN.
-- Executar API por process manager ou serviço.
-- Proteger `.env`.
-- Validar `/api/v1/health`.
-- Validar `/api/docs` se a documentação Swagger deve ficar exposta.
-
-## Troubleshooting
-
-### API encerra ao iniciar
-
-Verifique:
-
-- `JWT_SECRET`.
-- `ALLOWED_ORIGINS`.
-- `DB_HOST`, `DB_USER`, `DB_NAME`.
-- MySQL acessível.
-
-### Frontend recebe erro de CORS
-
-Verifique:
-
-- `ALLOWED_ORIGINS` na API.
-- URL real do frontend.
-- Protocolo `http`/`https`.
-
-### Frontend chama API errada
-
-Verifique:
-
-- `VITE_API_URL`.
-- Rebuild do frontend após mudar `.env`.
-
-### Tela de inventário falha
-
-Verifique:
-
-- Existência da tabela `inventario`.
-- Aplicação de migração compatível.
-- Rotas `/inventario` e `/inventarios`.
-
-### Login falha mesmo com senha correta
-
-Verifique:
-
-- Usuário ativo.
-- Hash de senha no banco.
-- `JWT_SECRET`.
-- Rate limit temporário por muitas tentativas.
-
-### `npm audit` acusa `xlsx`
-
-O frontend possui vulnerabilidade alta em `xlsx` sem correção disponível pelo `npm audit`. Avalie substituição, restrição de arquivos confiáveis e validação de entrada.
+O guia anterior descrevia o protótipo (Node 18, MySQL 8.4, `/api/v1`, variáveis `ALLOWED_ORIGINS` e `JWT_EXPIRES_IN`). Nada disso existe na v3.

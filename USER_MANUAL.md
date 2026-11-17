@@ -1,214 +1,93 @@
-# Manual do Usuário — StockFlow
+# Manual do Usuário — StockFlow v3.0
 
-Este manual resume o uso operacional das telas reais do StockFlow. O manual histórico também existe em `docs/MANUAL_USUARIO.md`.
+Este manual descreve as telas reais da v3.0, separadas por perfil. Para subir o sistema e para as credenciais de demonstração, veja o [`README.md`](README.md); para uma apresentação guiada, veja [`docs/ROTEIRO_APRESENTACAO.md`](docs/ROTEIRO_APRESENTACAO.md).
 
-## Login
+## Primeiros passos
 
-1. Acesse o frontend.
-2. Informe e-mail ou código de usuário.
-3. Informe a senha.
-4. Clique para entrar.
+1. Abra o endereço do sistema (na demonstração, `https://localhost:8443`; o certificado é autoassinado, aceite a exceção do navegador).
+2. Informe **e-mail e senha** e entre. A sessão dura até 8 horas ou até você sair ou fechar a aba; depois disso o sistema volta ao login.
+3. O botão de sol e lua alterna entre o tema claro e o escuro. Em celular, o menu lateral abre pelo botão de menu no topo.
+4. **Ctrl+K** (ou o botão "Buscar tela") abre uma busca para ir a qualquer tela pelo nome; só aparecem as telas do seu perfil.
 
-Se o login for válido, o sistema salva a sessão no navegador e abre o dashboard.
+Por segurança, depois de 10 tentativas de login erradas em 15 minutos o sistema pede para aguardar.
 
-## Dashboard
+## O que cada perfil vê
 
-Use o dashboard para acompanhar:
+| Tela | Operador | Administrador |
+| --- | --- | --- |
+| Dashboard, Produtos, Lotes, Mapa do Armazém | sim | sim |
+| Entrada, Saída, Transferência | sim | sim |
+| Inventário (registrar contagem) | sim | sim |
+| Inventário (finalizar e cancelar contagem) | não | sim |
+| Ajuste de estoque | não | sim |
+| Histórico, Rastreabilidade, Vencimentos | sim | sim |
+| Exportar vencimentos em CSV | não | sim |
+| Usuários | não | sim |
+| Auditoria | não | sim |
+| Meu Perfil | sim | sim |
 
-- KPIs gerais.
-- Alertas.
-- Movimentações recentes.
-- Ocupação do armazém.
-- Produtos mais movimentados.
-- Indicadores de saúde do estoque.
-- Risco de ruptura e curva ABC.
+Quem não tem permissão não vê o item no menu e, se abrir o endereço direto, recebe "Acesso negado".
 
-Passos:
+## Telas para os dois perfis
 
-1. Acesse `/dashboard`.
-2. Revise os cards principais.
-3. Use filtros de período quando disponíveis.
-4. Clique nos itens relevantes para investigar módulos relacionados.
+### Dashboard
+Visão geral do dia: produtos ativos, lotes com saldo, vencidos, bloqueados, movimentações de hoje e divergências de inventário; movimentações dos últimos 30 dias por tipo; entradas contra saídas; lotes por situação; saldo por categoria (em quilos equivalentes, só para produtos com peso unitário cadastrado); produtos mais movimentados; produtos abaixo do estoque mínimo; atividade recente; e lotes que vencem em até 30 dias. O botão **Atualizar** recarrega os dados; se uma atualização falhar, os dados anteriores continuam na tela com um aviso.
 
-## Produtos
+### Produtos
+Lista com busca por nome ou categoria e filtro Ativos, Inativos ou Todos. **Novo produto** abre um painel lateral; no menu `⋮` de cada linha: Visualizar, Editar e Inativar (com confirmação). Um produto inativo deixa de aceitar novos lotes e não é reativado por esta tela.
 
-Objetivo: cadastrar e consultar produtos.
+### Lotes
+Lista com busca por número do lote e filtros por situação, produto e localização. **Novo lote**, e no painel de cada lote: detalhes, **Bloquear** (com motivo), **Desbloquear** e **Associar etiqueta** (QR Code ou RFID). Lotes vencidos ou com validade expirada aparecem sinalizados. Um leitor de etiqueta, ou a digitação do código da etiqueta, abre o lote correspondente.
 
-Passos gerais:
+### Mapa do Armazém
+Posições agrupadas por corredor e nível, com filtro por corredor. Clique em uma posição para ver os lotes armazenados nela; se houver mais de 50, um link leva à tela de Lotes filtrada por aquela posição.
 
-1. Acesse `/produtos`.
-2. Use busca ou filtros para localizar produto.
-3. Cadastre produto informando nome, categoria, unidade e estoque mínimo.
-4. Edite dados quando necessário.
-5. Inative produto apenas se tiver permissão administrativa.
+### Entrada, Saída e Transferência
+1. Escolha o lote: leia a etiqueta (ou digite o código no campo de etiqueta e tecle Enter) ou busque o lote pelo número.
+2. Informe os dados: quantidade (até 3 casas decimais) e motivo opcional na entrada e na saída; destino e justificativa na transferência.
+3. Registre. O resultado mostra o saldo antes e depois.
 
-## Lotes
+Regras: a saída é recusada para lote bloqueado, vencido ou com validade expirada e quando o saldo é insuficiente; a transferência só vale para lote ativo e com saldo, e o destino deve ser outra localização. Se a conexão cair no meio do registro, o sistema avisa e pede para conferir o Histórico antes de repetir, para não duplicar a operação.
 
-Objetivo: controlar unidades rastreáveis.
+### Inventário
+Registre uma contagem escolhendo o lote e informando a quantidade contada (zero é permitido). A contagem fica **pendente** e **não altera o saldo**. A lista mostra as contagens Pendentes, Concluídas e Canceladas, com a divergência. Só pode haver uma contagem pendente por lote.
 
-Passos:
+### Histórico
+Todas as movimentações, das mais recentes para as mais antigas, com filtros por tipo, período, lote e usuário (o filtro de usuário é do administrador; "Só as minhas" mostra as suas). Use **Carregar mais** para ver páginas anteriores.
 
-1. Acesse `/lotes`.
-2. Consulte por número de lote, produto ou status.
-3. Cadastre lote com produto, localização, quantidade e validade.
-4. Abra detalhes/timeline para ver histórico.
-5. Administradores podem bloquear ou desbloquear lotes.
+### Rastreabilidade
+Digite o número exato do lote (ou leia a etiqueta). A tela mostra os dados do lote, o saldo atual e a linha do tempo completa, da primeira à última movimentação. Contagens de inventário aparecem como eventos informativos: não alteram o saldo.
 
-## Entradas
+### Vencimentos
+Lotes ativos com validade entre hoje e 30 dias, com o prazo restante.
 
-Objetivo: aumentar estoque de um lote.
+### Meu Perfil
+Seus dados (nome, e-mail e perfil, alterados só por um administrador) e a troca da própria senha: informe a senha atual, a nova (mínimo de 8 caracteres) e a confirmação. Sessões já abertas continuam válidas até expirar.
 
-Passos:
+## Telas só do administrador
 
-1. Acesse `/entrada`.
-2. Selecione o lote.
-3. Informe quantidade.
-4. Informe observação, se necessário.
-5. Confirme.
+### Inventário: finalizar e cancelar
+No menu `⋮` de uma contagem pendente: **Finalizar** mostra o saldo da contagem, o contado, a divergência e o saldo atual do lote, e avisa que a divergência é somada ao saldo **atual** (não ao da hora da contagem). Ao confirmar, o sistema gera um ajuste e conclui a contagem. Se o saldo atual não comportar a divergência, a finalização é bloqueada. **Cancelar contagem** encerra sem mexer no saldo.
 
-O sistema registra movimentação tipo `entrada` e incrementa a quantidade do lote.
+### Ajuste de estoque
+Escolha o lote, veja o saldo exibido, informe o novo saldo e a justificativa (de 10 a 255 caracteres). Uma confirmação mostra "de X para Y". Se o saldo do lote mudou desde que foi exibido, o sistema avisa, recarrega o saldo e pede nova confirmação; nada é gravado sozinho.
 
-## Saídas
+### Vencimentos: exportar CSV
+O botão **Exportar CSV** baixa a lista de vencimentos em um arquivo que abre no Excel (UTF-8, separador ponto e vírgula).
 
-Objetivo: retirar estoque.
+### Usuários
+Lista com busca e filtros de situação e perfil. **Novo usuário** (nome, e-mail, perfil e senha de pelo menos 8 caracteres), **Editar** (a senha em branco mantém a atual) e **Inativar** com confirmação. O sistema não deixa inativar o último administrador ativo nem a si mesmo, e não aceita e-mail repetido. Não há reativação por esta tela.
 
-Passos:
+### Auditoria
+Registro somente leitura, dos mais recentes para os mais antigos, com filtros por usuário, tabela, operação, IP, período e conteúdo (um JSON simples, por exemplo `{"status_lote":"bloqueado"}`). Clique na seta de uma linha para ver o valor anterior e o novo lado a lado. Operações do sistema, como a marcação automática de lote vencido, aparecem como "Sistema".
 
-1. Acesse `/saida`.
-2. Selecione o lote.
-3. Informe quantidade.
-4. Confirme.
+## Detalhes úteis
 
-O sistema bloqueia saída quando:
+- **Horários:** nas telas de análise (Histórico, Rastreabilidade, Auditoria, Inventário) data e hora aparecem em UTC, e os filtros de período também são UTC.
+- **Listas longas:** a tela mostra no máximo 300 itens; ao passar disso, os primeiros já carregados são ocultados e o botão **Voltar ao início** recarrega a lista.
+- **Erros de tela:** se uma tela não carregar (por exemplo, a conexão caiu ou o sistema foi atualizado), aparece uma mensagem com **Recarregar a aplicação**; erros ao exibir uma tela oferecem também **Tentar de novo**.
+- **Leitor de etiqueta:** um leitor que age como teclado funciona nas telas que pedem lote; a conexão direta por porta serial (Web Serial) existe para navegadores Chromium em HTTPS ou `localhost`, mas **não foi testada com um leitor físico**.
 
-- lote não existe;
-- lote está bloqueado;
-- lote está vencido;
-- quantidade solicitada é maior que a disponível.
+## Divergência registrada
 
-## Transferências
-
-Objetivo: mover lote para outra localização.
-
-Passos:
-
-1. Acesse `/transferencia`.
-2. Selecione lote.
-3. Selecione localização destino.
-4. Informe motivo com pelo menos 10 caracteres.
-5. Confirme.
-
-O sistema registra movimentação e atualiza a localização atual do lote.
-
-## Mapa do Armazém
-
-Objetivo: visualizar posições físicas e ocupação.
-
-Passos:
-
-1. Acesse `/mapa`.
-2. Analise corredores, níveis e posições.
-3. Selecione uma posição/lote para consultar detalhes.
-
-## RFID e QR Code
-
-Objetivo: identificar lotes por código.
-
-Uso operacional:
-
-1. Cadastre uma identificação em um lote usando tipo `QR Code` ou `RFID`.
-2. Use o código para buscar o lote.
-3. Consulte a timeline para rastrear movimentações.
-
-Regras:
-
-- Um código pertence a um único lote.
-- Um lote tem no máximo uma identificação.
-
-## Rastreabilidade
-
-Objetivo: consultar histórico de um lote.
-
-Passos:
-
-1. Acesse `/rastreabilidade`.
-2. Pesquise por lote ou código.
-3. Abra a timeline.
-4. Analise entradas, saídas, transferências, ajustes e inventários.
-
-## Alertas de Vencimento
-
-Objetivo: acompanhar lotes com risco por validade.
-
-Passos:
-
-1. Acesse `/alertas` ou `/alertas-vencimento`.
-2. Revise lotes vencendo.
-3. Administradores podem bloquear lote quando necessário.
-
-## Inventário
-
-Objetivo: conferir estoque físico por corredor.
-
-Passos:
-
-1. Acesse `/inventario`.
-2. Crie inventário por corredor.
-3. Conte os lotes listados.
-4. Confirme a contagem.
-5. Finalize para registrar divergências.
-
-Observação: o módulo depende da tabela `inventario`, que não é criada pelo `database/setup.sql` atual.
-
-## Relatórios
-
-Objetivo: consultar dados operacionais consolidados.
-
-Passos:
-
-1. Acesse `/relatorios`.
-2. Escolha o tipo de relatório.
-3. Gere a visualização.
-4. Exporte quando a opção estiver disponível.
-
-## Usuários
-
-Tela administrativa.
-
-Passos:
-
-1. Acesse `/usuarios`.
-2. Cadastre usuário.
-3. Defina perfil.
-4. Ajuste permissões customizadas quando aplicável.
-5. Inative usuários que não devem acessar o sistema.
-
-## Auditoria
-
-Tela administrativa.
-
-Uso:
-
-1. Acesse `/auditoria`.
-2. Filtre por operação, tabela, usuário ou termo.
-3. Consulte logs.
-
-Os registros são somente leitura.
-
-## Integração SAP
-
-Tela administrativa.
-
-Uso:
-
-1. Acesse `/sap`.
-2. Envie dados JSON de produtos.
-3. O sistema importa ou atualiza produtos por nome ou `sku_sap`.
-
-Campos reconhecidos:
-
-- `MAKTX`: nome.
-- `MATNR`: SKU SAP.
-- `MATKL`: categoria.
-- `MEINS`: unidade.
-- `MINBE`: estoque mínimo.
+O manual anterior descrevia telas do protótipo (login por código de usuário, ocupação do armazém, curva ABC, integração SAP por JSON, entre outras) que não existem na v3. O arquivo `docs/MANUAL_USUARIO.md` agora apenas aponta para este.

@@ -1,3 +1,5 @@
+> **Registro histórico do protótipo anterior (2026-05-31).** Não descreve a v3.0, que tem backend, banco e frontend novos. Para o estado atual, veja o [`README.md`](README.md).
+
 # Auditoria Técnica do StockFlow
 
 Data da revisão documental: 2026-05-31.
