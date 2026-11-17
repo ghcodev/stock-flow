@@ -7,7 +7,7 @@ Credenciais (dados de demonstração, não são segredos reais):
 - Administrador: `carlos.matos@stockflow.demo` / `Admin@Demo2026`
 - Operador: `joao.almeida@stockflow.demo` / `Operador@Demo2026`
 
-Os números de lote mudam conforme o dia em que o banco foi criado (o número leva o ano e o mês da validade). Por isso o roteiro manda **escolher na tela** o lote certo em vez de citar um número fixo. A etiqueta QR de cada lote é `QR-` seguido do número do lote (os lotes com RFID têm um código `E200…`, visível no detalhe do lote).
+Os números de lote mudam conforme o dia em que o banco foi criado (o número leva o ano e o mês da fabricação). Por isso o roteiro manda **escolher na tela** o lote certo em vez de citar um número fixo. A etiqueta QR de cada lote é `QR-` seguido do número do lote (os lotes com RFID têm um código `E200…`, visível no detalhe do lote).
 
 ## Passo a passo
 

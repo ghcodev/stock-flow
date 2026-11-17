@@ -120,7 +120,7 @@ Os testes do backend criam e alteram dados no banco de desenvolvimento (com pref
 ## Divergências conhecidas
 
 - `ARCHITECTURE.md`, `DEPLOYMENT_GUIDE.md`, `SECURITY.md`, `TECH_STACK.md`, `USER_MANUAL.md`, `AUDIT.md` e `PROJECT_MEMORY.md` descrevem o protótipo anterior (React 18, Express 4, MySQL) e **não foram atualizados para a v3**. Valem a especificação v3.0, este README, `API_DOCUMENTATION.md` e os READMEs de `backend/`, `frontend/` e `deploy/`.
-- Cada produto precisa de `peso_unitario_kg` para entrar no gráfico de saldo por categoria do Dashboard.
+- Gráfico de saldo por categoria do Dashboard, em kg: produtos em kg entram direto; unidades de contagem (`un`, `cx`, `rolo`, `pct`) são multiplicadas por `peso_unitario_kg`; litros, outras unidades e produtos de contagem sem peso ficam de fora, e o painel mostra quantos lotes ficaram de fora.
 - O certificado da demonstração é autoassinado; em produção real deve ser substituído por um emitido por uma autoridade confiável.
 
 ## Equipe

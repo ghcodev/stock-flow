@@ -31,7 +31,7 @@ Quem não tem permissão não vê o item no menu e, se abrir o endereço direto,
 ## Telas para os dois perfis
 
 ### Dashboard
-Visão geral do dia: produtos ativos, lotes com saldo, vencidos, bloqueados, movimentações de hoje e divergências de inventário; movimentações dos últimos 30 dias por tipo; entradas contra saídas; lotes por situação; saldo por categoria (em quilos equivalentes, só para produtos com peso unitário cadastrado); produtos mais movimentados; produtos abaixo do estoque mínimo; atividade recente; e lotes que vencem em até 30 dias. O botão **Atualizar** recarrega os dados; se uma atualização falhar, os dados anteriores continuam na tela com um aviso.
+Visão geral do dia: produtos ativos, lotes com saldo, vencidos, bloqueados, movimentações de hoje e divergências de inventário; movimentações dos últimos 30 dias por tipo; entradas contra saídas; lotes por situação; saldo por categoria em kg (produtos em kg direto; caixas, unidades, rolos e pacotes multiplicados pelo peso unitário; litros e produtos sem peso ficam de fora, com aviso de quantos lotes); produtos mais movimentados; produtos abaixo do estoque mínimo; atividade recente; e lotes que vencem em até 30 dias. O botão **Atualizar** recarrega os dados; se uma atualização falhar, os dados anteriores continuam na tela com um aviso.
 
 ### Produtos
 Lista com busca por nome ou categoria e filtro Ativos, Inativos ou Todos. **Novo produto** abre um painel lateral; no menu `⋮` de cada linha: Visualizar, Editar e Inativar (com confirmação). Um produto inativo deixa de aceitar novos lotes e não é reativado por esta tela.
