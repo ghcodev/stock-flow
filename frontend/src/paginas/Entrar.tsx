@@ -39,6 +39,11 @@ export function Entrar() {
     setFoco(null);
   }, [foco, enviando]);
 
+  useParallax((inclinacao) => {
+    if (palco.current) palco.current.style.transform = `rotateX(${58 + inclinacao.y * 7}deg) rotateZ(${-38 + inclinacao.x * 12}deg)`;
+    if (cartao.current) cartao.current.style.transform = `rotateY(${inclinacao.x * 3}deg) rotateX(${-inclinacao.y * 2}deg)`;
+  });
+
   if (sessao) {
     const origem = (local.state as { de?: unknown } | null)?.de;
     return <Navigate to={destinoAposLogin(origem)} replace />;
@@ -76,11 +81,6 @@ export function Entrar() {
       setEnviando(false);
     }
   };
-
-  useParallax((inclinacao) => {
-    if (palco.current) palco.current.style.transform = `rotateX(${58 + inclinacao.y * 7}deg) rotateZ(${-38 + inclinacao.x * 12}deg)`;
-    if (cartao.current) cartao.current.style.transform = `rotateY(${inclinacao.x * 3}deg) rotateX(${-inclinacao.y * 2}deg)`;
-  });
 
   const mensagemGeral = geral ?? aviso;
 
