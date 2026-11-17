@@ -36,7 +36,7 @@ services:
       PORT: "3000"
       AGENDADOR_ATIVO: "true"
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET em deploy/.env}
-      DATABASE_URL: postgresql://stockflow_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://stockflow_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}?options=-c%20timezone%3DUTC
     depends_on:
       postgres:
         condition: service_healthy
