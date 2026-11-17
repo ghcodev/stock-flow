@@ -16,8 +16,6 @@ INSERT INTO usuario (nome, email, senha_hash, perfil, created_at) VALUES
   ('Rafael Souza Lima', 'rafael.lima@stockflow.demo', '$2b$12$rWLjb0ce5klmUOnNJLmK2e0sA4Yb5ViY7hgmrpiARFnzcrGICzjGm', 'operador', now() - interval '100 days'),
   ('Camila Teixeira', 'camila.teixeira@stockflow.demo', '$2b$12$rWLjb0ce5klmUOnNJLmK2e0sA4Yb5ViY7hgmrpiARFnzcrGICzjGm', 'operador', now() - interval '100 days');
 
-UPDATE auditoria_log SET data_hora = now() - interval '120 days';
-
 INSERT INTO localizacao (corredor, nivel, posicao, capacidade, tipo_zona, distancia_expedicao, descricao)
 SELECT c.corredor, n.nivel::text, lpad(p.posicao::text, 2, '0'),
        (2400 - n.nivel * 300)::numeric,
@@ -245,7 +243,6 @@ $plano$;
 DO $execucao$
 DECLARE
   e record;
-  v_ult bigint;
   v_id_lote int;
   v_id_mov bigint;
   v_loc int;
@@ -256,7 +253,6 @@ BEGIN
   FOR e IN SELECT * FROM ev ORDER BY ts, seq LOOP
     PERFORM set_config('app.user_id', COALESCE(e.uid::text, ''), true);
     PERFORM set_config('app.ip', CASE WHEN e.uid IS NULL THEN '' ELSE '10.20.0.' || (10 + e.uid) END, true);
-    SELECT COALESCE(max(id_log), 0) INTO v_ult FROM auditoria_log;
     SELECT id_lote INTO v_id_lote FROM lotdef WHERE lk = e.lk;
     IF e.tipo = 'criar' THEN
       INSERT INTO lote (numero_lote, data_fabricacao, data_validade, quantidade, id_produto, id_localizacao, status_lote)
@@ -282,9 +278,7 @@ BEGIN
                                 motivo_movimentacao, observacao, status_movimentacao, created_at)
       VALUES ('inventario', e.ts, e.qtd, e.ant, e.pos, v_id_lote, e.uid, 'Contagem de inventário', e.obs, 'pendente', e.ts)
       RETURNING id_movimentacao INTO v_id_mov;
-      UPDATE auditoria_log SET data_hora = e.ts WHERE id_log > v_ult;
       IF e.tipo <> 'cont_pend' THEN
-        SELECT COALESCE(max(id_log), 0) INTO v_ult FROM auditoria_log;
         PERFORM set_config('app.user_id', (SELECT id_usuario FROM usuario WHERE perfil = 'administrador' ORDER BY id_usuario OFFSET (e.seq % 2) LIMIT 1)::text, true);
         UPDATE movimentacao SET status_movimentacao = CASE WHEN e.tipo = 'cont_ok' THEN 'concluida' ELSE 'cancelada' END::status_movimentacao WHERE id_movimentacao = v_id_mov;
         IF e.tipo = 'cont_ok' AND e.delta <> 0 THEN
@@ -294,7 +288,6 @@ BEGIN
                   current_setting('app.user_id')::int, 'Finalização da contagem de inventário ' || v_id_mov, 'concluida', e.ts + interval '1 minute');
           UPDATE lote SET quantidade = e.pos WHERE id_lote = v_id_lote;
         END IF;
-        UPDATE auditoria_log SET data_hora = e.ts + interval '1 minute' WHERE id_log > v_ult;
       END IF;
       CONTINUE;
     ELSIF e.tipo = 'venc' THEN
@@ -302,7 +295,6 @@ BEGIN
     ELSIF e.tipo = 'bloq' THEN
       UPDATE lote SET status_lote = 'bloqueado', data_bloqueio = e.ts, motivo_bloqueio = e.motivo WHERE id_lote = v_id_lote;
     END IF;
-    UPDATE auditoria_log SET data_hora = e.ts WHERE id_log > v_ult;
   END LOOP;
 END
 $execucao$;

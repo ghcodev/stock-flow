@@ -13,7 +13,7 @@ services:
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?defina APP_DB_PASSWORD em deploy/.env}
     command: ["postgres", "-c", "timezone=America/Sao_Paulo", "-c", "log_timezone=America/Sao_Paulo"]
     volumes:
-      - stockflow_demo_pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
       - ../database/postgres/init:/base:ro
       - ./demo:/demo:ro
       - ./demo/inicializar.sh:/docker-entrypoint-initdb.d/10_demo.sh:ro
@@ -68,4 +68,5 @@ networks:
   interna:
 
 volumes:
-  stockflow_demo_pgdata:
+  pgdata:
+    name: ${VOLUME_DO_BANCO:-stockflow_demo_pgdata}

@@ -9,7 +9,7 @@ Esta pasta sobe o sistema completo como se já estivesse em uso: PostgreSQL 16 c
 ./deploy/derrubar.sh   # derruba os serviços e mantém o volume (os dados continuam)
 ```
 
-Os scripts são de bash (no Windows, Git Bash) e precisam de Docker e de `openssl`. Para recomeçar do zero, apague o volume de propósito: `docker volume rm stockflow_demo_pgdata` (com os serviços derrubados).
+Os scripts são de bash (no Windows, Git Bash) e precisam de Docker e de `openssl`. Para recomeçar do zero com dados novos sem apagar nada, mude `VOLUME_DO_BANCO` em `deploy/.env` (por exemplo `stockflow_demo_pgdata_v2`) e rode `./deploy/subir.sh`; o banco novo é criado e carregado do zero.
 
 ## Portas
 
@@ -37,7 +37,9 @@ Os segredos reais do Compose (senhas do banco e `JWT_SECRET`) são gerados aleat
 
 ## O que há nos dados
 
-Cerca de 45 produtos, 120 posições (3 corredores, 4 níveis, 10 posições), ~146 lotes com etiquetas QR e RFID e 60 a 90 dias de histórico: entradas, saídas, transferências, ajustes e contagens pendentes, concluídas e canceladas, com lotes vencendo, vencidos e bloqueados e produtos abaixo do estoque mínimo. A auditoria é gerada pelas próprias triggers do banco, com o autor de cada operação. As datas são relativas ao dia em que o banco é criado.
+Cerca de 45 produtos, 120 posições (3 corredores, 4 níveis, 10 posições), ~146 lotes com etiquetas QR e RFID e 60 a 90 dias de histórico: entradas, saídas, transferências, ajustes e contagens pendentes, concluídas e canceladas, com lotes vencendo, vencidos e bloqueados e produtos abaixo do estoque mínimo. As movimentações têm datas históricas (relativas ao dia em que o banco é criado). A auditoria é gerada pelas próprias triggers do banco, com o autor de cada operação, e **registra o instante real da carga**: o seed não altera nenhuma linha de `auditoria_log` (tabela imutável), então todos os registros de auditoria da demonstração mostram a data e a hora em que os dados foram carregados, não as datas históricas das movimentações.
+
+Exceção só do seed da demonstração: o trigger `trg_bloquear_saida` fica desabilitado durante a carga inicial (para inserir saídas históricas de lotes que hoje estão vencidos ou bloqueados) e é reabilitado antes do `COMMIT`; `./deploy/verificar.sh` confirma que ele está habilitado no fim.
 
 ## Verificações
 

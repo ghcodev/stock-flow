@@ -20,6 +20,8 @@ UNION ALL SELECT 'registros de auditoria', count(*) FROM auditoria_log
 UNION ALL SELECT 'dias com movimentacao', count(DISTINCT data_movimentacao::date) FROM movimentacao
 ORDER BY 1;
 
+SELECT min(data_hora) AS auditoria_primeiro_registro, max(data_hora) AS auditoria_ultimo_registro FROM auditoria_log;
+
 SELECT min(data_movimentacao)::date AS primeira_movimentacao, max(data_movimentacao)::date AS ultima_movimentacao, current_date AS hoje, current_setting('TimeZone') AS fuso FROM movimentacao;
 
 CREATE TEMP TABLE alteradoras AS
@@ -50,10 +52,12 @@ WHERE m.tipo_movimentacao = 'saida'
 UNION ALL
 SELECT 'movimentacoes no futuro', count(*) FROM movimentacao WHERE data_movimentacao > now()
 UNION ALL
-SELECT 'registros de auditoria no futuro', count(*) FROM auditoria_log WHERE data_hora > now()
+SELECT 'trigger trg_bloquear_saida desabilitado (deve estar habilitado)', count(*)
+FROM pg_trigger WHERE tgname = 'trg_bloquear_saida' AND tgenabled <> 'O'
 UNION ALL
-SELECT 'ids de auditoria fora da ordem cronologica', count(*)
-FROM (SELECT data_hora, lag(data_hora) OVER (ORDER BY id_log) AS ant FROM auditoria_log) x WHERE ant IS NOT NULL AND data_hora < ant
+SELECT 'trigger trg_bloquear_saida ausente', CASE WHEN EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_bloquear_saida') THEN 0 ELSE 1 END
+UNION ALL
+SELECT 'triggers de auditoria desabilitados', count(*) FROM pg_trigger WHERE tgname LIKE 'trg_auditoria_%' AND tgenabled <> 'O'
 UNION ALL
 SELECT 'lotes sem etiqueta', count(*) FROM lote l WHERE NOT EXISTS (SELECT 1 FROM identificacao i WHERE i.id_lote = l.id_lote)
 UNION ALL
@@ -63,4 +67,5 @@ ORDER BY 1;
 SELECT CASE WHEN (
   (SELECT count(*) FROM lote l LEFT JOIN alteradoras a ON a.id_lote = l.id_lote AND a.desc_n = 1 WHERE l.quantidade <> COALESCE(a.saldo_posterior, 0))
   + (SELECT count(*) FROM alteradoras WHERE saldo_anterior <> COALESCE(posterior_anterior, 0))
+  + (SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_bloquear_saida' AND tgenabled <> 'O')
 ) = 0 THEN 'INVARIANTE DE SALDO: OK' ELSE 'INVARIANTE DE SALDO: VIOLADO' END AS resultado;
