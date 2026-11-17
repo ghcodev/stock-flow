@@ -1,10 +1,9 @@
 FROM node:22.20.0-bookworm-slim AS base
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ ca-certificates && rm -rf /var/lib/apt/lists/*
 
 FROM base AS construcao
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY prisma ./prisma
 COPY prisma.config.ts tsconfig.json tsconfig.build.json ./
 COPY src ./src
@@ -12,7 +11,7 @@ RUN npm run build
 
 FROM base AS producao
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 FROM node:22.20.0-bookworm-slim AS final
 ENV NODE_ENV=production PORT=3000
