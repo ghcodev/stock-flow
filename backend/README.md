@@ -55,6 +55,16 @@ Usa `node:test` contra o PostgreSQL do Docker, com o app em porta efêmera. Os t
 
 Atenção: a suíte escreve no banco. Cada execução completa persiste usuários de teste (e-mail único, `@teste.local`, deixados inativos), produtos (deixados inativos), localizações, lotes, etiquetas, movimentações de entrada dos saldos iniciais e as linhas de `auditoria_log` geradas pelos triggers. Nada é apagado, porque a role da aplicação não tem DELETE, então esses dados se acumulam a cada execução. Rode a suíte só contra banco de desenvolvimento ou de teste, nunca contra produção.
 
+### Testar em banco descartável
+
+```
+npm run test:isolado
+```
+
+Roda a suíte inteira sem escrever no banco de desenvolvimento nem na demonstração. O script `scripts/testar-isolado.sh` (bash; no Windows, Git Bash) sobe um PostgreSQL `postgres:16.10` com `docker run --rm`, em uma porta livre só em `127.0.0.1` e com nome único (`stockflow-teste-<n>`), dados em `tmpfs` (sem volume) e senhas aleatórias geradas na hora (não são impressas). Aplica `database/postgres/init` (01 a 05 e as roles) e o `seed_dev.sql`, aponta `DATABASE_URL` para esse banco (role `stockflow_app`, como no `npm test`) e roda a suíte. O caso do último administrador ativo (`tests/usuarios.ultimo-admin.test.ts`), que depende do estado global de administradores, roda sozinho no fim, depois da suíte principal. O contêiner é removido ao terminar, inclusive se os testes falharem ou o processo for interrompido (`trap`). Não precisa de `backend/.env`. Leva cerca de 25 a 30 segundos neste computador. A saída do processo é o resultado dos testes (0 = verde).
+
+O `npm test` continua como antes (banco compartilhado); nele o caso do último administrador é pulado com a mensagem "só roda no banco descartável", e a decisão da regra é coberta também por um teste com conjunto de administradores injetado (`deixariaSemAdministrador`).
+
 ## Listagem de localizações
 
 `GET /localizacoes?busca=<texto>` (operador e administrador, paginado) casa o texto, sem diferenciar caixa, com corredor, nível, posição ou descrição (contém) **e também com o rótulo combinado** `corredor-nível-posição`: `A-1-01`, `a 1 01`, `A/1/01` e trechos como `1-01` encontram a posição A-1-01. Espaços e barras viram hífen antes de comparar. O filtro roda no banco antes do limite, com parâmetros ligados e `%`, `_` e `\` tratados como texto literal. Ordem do resultado com busca: rótulo igual ao digitado, depois rótulo que começa com o digitado, depois corredor, nível e posição. Sem busca a ordem continua sendo corredor, nível e posição. NUL e parâmetro repetido respondem 400.
