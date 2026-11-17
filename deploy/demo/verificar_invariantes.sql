@@ -1,6 +1,8 @@
 \set ON_ERROR_STOP on
 \pset footer off
 
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+
 SELECT 'produtos' AS item, count(*) AS total FROM produto
 UNION ALL SELECT 'usuarios (admin + operador)', count(*) FROM usuario
 UNION ALL SELECT 'localizacoes', count(*) FROM localizacao
@@ -10,6 +12,7 @@ UNION ALL SELECT 'lotes vencidos', count(*) FROM lote WHERE status_lote = 'venci
 UNION ALL SELECT 'lotes bloqueados', count(*) FROM lote WHERE status_lote = 'bloqueado'
 UNION ALL SELECT 'lotes ativos vencendo em 30 dias', count(*) FROM lote WHERE status_lote = 'ativo' AND data_validade BETWEEN current_date AND current_date + 30
 UNION ALL SELECT 'etiquetas', count(*) FROM identificacao
+UNION ALL SELECT 'lotes sem etiqueta (informativo)', count(*) FROM lote l WHERE NOT EXISTS (SELECT 1 FROM identificacao i WHERE i.id_lote = l.id_lote)
 UNION ALL SELECT 'movimentacoes', count(*) FROM movimentacao
 UNION ALL SELECT 'contagens pendentes', count(*) FROM movimentacao WHERE tipo_movimentacao = 'inventario' AND status_movimentacao = 'pendente'
 UNION ALL SELECT 'contagens concluidas', count(*) FROM movimentacao WHERE tipo_movimentacao = 'inventario' AND status_movimentacao = 'concluida'
@@ -25,3 +28,5 @@ SELECT min(data_hora) AS auditoria_primeiro_registro, max(data_hora) AS auditori
 SELECT min(data_movimentacao)::date AS primeira_movimentacao, max(data_movimentacao)::date AS ultima_movimentacao, current_date AS hoje, current_setting('TimeZone') AS fuso FROM movimentacao;
 
 \i /demo/assercao_invariantes.sql
+
+COMMIT;
