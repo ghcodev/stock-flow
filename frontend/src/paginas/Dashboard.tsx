@@ -198,7 +198,7 @@ export function Dashboard() {
       </div>
 
       <div className="dashboard-grade dashboard-grade--igual">
-        <Bloco titulo="Saldo por categoria" subtitulo="Lotes ativos, em quilos equivalentes" rotulo="Saldo por categoria">
+        <Bloco titulo="Saldo por categoria" subtitulo="Lotes ativos em kg (unidades de contagem convertidas pelo peso unitário)" rotulo="Saldo por categoria">
           {painel.erro && !painel.dados ? (
             <EstadoDeErro mensagem={painel.erro} aoTentarNovamente={painel.recarregar} />
           ) : painel.dados === null ? (
@@ -206,9 +206,16 @@ export function Dashboard() {
               <span className="esqueleto" />
             </div>
           ) : painel.dados.saldo_por_categoria.length === 0 ? (
-            <EstadoVazio titulo="Sem saldo com peso informado" descricao="Cadastre o peso unitário dos produtos para ver o saldo por categoria." />
+            <EstadoVazio titulo="Sem saldo conversível para kg" descricao="Só entram lotes em kg ou em unidades de contagem com peso unitário informado." />
           ) : (
-            <BarrasDeCategoria categorias={painel.dados.saldo_por_categoria} />
+            <>
+              <BarrasDeCategoria categorias={painel.dados.saldo_por_categoria} />
+              {painel.dados.saldo_por_categoria_lotes_fora > 0 ? (
+                <p className="bloco-nota">
+                  {formatarInteiro(painel.dados.saldo_por_categoria_lotes_fora)} lote(s) ativo(s) ficaram de fora: unidade em litros ou sem fator de conversão para kg.
+                </p>
+              ) : null}
+            </>
           )}
         </Bloco>
         <Bloco titulo="Produtos mais movimentados" subtitulo="Entradas e saídas nos últimos 30 dias" rotulo="Produtos mais movimentados">

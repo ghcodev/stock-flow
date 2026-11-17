@@ -126,6 +126,7 @@ export type Dashboard = {
   data_referencia: string;
   lotes_por_situacao: LotesPorSituacao;
   saldo_por_categoria: SaldoDeCategoria[];
+  saldo_por_categoria_lotes_fora: number;
   top_produtos: ProdutoMovimentado[];
   indicadores: Indicadores;
   grafico: PontoDoGrafico[];

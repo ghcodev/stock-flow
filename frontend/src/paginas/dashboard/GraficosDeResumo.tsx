@@ -98,7 +98,7 @@ function BarrasHorizontais({ titulo, descricao, itens }: { titulo: string; descr
 
 export function BarrasDeCategoria({ categorias }: { categorias: readonly SaldoDeCategoria[] }) {
   const itens = categorias.map((categoria) => ({ chave: categoria.categoria, rotulo: categoria.categoria, valor: paraGeometria(categoria.saldo_kg), texto: `${formatarQuantidade(categoria.saldo_kg)} kg` }));
-  return <BarrasHorizontais titulo="Saldo por categoria" descricao={`Saldo ativo em quilos equivalentes: ${itens.map((i) => `${i.rotulo} ${i.texto}`).join("; ")}.`} itens={itens} />;
+  return <BarrasHorizontais titulo="Saldo por categoria" descricao={`Saldo ativo em quilos: ${itens.map((i) => `${i.rotulo} ${i.texto}`).join("; ")}.`} itens={itens} />;
 }
 
 export function BarrasDeProdutos({ produtos }: { produtos: readonly ProdutoMovimentado[] }) {
