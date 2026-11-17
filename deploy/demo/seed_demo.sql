@@ -127,11 +127,12 @@ UPDATE lotdef l SET
     ELSE current_date + (45 + floor(random() * 380)::int) END;
 
 UPDATE lotdef l SET
-  fab = l.validade - (d.vida_util / 2 + floor(random() * 60)::int),
-  numero = 'L' || to_char(l.validade - (d.vida_util / 2), 'YYMM') || '-' || lpad(l.lk::text, 4, '0'),
+  fab = LEAST(l.validade - (d.vida_util / 2 + floor(random() * 60)::int), current_date - (3 + floor(random() * 30)::int)),
   qtd_ini = round((CASE WHEN l.unidade IN ('un', 'cx', 'rolo') THEN 150 + random() * 1850 ELSE 60 + random() * 640 END)::numeric, l.dec),
   loc_ini = (SELECT lo.id_localizacao FROM localizacao lo WHERE lo.tipo_zona = l.zona::tipo_armazenagem ORDER BY random() LIMIT 1)
 FROM prod_def d JOIN produto pr ON pr.nome = d.nome WHERE pr.id_produto = l.id_produto;
+
+UPDATE lotdef SET numero = 'L' || to_char(fab, 'YYMM') || '-' || lpad(lk::text, 4, '0');
 
 UPDATE lotdef SET t_fim = CASE tipo
   WHEN 'venc' THEN (validade::timestamp + interval '23 hours')::timestamptz
@@ -303,6 +304,8 @@ UPDATE produto SET estoque_minimo = ceil((SELECT COALESCE(sum(l.quantidade), 0) 
 WHERE nome IN ('Farinha de trigo integral', 'Cacau em pó alcalino', 'Queijo mussarela', 'Pão de queijo congelado', 'Hipoclorito de sódio 2%', 'Caixa de papelão 40x30', 'Água mineral 500 ml');
 
 ALTER TABLE movimentacao ENABLE TRIGGER trg_bloquear_saida;
+
+\i /demo/assercao_invariantes.sql
 
 COMMIT;
 

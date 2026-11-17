@@ -24,48 +24,4 @@ SELECT min(data_hora) AS auditoria_primeiro_registro, max(data_hora) AS auditori
 
 SELECT min(data_movimentacao)::date AS primeira_movimentacao, max(data_movimentacao)::date AS ultima_movimentacao, current_date AS hoje, current_setting('TimeZone') AS fuso FROM movimentacao;
 
-CREATE TEMP TABLE alteradoras AS
-SELECT id_movimentacao, id_lote, saldo_anterior, saldo_posterior,
-       row_number() OVER (PARTITION BY id_lote ORDER BY data_movimentacao, id_movimentacao) AS n,
-       lag(saldo_posterior) OVER (PARTITION BY id_lote ORDER BY data_movimentacao, id_movimentacao) AS posterior_anterior,
-       row_number() OVER (PARTITION BY id_lote ORDER BY data_movimentacao DESC, id_movimentacao DESC) AS desc_n
-FROM movimentacao
-WHERE status_movimentacao = 'concluida' AND tipo_movimentacao IN ('entrada', 'saida', 'ajuste');
-
-SELECT 'lotes cujo saldo difere do ultimo saldo_posterior' AS verificacao, count(*) AS violacoes
-FROM lote l
-LEFT JOIN alteradoras a ON a.id_lote = l.id_lote AND a.desc_n = 1
-WHERE l.quantidade <> COALESCE(a.saldo_posterior, 0)
-UNION ALL
-SELECT 'buracos na cadeia de saldos (anterior diferente do posterior anterior)', count(*)
-FROM alteradoras WHERE saldo_anterior <> COALESCE(posterior_anterior, 0)
-UNION ALL
-SELECT 'movimentacoes que alteram saldo com delta incoerente', count(*)
-FROM movimentacao m
-WHERE m.status_movimentacao = 'concluida' AND m.tipo_movimentacao IN ('entrada', 'saida', 'ajuste')
-  AND abs(m.saldo_posterior - m.saldo_anterior) <> m.quantidade
-UNION ALL
-SELECT 'saidas em lote vencido ou bloqueado na data da saida', count(*)
-FROM movimentacao m JOIN lote l ON l.id_lote = m.id_lote
-WHERE m.tipo_movimentacao = 'saida'
-  AND ((l.status_lote = 'bloqueado' AND m.data_movimentacao >= l.data_bloqueio) OR m.data_movimentacao::date > l.data_validade)
-UNION ALL
-SELECT 'movimentacoes no futuro', count(*) FROM movimentacao WHERE data_movimentacao > now()
-UNION ALL
-SELECT 'trigger trg_bloquear_saida desabilitado (deve estar habilitado)', count(*)
-FROM pg_trigger WHERE tgname = 'trg_bloquear_saida' AND tgenabled <> 'O'
-UNION ALL
-SELECT 'trigger trg_bloquear_saida ausente', CASE WHEN EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_bloquear_saida') THEN 0 ELSE 1 END
-UNION ALL
-SELECT 'triggers de auditoria desabilitados', count(*) FROM pg_trigger WHERE tgname LIKE 'trg_auditoria_%' AND tgenabled <> 'O'
-UNION ALL
-SELECT 'lotes sem etiqueta', count(*) FROM lote l WHERE NOT EXISTS (SELECT 1 FROM identificacao i WHERE i.id_lote = l.id_lote)
-UNION ALL
-SELECT 'usuarios com hash que nao e bcrypt custo 12', count(*) FROM usuario WHERE senha_hash !~ '^[$]2b[$]12[$]'
-ORDER BY 1;
-
-SELECT CASE WHEN (
-  (SELECT count(*) FROM lote l LEFT JOIN alteradoras a ON a.id_lote = l.id_lote AND a.desc_n = 1 WHERE l.quantidade <> COALESCE(a.saldo_posterior, 0))
-  + (SELECT count(*) FROM alteradoras WHERE saldo_anterior <> COALESCE(posterior_anterior, 0))
-  + (SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_bloquear_saida' AND tgenabled <> 'O')
-) = 0 THEN 'INVARIANTE DE SALDO: OK' ELSE 'INVARIANTE DE SALDO: VIOLADO' END AS resultado;
+\i /demo/assercao_invariantes.sql
