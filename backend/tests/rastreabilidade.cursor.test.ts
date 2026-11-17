@@ -54,12 +54,17 @@ describe("cursor da rastreabilidade com timestamps de microssegundo, empates e m
     servidor = await subir(createApp());
     c = await montarCenario(servidor, "CU");
     lote = await c.novoLote("a");
+    const cronologica = await prisma.$queryRaw<{ i: number }[]>`
+      SELECT (t.i - 1)::int AS i FROM unnest(${INSTANTES}::timestamptz[]) WITH ORDINALITY AS t(ts, i) ORDER BY t.ts, t.i`;
+    const posicao = new Map(cronologica.map((linha, ordem) => [linha.i, ordem]));
     for (let i = 0; i < INSTANTES.length; i++) {
+      const ordem = posicao.get(i) ?? 0;
       await prisma.$executeRaw`
         INSERT INTO movimentacao (tipo_movimentacao, data_movimentacao, quantidade, saldo_anterior, saldo_posterior, id_lote, id_usuario, id_localizacao_destino)
-        VALUES ('entrada'::tipo_movimentacao, ${INSTANTES[i]}::timestamptz, 1, ${i}, ${i + 1}, ${lote}, ${c.operadorUsuario.id}, ${c.idLocalizacao})`;
+        VALUES ('entrada'::tipo_movimentacao, ${INSTANTES[i]}::timestamptz, 1, ${ordem}, ${ordem + 1}, ${lote}, ${c.operadorUsuario.id}, ${c.idLocalizacao})`;
     }
     await prisma.lote.update({ where: { id_lote: lote }, data: { quantidade: INSTANTES.length } });
+    await c.verificarInvariante(lote);
     const ordenados = await prisma.$queryRaw<{ id_movimentacao: bigint }[]>`
       SELECT id_movimentacao FROM movimentacao WHERE id_lote = ${lote} ORDER BY data_movimentacao, id_movimentacao`;
     esperados = ordenados.map((o) => o.id_movimentacao.toString());
