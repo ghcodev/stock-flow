@@ -3,3 +3,10 @@
 !deploy/nginx
 **/node_modules
 **/dist
+**/.env
+**/.env.*
+**/*.env
+**/*.key
+**/*.pem
+**/*.crt
+**/*.dump
