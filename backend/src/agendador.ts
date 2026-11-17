@@ -16,7 +16,7 @@ export async function marcarLotesVencidos(escopo?: EscopoDoAgendador): Promise<n
       async (tx) => {
         const achados = await tx.$queryRaw<{ id_lote: number }[]>`
           SELECT id_lote FROM lote
-          WHERE status_lote = 'ativo' AND data_validade IS NOT NULL AND data_validade < current_date ${restringir}
+          WHERE status_lote = 'ativo' AND data_validade IS NOT NULL AND data_validade < hoje_operacional() ${restringir}
           ORDER BY id_lote LIMIT ${TAMANHO_DO_LOTE} FOR UPDATE SKIP LOCKED`;
         if (achados.length === 0) return { candidatos: 0, marcados: 0 };
         const resultado = await tx.lote.updateMany({

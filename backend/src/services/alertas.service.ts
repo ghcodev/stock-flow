@@ -23,8 +23,8 @@ export type EscopoDeAlertas = { idsDeProduto: number[] };
 
 const JANELA = Prisma.sql`
   l.status_lote = 'ativo'
-  AND l.data_validade >= current_date
-  AND l.data_validade <= current_date + ${DIAS_DE_ANTECEDENCIA}::int`;
+  AND l.data_validade >= hoje_operacional()
+  AND l.data_validade <= hoje_operacional() + ${DIAS_DE_ANTECEDENCIA}::int`;
 
 function restricao(escopo?: EscopoDeAlertas): Prisma.Sql {
   return escopo ? Prisma.sql`AND l.id_produto = ANY(${escopo.idsDeProduto}::int[])` : Prisma.empty;
@@ -33,7 +33,7 @@ function restricao(escopo?: EscopoDeAlertas): Prisma.Sql {
 function selecao(escopo?: EscopoDeAlertas): Prisma.Sql {
   return Prisma.sql`
     SELECT l.id_lote, l.numero_lote, to_char(l.data_validade, 'YYYY-MM-DD') AS data_validade,
-           (l.data_validade - current_date)::int AS dias_restantes, l.quantidade,
+           (l.data_validade - hoje_operacional())::int AS dias_restantes, l.quantidade,
            p.nome AS produto, p.unidade_medida, loc.corredor, loc.nivel, loc.posicao
     FROM lote l
     JOIN produto p ON p.id_produto = l.id_produto

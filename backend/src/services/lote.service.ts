@@ -69,7 +69,7 @@ function apresentar(lote: LoteBanco): LotePublico {
 async function expiradasDoBanco(ids: number[]): Promise<Map<number, boolean>> {
   if (ids.length === 0) return new Map();
   const linhas = await prisma.$queryRaw<{ id_lote: number; expirada: boolean }[]>`
-    SELECT id_lote, (data_validade IS NOT NULL AND data_validade < current_date) AS expirada
+    SELECT id_lote, (data_validade IS NOT NULL AND data_validade < hoje_operacional()) AS expirada
     FROM lote WHERE id_lote = ANY(${ids}::int[])`;
   return new Map(linhas.map((linha) => [linha.id_lote, linha.expirada]));
 }

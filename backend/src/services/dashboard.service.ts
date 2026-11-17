@@ -52,6 +52,13 @@ function loteDoEscopo(escopo?: Escopo): Prisma.Sql {
     : Prisma.empty;
 }
 
+const INICIO_DE_HOJE = Prisma.raw("(hoje_operacional()::timestamp AT TIME ZONE 'America/Sao_Paulo')");
+const INICIO_DE_AMANHA = Prisma.raw("((hoje_operacional() + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo')");
+
+function inicioDaJanela(dias: number) {
+  return Prisma.raw(`((hoje_operacional() - ${Math.trunc(dias)})::timestamp AT TIME ZONE 'America/Sao_Paulo')`);
+}
+
 export async function calcularIndicadores(escopo?: Escopo): Promise<Indicadores> {
   const [linha] = await prisma.$queryRaw<Indicadores[]>`
     SELECT
@@ -61,8 +68,8 @@ export async function calcularIndicadores(escopo?: Escopo): Promise<Indicadores>
       (SELECT count(*)::int FROM lote WHERE status_lote = 'bloqueado' ${produtoDe("id_produto", escopo)}) AS bloqueados,
       (SELECT count(*)::int FROM movimentacao
          WHERE status_movimentacao = 'concluida'
-           AND data_movimentacao >= current_date::timestamptz
-           AND data_movimentacao < (current_date + 1)::timestamptz ${loteDoEscopo(escopo)}) AS movimentacoes,
+           AND data_movimentacao >= ${INICIO_DE_HOJE}
+           AND data_movimentacao < ${INICIO_DE_AMANHA} ${loteDoEscopo(escopo)}) AS movimentacoes,
       (SELECT count(*)::int FROM movimentacao
          WHERE tipo_movimentacao = 'inventario' AND status_movimentacao = 'pendente'
            AND quantidade <> saldo_anterior ${loteDoEscopo(escopo)}) AS divergencias`;
@@ -71,11 +78,11 @@ export async function calcularIndicadores(escopo?: Escopo): Promise<Indicadores>
 
 export function movimentacoesPorDiaETipo(escopo?: Escopo): Promise<PontoDoGrafico[]> {
   return prisma.$queryRaw<PontoDoGrafico[]>`
-    SELECT to_char(data_movimentacao::date, 'YYYY-MM-DD') AS dia, tipo_movimentacao::text AS tipo, count(*)::int AS total
+    SELECT to_char((data_movimentacao AT TIME ZONE 'America/Sao_Paulo')::date, 'YYYY-MM-DD') AS dia, tipo_movimentacao::text AS tipo, count(*)::int AS total
     FROM movimentacao
     WHERE status_movimentacao = 'concluida'
-      AND data_movimentacao >= (current_date - ${DIAS_DO_GRAFICO - 1}::int)::timestamptz
-      AND data_movimentacao < (current_date + 1)::timestamptz ${loteDoEscopo(escopo)}
+      AND data_movimentacao >= ${inicioDaJanela(DIAS_DO_GRAFICO - 1)}
+      AND data_movimentacao < ${INICIO_DE_AMANHA} ${loteDoEscopo(escopo)}
     GROUP BY 1, 2 ORDER BY 1, 2`;
 }
 
@@ -85,7 +92,7 @@ export async function lotesPorSituacao(escopo?: Escopo): Promise<LotesPorSituaca
       count(*) FILTER (WHERE status_lote = 'ativo')::int AS ativo,
       count(*) FILTER (WHERE status_lote = 'bloqueado')::int AS bloqueado,
       count(*) FILTER (WHERE status_lote = 'vencido')::int AS vencido,
-      count(*) FILTER (WHERE status_lote = 'ativo' AND data_validade BETWEEN current_date AND current_date + 30)::int AS vencendo
+      count(*) FILTER (WHERE status_lote = 'ativo' AND data_validade BETWEEN hoje_operacional() AND hoje_operacional() + 30)::int AS vencendo
     FROM lote WHERE TRUE ${produtoDe("id_produto", escopo)}`;
   return linha ?? { ativo: 0, bloqueado: 0, vencido: 0, vencendo: 0 };
 }
@@ -122,13 +129,13 @@ export function produtosMaisMovimentados(escopo?: Escopo): Promise<ProdutoMovime
     SELECT p.id_produto, p.nome, count(*)::int AS movimentacoes
     FROM movimentacao m JOIN lote l ON l.id_lote = m.id_lote JOIN produto p ON p.id_produto = l.id_produto
     WHERE m.status_movimentacao = 'concluida' AND m.tipo_movimentacao IN ('entrada', 'saida')
-      AND m.data_movimentacao >= (current_date - ${DIAS_DO_GRAFICO - 1}::int)::timestamptz
-      AND m.data_movimentacao < (current_date + 1)::timestamptz ${produtoDe("l.id_produto", escopo)}
+      AND m.data_movimentacao >= ${inicioDaJanela(DIAS_DO_GRAFICO - 1)}
+      AND m.data_movimentacao < ${INICIO_DE_AMANHA} ${produtoDe("l.id_produto", escopo)}
     GROUP BY p.id_produto, p.nome ORDER BY 3 DESC, p.nome, p.id_produto LIMIT 5`;
 }
 
 export async function diaDeReferencia(): Promise<string> {
-  const [linha] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
+  const [linha] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(hoje_operacional(), 'YYYY-MM-DD') AS dia`;
   return linha?.dia ?? "";
 }
 

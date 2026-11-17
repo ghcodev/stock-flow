@@ -76,7 +76,7 @@ type LinhaDoLote = {
 export async function travarLote(tx: Tx, idLote: number): Promise<LoteTravado> {
   const [linha] = await tx.$queryRaw<LinhaDoLote[]>`
     SELECT id_lote, id_produto, id_localizacao, status_lote::text AS status_lote, quantidade,
-           (data_validade IS NOT NULL AND data_validade < current_date) AS validade_expirada
+           (data_validade IS NOT NULL AND data_validade < hoje_operacional()) AS validade_expirada
     FROM lote WHERE id_lote = ${idLote} FOR UPDATE`;
   if (!linha) throw new HttpError(404, "NAO_ENCONTRADO", "Lote não encontrado");
   return { ...linha, quantidade: new Prisma.Decimal(linha.quantidade.toString()) };
