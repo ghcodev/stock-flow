@@ -35,6 +35,10 @@ São dados de demonstração, **não são segredos reais**: existem só neste ba
 
 Os segredos reais do Compose (senhas do banco e `JWT_SECRET`) são gerados aleatoriamente em `deploy/.env` (fora do git).
 
+### Login pré-preenchido (modo demonstração)
+
+Na demonstração, a tela de login abre com o e-mail e a senha do administrador de demonstração já preenchidos, uma faixa "Ambiente de demonstração - dados fictícios" e dois atalhos ("Entrar como Administrador (demo)" e "Entrar como Operador (demo)") que só preenchem os campos; o login continua exigindo clicar em Entrar. O modo só existe na imagem construída por este Compose: `docker-compose.yml` passa `VITE_MODO_DEMO=true` e as credenciais como argumentos de build, lidas de `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_SENHA`, `DEMO_OPERADOR_EMAIL` e `DEMO_OPERADOR_SENHA` em `deploy/.env` (o `subir.sh` acrescenta essas quatro linhas se faltarem; os valores padrão são os da tabela acima). Em desenvolvimento e em qualquer build sem essas variáveis o login abre vazio. As credenciais não estão no código-fonte, mas, por serem argumentos de build, ficam dentro do pacote JavaScript servido: por isso devem ser só credenciais de demonstração, nunca de um ambiente real. Para mudar o preenchimento, edite `deploy/.env` e reconstrua só o web: `docker compose -p stockflow-demo up -d --no-deps --build web` (dentro de `deploy/`).
+
 ## O que há nos dados
 
 Cerca de 45 produtos, 120 posições (3 corredores, 4 níveis, 10 posições), ~146 lotes com etiquetas QR e RFID e 60 a 90 dias de histórico: entradas, saídas, transferências, ajustes e contagens pendentes, concluídas e canceladas, com lotes vencendo, vencidos e bloqueados e produtos abaixo do estoque mínimo. As movimentações têm datas históricas (relativas ao dia em que o banco é criado). A auditoria é gerada pelas próprias triggers do banco, com o autor de cada operação, e **registra o instante real da carga**: o seed não altera nenhuma linha de `auditoria_log` (tabela imutável), então todos os registros de auditoria da demonstração mostram a data e a hora em que os dados foram carregados, não as datas históricas das movimentações.

@@ -13,7 +13,7 @@ Os números de lote mudam conforme o dia em que o banco foi criado (o número le
 
 | Tempo | O que fazer | O que mostrar e dizer |
 | --- | --- | --- |
-| 0:00 | Abrir a tela de login | Cena 3D de armazém em CSS puro (sem biblioteca), que acompanha o mouse; tema claro e escuro; com movimento reduzido no sistema a cena fica parada. Entrar como **administrador**. |
+| 0:00 | Abrir a tela de login | Cena 3D de armazém em CSS puro (sem biblioteca), que acompanha o mouse; tema claro e escuro; com movimento reduzido no sistema a cena fica parada. A tela já abre com o administrador preenchido (faixa "Ambiente de demonstração"); os atalhos **Entrar como Administrador/Operador (demo)** preenchem os campos e basta clicar em *Entrar*. |
 | 1:00 | **Dashboard** | Seis indicadores do dia, movimentações dos últimos 30 dias por tipo, entradas contra saídas, lotes por situação, saldo por categoria, produtos mais movimentados, estoque abaixo do mínimo, atividade recente e vencimentos. Tudo calculado no banco; gráficos em SVG puro. Prova: RF11 e a regra de estoque mínimo. |
 | 2:00 | **Entrada** com leitura de etiqueta simulada | Em *Lotes*, escolher um lote ativo com bastante saldo. Em *Entrada*, digitar `QR-<número do lote>` no campo de etiqueta e Enter: o lote é carregado como se a etiqueta tivesse sido lida. Registrar a entrada de, por exemplo, 10 unidades e mostrar o saldo mudando (o número pulsa). Prova: RF10 (leitura de etiqueta), saldo transacional com decimais exatos. |
 | 3:30 | **Saída** e regra de bloqueio | Registrar uma saída pequena no mesmo lote. Depois ir em *Lotes*, filtrar por **Bloqueado**, abrir um lote bloqueado e ver o motivo; tentar uma saída nele em *Saída*: o sistema recusa. Prova: regras de lote vencido ou bloqueado, também garantidas por trigger no banco. |
@@ -33,6 +33,7 @@ Se sobrar tempo: *Usuários* (criar, editar, inativar com confirmação; o siste
 - **Carga com um trigger desligado.** Só durante a carga inicial, o trigger que bloqueia saída de lote vencido ou bloqueado fica desabilitado, para permitir saídas históricas de lotes que hoje estão vencidos ou bloqueados. Ele é religado antes do fim da carga e a verificação confirma isso.
 - **Certificado local.** O HTTPS usa um certificado autoassinado gerado no computador; em produção real seria um certificado de uma autoridade confiável.
 - **Leitor físico não testado.** A leitura de etiqueta funciona pela digitação simulada (e por leitor que age como teclado, detectado pela velocidade das teclas). A conexão serial (Web Serial) existe, só funciona em Chromium e em HTTPS ou `localhost`, e **nunca foi testada com um leitor de verdade**.
+- **Login pré-preenchido.** Só na imagem da demonstração (variável de build); as credenciais vêm do `deploy/.env`, não do código, e ficam no pacote JavaScript servido, por isso são só as de demonstração.
 - **Senhas de demonstração.** São públicas neste repositório de propósito; os segredos reais do Compose (banco e JWT) são gerados aleatoriamente em `deploy/.env`, fora do git.
 - **Saldo por categoria em kg.** Produtos em kg entram direto; unidades de contagem (un, cx, rolo, pct) são multiplicadas pelo peso unitário; litros e produtos sem peso informado ficam de fora, e o gráfico mostra quantos lotes ficaram de fora.
 
