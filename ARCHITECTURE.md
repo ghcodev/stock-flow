@@ -33,6 +33,7 @@ Na demonstração (`deploy/docker-compose.yml`) são três contêineres na mesma
 - `02_triggers.sql`: auditoria de `lote`, `movimentacao` (inserção e mudança de status) e `usuario`, sem gravar `senha_hash`; e o bloqueio de saída de lote vencido, expirado ou bloqueado.
 - `03_roles.sh`: papel `stockflow_app` com privilégios mínimos. Ele só insere em `movimentacao` e `auditoria_log` e só atualiza o status da movimentação; não altera nem apaga a auditoria.
 - `04_indices.sql`: índices de auditoria (por usuário, por tabela) e de movimentação por data.
+- `05_hoje_operacional.sql`: função `hoje_operacional()` (dia de `America/Sao_Paulo`) e o trigger de bloqueio de saída usando-a. É a única fonte do "hoje" das regras de validade, usada pelo trigger e pela API; as janelas do dashboard começam e terminam à meia-noite de São Paulo.
 - Dados de demonstração: `deploy/demo/seed_demo.sql` (só no Compose da demonstração; nunca no banco de desenvolvimento).
 
 ## Fluxos principais

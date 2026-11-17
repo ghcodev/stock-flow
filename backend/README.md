@@ -2,6 +2,10 @@
 
 Node 22.18+ (type stripping nativo no desenvolvimento), Express 5, Prisma 7, PostgreSQL 16.
 
+## Dia operacional (America/Sao_Paulo)
+
+As regras de validade (lote vencido ou com validade expirada, alertas de vencimento, agendador, desbloqueio, dashboard e o trigger que bloqueia saída) usam a função SQL `hoje_operacional(instante timestamptz DEFAULT now())`, definida em `database/postgres/init/05_hoje_operacional.sql` como `(instante AT TIME ZONE 'America/Sao_Paulo')::date`. Assim o dia da regra é o de São Paulo qualquer que seja o fuso da sessão do banco (a API da demonstração abre a sessão em UTC). Os filtros `de` e `ate` do histórico e da auditoria continuam em UTC, como documentado acima: são um contrato de período de consulta, não uma regra de validade. O arquivo `05` é idempotente e precisa ser aplicado em bancos já existentes (`psql -f`); em bancos novos a inicialização já o aplica.
+
 ## Instalar
 
 ```
@@ -106,11 +110,11 @@ Paginação da linha do tempo (decisão de projeto): é paginada de verdade, sem
 
 ## Dashboard (RF11, RN09)
 
-`GET /dashboard`, para operador e administrador, com agregação no banco. A data de referência é sempre o `current_date` do banco (a mesma fonte dos alertas e do agendador), nunca o relógio ou o fuso do Node.
+`GET /dashboard`, para operador e administrador, com agregação no banco. A data de referência é sempre o dia operacional do banco, `hoje_operacional()` (dia de `America/Sao_Paulo`; a mesma fonte dos alertas, do agendador e do trigger de saída), nunca o relógio ou o fuso do Node nem o `current_date` da sessão. A janela do "dia" (movimentações concluídas hoje) e a dos 30 dias do gráfico vão da meia-noite de São Paulo à meia-noite seguinte, e o gráfico agrupa os movimentos pelo dia de São Paulo.
 
 Indicadores (decisões de projeto; a especificação lista os seis nomes sem definir a conta): `produtos` = produtos ativos; `lotes` = lotes com status ativo e quantidade > 0; `vencidos` = lotes com status vencido; `bloqueados` = lotes com status bloqueado; `movimentacoes` = movimentações com status concluída gravadas no dia corrente do banco (todos os tipos, inclusive contagem de inventário concluída); `divergencias` = contagens de inventário pendentes cuja quantidade contada difere do saldo registrado na contagem. Os valores são contagens inteiras (números JSON).
 
-`data_referencia`: o `current_date` do banco em `AAAA-MM-DD`. É o último dia da janela do gráfico; o cliente monta os 30 dias só a partir dele (a API devolve apenas dias com movimento, e o relógio ou o fuso do navegador não decidem a janela). É lido numa consulta própria, então em uma virada de dia exatamente entre as consultas o gráfico pode ter um dia a menos de diferença até a próxima atualização.
+`data_referencia`: o `hoje_operacional()` do banco em `AAAA-MM-DD`. É o último dia da janela do gráfico; o cliente monta os 30 dias só a partir dele (a API devolve apenas dias com movimento, e o relógio ou o fuso do navegador não decidem a janela). É lido numa consulta própria, então em uma virada de dia exatamente entre as consultas o gráfico pode ter um dia a menos de diferença até a próxima atualização.
 
 `grafico`: movimentações concluídas por dia e por tipo nos últimos 30 dias (hoje e os 29 anteriores), em uma consulta agregada: `[{ "dia": "AAAA-MM-DD", "tipo": "...", "total": n }]`.
 
@@ -126,7 +130,7 @@ Todas as agregações são feitas no banco, somente leitura, sem consulta por it
 
 ## Alertas de vencimento e exportação (RF08, RN08)
 
-`GET /alertas/vencimento` (operador e administrador, paginado como as demais listas) devolve os lotes com **status ativo** e `data_validade` entre hoje e hoje + 30 dias, inclusive. Lotes sem validade, vencidos e bloqueados ficam fora, e a quantidade não filtra (lote com saldo 0 aparece). "Hoje" é o `current_date` do banco, a mesma fonte do agendador. Ordem: validade e id.
+`GET /alertas/vencimento` (operador e administrador, paginado como as demais listas) devolve os lotes com **status ativo** e `data_validade` entre hoje e hoje + 30 dias, inclusive. Lotes sem validade, vencidos e bloqueados ficam fora, e a quantidade não filtra (lote com saldo 0 aparece). "Hoje" é o `hoje_operacional()` do banco (dia de São Paulo), a mesma fonte do agendador. Ordem: validade e id.
 
 `GET /alertas/vencimento/exportacao` (só administrador; operador recebe 403) devolve o mesmo conjunto, sem paginação, como CSV. Decisões de projeto: gerado sem biblioteca; UTF-8 com BOM, separador ponto e vírgula, linhas terminadas em CRLF; colunas número do lote, produto, validade, quantidade, unidade e localização (`corredor-nível-posição`); células com aspas, ponto e vírgula ou quebra de linha vão entre aspas, com aspas duplicadas; proteção contra fórmulas: célula iniciada por `=`, `+`, `-`, `@`, tabulação ou CR recebe um apóstrofo na frente; `Content-Type: text/csv; charset=utf-8` e `Content-Disposition: attachment`.
 
@@ -144,9 +148,9 @@ Limite conhecido: a troca de senha **não invalida os tokens já emitidos**. A e
 
 ## Agendador diário (RN08, RNF05)
 
-Marca como `vencido` o lote com status `ativo` e `data_validade < current_date`. Sem node-cron: temporizador nativo (`setInterval` de 24 h; executa uma vez logo depois da subida e depois a cada 24 h, sem sobreposição). Só roda quando `AGENDADOR_ATIVO=true` no ambiente (para uma única réplica; o padrão no `.env.example` é `false`). Não há rota HTTP de disparo.
+Marca como `vencido` o lote com status `ativo` e `data_validade < hoje_operacional()`. Sem node-cron: temporizador nativo (`setInterval` de 24 h; executa uma vez logo depois da subida e depois a cada 24 h, sem sobreposição). Só roda quando `AGENDADOR_ATIVO=true` no ambiente (para uma única réplica; o padrão no `.env.example` é `false`). Não há rota HTTP de disparo.
 
-Decisões de projeto: a referência de data é sempre o `current_date` do banco (a mesma fonte dos alertas de vencimento), nunca o relógio ou o fuso do Node (o fuso do banco será fixado na Etapa 4); no dia da validade o lote ainda não venceu, como na trigger; lote bloqueado continua bloqueado (o status é único e trocar apagaria o bloqueio); a ação é do sistema: transação própria com `app.user_id` e `app.ip` vazios, então a auditoria grava usuário e IP nulos (a seção 18 diz que ações do agendador não têm usuário), sem criar usuário técnico e sem herdar contexto de uma conexão do pool; cada lote é travado (`FOR UPDATE SKIP LOCKED`, lotes em uso ficam para a próxima execução) e só quem precisa é atualizado, então rodar duas vezes não gera log repetido; o processamento é em lotes de 500; uma falha escreve apenas `Agendador: falha na execução` e não derruba a API; o temporizador para no encerramento do processo, depois de esperar a execução em curso.
+Decisões de projeto: a referência de data é sempre o `hoje_operacional()` do banco (a mesma fonte dos alertas de vencimento e do trigger), nunca o relógio ou o fuso do Node nem o fuso da sessão; no dia da validade o lote ainda não venceu, como na trigger; lote bloqueado continua bloqueado (o status é único e trocar apagaria o bloqueio); a ação é do sistema: transação própria com `app.user_id` e `app.ip` vazios, então a auditoria grava usuário e IP nulos (a seção 18 diz que ações do agendador não têm usuário), sem criar usuário técnico e sem herdar contexto de uma conexão do pool; cada lote é travado (`FOR UPDATE SKIP LOCKED`, lotes em uso ficam para a próxima execução) e só quem precisa é atualizado, então rodar duas vezes não gera log repetido; o processamento é em lotes de 500; uma falha escreve apenas `Agendador: falha na execução` e não derruba a API; o temporizador para no encerramento do processo, depois de esperar a execução em curso.
 
 Teto da exportação (decisão de projeto): o CSV tem no máximo 10.000 linhas. O servidor confere por `COUNT` antes de ler as linhas e lê no máximo 10.001; acima do teto responde 422 `EXPORTACAO_MUITO_GRANDE` ("A exportação excede o limite de 10000 linhas. Reduza o conjunto de alertas e tente novamente"). Nunca trunca em silêncio. O documento é montado linha a linha, sem cópias intermediárias do conjunto.
 
