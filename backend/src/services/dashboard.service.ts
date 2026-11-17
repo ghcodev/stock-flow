@@ -22,10 +22,19 @@ export type AlertaDeEstoqueMinimo = {
   saldo_ativo: Prisma.Decimal;
 };
 
+export type LotesPorSituacao = { ativo: number; bloqueado: number; vencido: number; vencendo: number };
+
+export type SaldoDeCategoria = { categoria: string; saldo_kg: Prisma.Decimal };
+
+export type ProdutoMovimentado = { id_produto: number; nome: string; movimentacoes: number };
+
 export type Dashboard = {
   data_referencia: string;
   indicadores: Indicadores;
   grafico: PontoDoGrafico[];
+  lotes_por_situacao: LotesPorSituacao;
+  saldo_por_categoria: SaldoDeCategoria[];
+  top_produtos: ProdutoMovimentado[];
   alertas_estoque_minimo: { total: number; itens: AlertaDeEstoqueMinimo[] };
 };
 
@@ -69,6 +78,36 @@ export function movimentacoesPorDiaETipo(escopo?: Escopo): Promise<PontoDoGrafic
     GROUP BY 1, 2 ORDER BY 1, 2`;
 }
 
+export async function lotesPorSituacao(escopo?: Escopo): Promise<LotesPorSituacao> {
+  const [linha] = await prisma.$queryRaw<LotesPorSituacao[]>`
+    SELECT
+      count(*) FILTER (WHERE status_lote = 'ativo')::int AS ativo,
+      count(*) FILTER (WHERE status_lote = 'bloqueado')::int AS bloqueado,
+      count(*) FILTER (WHERE status_lote = 'vencido')::int AS vencido,
+      count(*) FILTER (WHERE status_lote = 'ativo' AND data_validade BETWEEN current_date AND current_date + 30)::int AS vencendo
+    FROM lote WHERE TRUE ${produtoDe("id_produto", escopo)}`;
+  return linha ?? { ativo: 0, bloqueado: 0, vencido: 0, vencendo: 0 };
+}
+
+export function saldoPorCategoria(escopo?: Escopo): Promise<SaldoDeCategoria[]> {
+  return prisma.$queryRaw<SaldoDeCategoria[]>`
+    SELECT COALESCE(p.categoria, 'Sem categoria') AS categoria, SUM(l.quantidade * p.peso_unitario_kg) AS saldo_kg
+    FROM lote l JOIN produto p ON p.id_produto = l.id_produto
+    WHERE l.status_lote = 'ativo' AND p.peso_unitario_kg IS NOT NULL ${produtoDe("l.id_produto", escopo)}
+    GROUP BY 1 HAVING SUM(l.quantidade * p.peso_unitario_kg) > 0
+    ORDER BY 2 DESC, 1 LIMIT 8`;
+}
+
+export function produtosMaisMovimentados(escopo?: Escopo): Promise<ProdutoMovimentado[]> {
+  return prisma.$queryRaw<ProdutoMovimentado[]>`
+    SELECT p.id_produto, p.nome, count(*)::int AS movimentacoes
+    FROM movimentacao m JOIN lote l ON l.id_lote = m.id_lote JOIN produto p ON p.id_produto = l.id_produto
+    WHERE m.status_movimentacao = 'concluida' AND m.tipo_movimentacao IN ('entrada', 'saida')
+      AND m.data_movimentacao >= (current_date - ${DIAS_DO_GRAFICO - 1}::int)::timestamptz
+      AND m.data_movimentacao < (current_date + 1)::timestamptz ${produtoDe("l.id_produto", escopo)}
+    GROUP BY p.id_produto, p.nome ORDER BY 3 DESC, p.nome, p.id_produto LIMIT 5`;
+}
+
 export async function diaDeReferencia(): Promise<string> {
   const [linha] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
   return linha?.dia ?? "";
@@ -92,11 +131,22 @@ export async function alertasDeEstoqueMinimo(escopo?: Escopo): Promise<Dashboard
 }
 
 export async function montarDashboard(): Promise<Dashboard> {
-  const [dataReferencia, indicadores, grafico, alertas] = await Promise.all([
+  const [dataReferencia, indicadores, grafico, alertas, situacao, categorias, topo] = await Promise.all([
     diaDeReferencia(),
     calcularIndicadores(),
     movimentacoesPorDiaETipo(),
     alertasDeEstoqueMinimo(),
+    lotesPorSituacao(),
+    saldoPorCategoria(),
+    produtosMaisMovimentados(),
   ]);
-  return { data_referencia: dataReferencia, indicadores, grafico, alertas_estoque_minimo: alertas };
+  return {
+    data_referencia: dataReferencia,
+    indicadores,
+    grafico,
+    lotes_por_situacao: situacao,
+    saldo_por_categoria: categorias,
+    top_produtos: topo,
+    alertas_estoque_minimo: alertas,
+  };
 }

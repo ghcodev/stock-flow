@@ -2,7 +2,14 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createApp } from "../src/app.ts";
 import { prisma } from "../src/db.ts";
-import { alertasDeEstoqueMinimo, calcularIndicadores, movimentacoesPorDiaETipo } from "../src/services/dashboard.service.ts";
+import {
+  alertasDeEstoqueMinimo,
+  calcularIndicadores,
+  lotesPorSituacao,
+  movimentacoesPorDiaETipo,
+  produtosMaisMovimentados,
+  saldoPorCategoria,
+} from "../src/services/dashboard.service.ts";
 import { chamarApi } from "./api.ts";
 import { desativarUsuariosTeste, subir, type Servidor } from "./helpers.ts";
 import { montarCenario, type Cenario } from "./movimentacao.apoio.ts";
@@ -10,6 +17,9 @@ import { montarCenario, type Cenario } from "./movimentacao.apoio.ts";
 type Resposta = {
   data_referencia: string;
   indicadores: Record<string, number>;
+  lotes_por_situacao: Record<string, number>;
+  saldo_por_categoria: { categoria: string; saldo_kg: string }[];
+  top_produtos: { id_produto: number; nome: string; movimentacoes: number }[];
   grafico: { dia: string; tipo: string; total: number }[];
   alertas_estoque_minimo: { total: number; itens: { id_produto: number; nome: string; estoque_minimo: string; saldo_ativo: string }[] };
 };
@@ -107,6 +117,27 @@ describe("dashboard (A20, RF11, RN09)", () => {
     assert.ok(ponto.length >= 1 && typeof hoje === "string");
   });
 
+  it("B3: lotes por situação, saldo por categoria (kg) e produtos mais movimentados, só do escopo do teste", async () => {
+    const situacao = await lotesPorSituacao(escopo);
+    const lotes = await prisma.lote.findMany({ where: { id_produto: { in: escopo.idsDeProduto } }, select: { status_lote: true } });
+    for (const status of ["ativo", "bloqueado", "vencido"] as const) {
+      assert.equal(situacao[status], lotes.filter((l) => l.status_lote === status).length, status);
+    }
+    assert.ok(situacao.vencendo >= 0 && situacao.vencendo <= situacao.ativo);
+
+    assert.deepEqual(await saldoPorCategoria({ idsDeProduto: [p4] }), []);
+    await prisma.produto.update({ where: { id_produto: p1 }, data: { peso_unitario_kg: "2", categoria: `${c.prefixo}-cat` } });
+    const categorias = await saldoPorCategoria(escopo);
+    const doTeste = categorias.find((x) => x.categoria === `${c.prefixo}-cat`);
+    const saldoAtivoP1 = await prisma.lote.aggregate({ where: { id_produto: p1, status_lote: "ativo" }, _sum: { quantidade: true } });
+    assert.equal(doTeste?.saldo_kg.toString(), (Number(saldoAtivoP1._sum.quantidade) * 2).toString());
+
+    const topo = await produtosMaisMovimentados(escopo);
+    assert.ok(topo.length >= 1 && topo.length <= 5);
+    assert.equal(topo[0]?.id_produto, p1);
+    for (let i = 1; i < topo.length; i += 1) assert.ok((topo[i - 1]?.movimentacoes ?? 0) >= (topo[i]?.movimentacoes ?? 0));
+  });
+
   it("RN09: alerta só para produto ativo cuja soma dos lotes ativos é menor que o mínimo", async () => {
     const alertas = await alertasDeEstoqueMinimo(escopo);
     const porNome = new Map(alertas.itens.map((i) => [i.nome, i]));
@@ -135,6 +166,9 @@ describe("dashboard (A20, RF11, RN09)", () => {
       assert.deepEqual(Object.keys(corpo.indicadores).sort(), ["bloqueados", "divergencias", "lotes", "movimentacoes", "produtos", "vencidos"]);
       for (const valor of Object.values(corpo.indicadores)) assert.ok(Number.isInteger(valor) && valor >= 0);
       assert.ok(Array.isArray(corpo.grafico));
+      for (const chave of ["ativo", "bloqueado", "vencido", "vencendo"]) assert.ok(Number.isInteger(corpo.lotes_por_situacao[chave]));
+      assert.ok(Array.isArray(corpo.saldo_por_categoria) && corpo.saldo_por_categoria.length <= 8);
+      assert.ok(Array.isArray(corpo.top_produtos) && corpo.top_produtos.length <= 5);
       assert.match(corpo.data_referencia, /^\d{4}-\d{2}-\d{2}$/);
       const [banco] = await prisma.$queryRaw<{ dia: string }[]>`SELECT to_char(current_date, 'YYYY-MM-DD') AS dia`;
       assert.equal(corpo.data_referencia, banco?.dia);

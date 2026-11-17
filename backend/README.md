@@ -114,6 +114,14 @@ Indicadores (decisões de projeto; a especificação lista os seis nomes sem def
 
 `grafico`: movimentações concluídas por dia e por tipo nos últimos 30 dias (hoje e os 29 anteriores), em uma consulta agregada: `[{ "dia": "AAAA-MM-DD", "tipo": "...", "total": n }]`.
 
+`lotes_por_situacao`: contagem de lotes por situação (`ativo`, `bloqueado`, `vencido`) e `vencendo` (ativos com validade nos próximos 30 dias, subconjunto de `ativo`), em uma consulta agregada.
+
+`saldo_por_categoria`: até 8 categorias, do maior para o menor, com `saldo_kg` = soma de `quantidade × peso_unitario_kg` dos lotes ativos (só produtos com peso unitário informado, porque as unidades de medida não são somáveis entre si); texto decimal.
+
+`top_produtos`: os 5 produtos com mais movimentações concluídas de entrada e saída nos últimos 30 dias (mesma janela do gráfico), por `movimentacoes`, desempate pelo nome.
+
+Todas as agregações são feitas no banco, somente leitura, sem consulta por item (sem N+1).
+
 `alertas_estoque_minimo` (RN09): produto ativo cuja soma da quantidade dos lotes com status ativo é menor que o estoque mínimo (sem lote ativo a soma é 0), do maior déficit para o menor, até 100 itens, com `total` de produtos em alerta. Lotes bloqueados e vencidos não entram na soma.
 
 ## Alertas de vencimento e exportação (RF08, RN08)
