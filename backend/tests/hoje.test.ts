@@ -11,6 +11,15 @@ const dia = async (instante: string): Promise<string> => {
   return linha?.d ?? "";
 };
 
+const MARGEM_DA_MEIA_NOITE_S = 30;
+
+const esperarVirarODia = async (): Promise<void> => {
+  const [linha] = await prisma.$queryRaw<{ falta: number }[]>`
+    SELECT extract(epoch FROM (((hoje_operacional() + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo') - now()))::float8 AS falta`;
+  const falta = linha?.falta ?? Number.POSITIVE_INFINITY;
+  if (falta < MARGEM_DA_MEIA_NOITE_S) await new Promise((resolver) => setTimeout(resolver, (falta + 1) * 1000));
+};
+
 describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
   let servidor: Servidor;
   let c: Cenario;
@@ -35,11 +44,13 @@ describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
   });
 
   it("sem argumento é o dia de hoje em São Paulo e é o data_referencia do dashboard", async () => {
+    await esperarVirarODia();
     const [agora] = await prisma.$queryRaw<{ d: string }[]>`SELECT to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') AS d`;
     assert.equal(await diaDeReferencia(), agora?.d);
   });
 
   it("janela do dia no dashboard e no gráfico começa e termina à meia-noite de São Paulo", async () => {
+    await esperarVirarODia();
     const lote = await c.novoLote("a");
     const escopo = { idsDeProduto: [c.idProduto] };
     const antesIndicadores = (await calcularIndicadores(escopo)).movimentacoes;
@@ -49,8 +60,8 @@ describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
              ((hoje_operacional() + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo') AS fim`;
     assert.ok(limites);
     const instantes = [
-      limites.inicio,
       new Date(limites.inicio.getTime() - 1000),
+      limites.inicio,
       new Date(limites.fim.getTime() - 1000),
       limites.fim,
     ];
@@ -59,6 +70,8 @@ describe("dia operacional de America/Sao_Paulo (hoje_operacional)", () => {
         INSERT INTO movimentacao (tipo_movimentacao, data_movimentacao, quantidade, saldo_anterior, saldo_posterior, id_lote, id_usuario, id_localizacao_destino)
         VALUES ('entrada'::tipo_movimentacao, ${instante}::timestamptz, 1, ${i}, ${i + 1}, ${lote}, ${c.operadorUsuario.id}, ${c.idLocalizacao})`;
     }
+    await prisma.lote.update({ where: { id_lote: lote }, data: { quantidade: instantes.length } });
+    await c.verificarInvariante(lote);
     assert.equal((await calcularIndicadores(escopo)).movimentacoes, antesIndicadores + 2);
     assert.equal((await movimentacoesPorDiaETipo(escopo)).reduce((soma, p) => soma + p.total, 0), antesGrafico + 3);
     const hoje = await diaDeReferencia();
