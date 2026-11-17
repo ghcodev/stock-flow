@@ -1,3 +1,5 @@
+*
+!frontend
+!deploy/nginx
 **/node_modules
 **/dist
-.git
