@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")"
+umask 077
 
 aleatorio() {
   openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c "$1"
