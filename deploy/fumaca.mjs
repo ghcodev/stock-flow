@@ -7,11 +7,19 @@ const senhaAdmin = process.env.DEMO_SENHA_ADMIN ?? "Admin@Demo2026";
 const senhaOperador = process.env.DEMO_SENHA_OPERADOR ?? "Operador@Demo2026";
 
 let falhas = 0;
+
+function escrever(texto) {
+  process.stdout.write(`${texto}\n`);
+}
+
+function reclamar(texto) {
+  process.stderr.write(`${texto}\n`);
+}
 function verificar(descricao, condicao, detalhe = "") {
-  if (condicao) console.log(`ok     ${descricao}`);
+  if (condicao) escrever(`ok     ${descricao}`);
   else {
     falhas += 1;
-    console.log(`FALHA  ${descricao} ${detalhe}`);
+    reclamar(`FALHA  ${descricao} ${detalhe}`);
   }
 }
 
@@ -122,8 +130,9 @@ verificar("API sem porta publicada no host (só rede interna)", (portas.api ?? [
 verificar("banco sem porta publicada no host", (portas.postgres ?? []).length === 0, JSON.stringify(portas));
 verificar("Nginx é a única porta publicada (80 e 443 internos)", (portas.web ?? []).length === 2, JSON.stringify(portas));
 const aberta3000 = !(await portaFechada(3000));
-console.log(aberta3000 ? "aviso  a porta 3000 do host responde, mas é outro processo (a API da demonstração não publica porta)" : "ok     porta 3000 do host fechada");
+escrever(aberta3000 ? "aviso  a porta 3000 do host responde, mas é outro processo (a API da demonstração não publica porta)" : "ok     porta 3000 do host fechada");
 verificar("porta 5432 do host fechada", await portaFechada(5432));
 
-console.log(falhas === 0 ? "\nFUMAÇA: TUDO OK" : `\nFUMAÇA: ${falhas} FALHA(S)`);
+if (falhas === 0) escrever("\nFUMAÇA: TUDO OK");
+else reclamar(`\nFUMAÇA: ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 1 - 1 : 1);
